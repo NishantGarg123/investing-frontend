@@ -16,6 +16,7 @@
       --accent-dark: #159466;
       --danger: #fb7185;
       --warning: #fbbf24;
+      --info: #38bdf8;
     }
 
     * { box-sizing: border-box; }
@@ -31,7 +32,7 @@
         var(--page);
     }
 
-    .shell { width: min(100% - 32px, 980px); margin: 0 auto; padding: 56px 0 72px; }
+    .shell { width: min(100% - 32px, 1040px); margin: 0 auto; padding: 56px 0 72px; }
     .eyebrow { color: var(--accent); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
     h1 { margin: 10px 0 10px; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.1; letter-spacing: -0.045em; }
     .intro { max-width: 660px; color: var(--muted); line-height: 1.65; margin: 0 0 32px; }
@@ -53,20 +54,294 @@
     .divider { height: 1px; background: var(--panel-border); margin: 30px 0; }
     .options { display: flex; align-items: end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
     .field-note { color: var(--muted); font-size: 0.8rem; margin: 7px 0 0; }
+    
     button {
       min-height: 46px; padding: 0 20px; border: 0; border-radius: 10px; cursor: pointer;
       color: #032217; background: var(--accent); font: inherit; font-weight: 800;
       transition: transform 150ms ease, background 150ms ease, opacity 150ms ease;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     }
     button:hover:not(:disabled) { background: #5ee8b1; transform: translateY(-1px); }
     button:disabled { cursor: wait; opacity: 0.65; }
+
+    .btn-secondary {
+      background: rgba(51, 65, 85, 0.7);
+      color: #f1f5f9;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      font-weight: 600;
+      font-size: 0.88rem;
+      min-height: 38px;
+      padding: 0 14px;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(71, 85, 105, 0.9);
+      color: #fff;
+    }
+
     .status { display: none; margin-top: 22px; border-radius: 10px; padding: 14px 16px; line-height: 1.5; font-size: 0.92rem; white-space: pre-wrap; }
     .status.show { display: block; }
     .status.error { color: #fecdd3; background: rgba(190, 24, 93, 0.15); border: 1px solid rgba(251, 113, 133, 0.35); }
     .status.success { color: #bbf7d0; background: rgba(22, 163, 74, 0.14); border: 1px solid rgba(74, 222, 128, 0.35); }
     .api-note { margin-top: 22px; color: #71829b; font-size: 0.76rem; overflow-wrap: anywhere; }
-    code { color: #93c5fd; }
-    @media (max-width: 640px) { .shell { width: min(100% - 24px, 980px); padding-top: 34px; } .pairs { grid-template-columns: 1fr; } .options { align-items: stretch; } button { width: 100%; } }
+    code { color: #93c5fd; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.85em; }
+
+    /* Logs Section */
+    .logs-section {
+      margin-top: 48px;
+    }
+    .logs-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .logs-title-area h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+    .logs-subtitle {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-top: 4px;
+    }
+    .logs-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .live-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      margin-right: 4px;
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .batch-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .batch-card {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+    .batch-card:hover {
+      border-color: rgba(49, 196, 141, 0.35);
+    }
+    .batch-header {
+      padding: 16px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      user-select: none;
+      background: rgba(24, 34, 58, 0.5);
+    }
+    .batch-header:hover {
+      background: rgba(30, 41, 69, 0.8);
+    }
+    .batch-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .batch-badge {
+      background: rgba(49, 196, 141, 0.15);
+      color: #6ee7b7;
+      border: 1px solid rgba(49, 196, 141, 0.3);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+      min-width: 95px;
+      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .batch-time {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      min-width: 165px;
+    }
+    .batch-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+    }
+    .pill {
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      justify-content: center;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .pill-accounts {
+      width: 115px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .pill-success {
+      width: 115px;
+      background: rgba(34, 197, 94, 0.16);
+      color: #86efac;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .pill-fail {
+      width: 105px;
+      background: rgba(244, 63, 94, 0.16);
+      color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+    .pill-progress {
+      width: 230px;
+      background: rgba(251, 191, 36, 0.15);
+      color: #fde047;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+    .pill-muted {
+      background: rgba(148, 163, 184, 0.1);
+      color: #94a3b8;
+    }
+    .pill-muted-success {
+      width: 115px;
+      background: rgba(148, 163, 184, 0.1);
+      color: #94a3b8;
+    }
+    .pill-muted-fail {
+      width: 105px;
+      background: rgba(148, 163, 184, 0.1);
+      color: #94a3b8;
+    }
+    .chevron {
+      width: 18px;
+      height: 18px;
+      transition: transform 200ms ease;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .batch-card.open .chevron {
+      transform: rotate(180deg);
+      color: var(--accent);
+    }
+
+    .batch-content {
+      display: none;
+      padding: 16px 20px 22px;
+      border-top: 1px solid rgba(148, 163, 184, 0.15);
+      background: rgba(11, 17, 34, 0.6);
+    }
+    .batch-card.open .batch-content {
+      display: block;
+    }
+
+    .payload-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .payload-meta span strong {
+      color: #cbd5e1;
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      text-align: left;
+    }
+    th {
+      background: rgba(30, 41, 59, 0.7);
+      color: #94a3b8;
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+      color: #e2e8f0;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:hover td {
+      background: rgba(51, 65, 85, 0.2);
+    }
+
+    .status-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .status-completed {
+      background: rgba(34, 197, 94, 0.15);
+      color: #86efac;
+    }
+    .status-created {
+      background: rgba(234, 179, 8, 0.15);
+      color: #fde047;
+    }
+    .status-failed {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fda4af;
+    }
+
+    .loading-state, .empty-state {
+      padding: 36px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 640px) {
+      .shell { width: min(100% - 24px, 980px); padding-top: 34px; }
+      .pairs { grid-template-columns: 1fr; }
+      .options { align-items: stretch; }
+      button { width: 100%; }
+      .batch-header { flex-direction: column; align-items: flex-start; }
+      .batch-right { width: 100%; justify-content: space-between; }
+    }
   </style>
 </head>
 <body>
@@ -105,11 +380,33 @@
       <div class="status" id="status" role="status" aria-live="polite"></div>
       <div class="api-note">The request is saved first, then submitted directly to the reporting API.</div>
     </form>
+
+    <!-- LIVE BATCH LOGS SECTION -->
+    <section class="logs-section">
+      <div class="logs-header">
+        <div class="logs-title-area">
+          <h2>Execution Batch Logs</h2>
+          <div class="logs-subtitle"><span class="live-dot"></span> Live records grouped by execution run directly from database</div>
+        </div>
+        <div class="logs-actions">
+          <button type="button" class="btn-secondary" id="refresh-logs-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Refresh Logs
+          </button>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 16px;">
+        <div id="batch-list" class="batch-list">
+          <div class="loading-state">Loading live run batches from database...</div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script>
-    // Configuration loaded dynamically from the backend (.env)
     const STORAGE_API_URL = "/api/store";
+    const LOGS_API_URL = "/api/logs";
     let lambdaApiUrl = "";
 
     async function initConfig() {
@@ -131,6 +428,8 @@
     const accountCountInput = document.getElementById("account-count");
     const runButton = document.getElementById("run-button");
     const status = document.getElementById("status");
+    const refreshLogsBtn = document.getElementById("refresh-logs-btn");
+    const batchListContainer = document.getElementById("batch-list");
 
     function idsFrom(input) {
       return input.value.split(/\r?\n/).map(value => value.trim()).filter(Boolean);
@@ -149,6 +448,182 @@
     commentIdsInput.addEventListener("input", updateCounts);
     userIdsInput.addEventListener("input", updateCounts);
 
+    // --- LOGS RENDERING LOGIC ---
+    let openBatchIds = new Set([1]); // default expand latest batch
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function renderBatches(batches) {
+      if (!batches || !batches.length) {
+        batchListContainer.innerHTML = `<div class="empty-state">No execution runs found in the database.</div>`;
+        return;
+      }
+
+      batchListContainer.innerHTML = batches.map((batch, index) => {
+        const batchNum = batch.batch_number || (batches.length - index);
+        const isOpen = openBatchIds.has(batchNum) || (index === 0 && openBatchIds.size === 0);
+        
+        let commentDisplay = "";
+        let userDisplay = "";
+        try {
+          const cArr = JSON.parse(batch.comment_ids);
+          commentDisplay = Array.isArray(cArr) ? cArr.join(", ") : batch.comment_ids;
+        } catch (_) {
+          commentDisplay = batch.comment_ids;
+        }
+        try {
+          const uArr = JSON.parse(batch.user_ids);
+          userDisplay = Array.isArray(uArr) ? uArr.join(", ") : batch.user_ids;
+        } catch (_) {
+          userDisplay = batch.user_ids;
+        }
+
+        const rowsHtml = batch.records.map((r, rIdx) => {
+          let statusClass = "status-created";
+          const stLower = (r.status || "").toLowerCase();
+          if (stLower.includes("completed")) {
+            statusClass = "status-completed";
+          } else if (stLower.includes("fail") || stLower.includes("error")) {
+            statusClass = "status-failed";
+          }
+
+          let resultHtml = "";
+          if (r.is_completed) {
+            const hasFail = r.failure_count > 0;
+            const resColor = hasFail ? 'var(--danger)' : 'var(--accent)';
+            const textVal = r.is_success && r.is_success !== '-' ? r.is_success : (hasFail ? 'Failed' : 'Success');
+            resultHtml = `<span style="font-family: monospace; font-size: 0.82rem; color: ${resColor};">${escapeHtml(textVal)}</span>`;
+          } else {
+            resultHtml = `<span style="color: var(--muted); font-size: 0.82rem;">—</span>`;
+          }
+
+          return `
+            <tr>
+              <td style="color: var(--muted);">${rIdx + 1}</td>
+              <td><code>${escapeHtml(r.account_email || "—")}</code></td>
+              <td><span class="status-tag ${statusClass}">${escapeHtml(r.status || "Unknown")}</span></td>
+              <td>${resultHtml}</td>
+              <td style="color: var(--muted); font-size: 0.8rem;">${escapeHtml(r.starting_date || "—")}</td>
+            </tr>
+          `;
+        }).join("");
+
+        // Header pills: only show success/failure counts when the batch is fully completed
+        let headerMetricsHtml = "";
+        if (batch.is_completed) {
+          headerMetricsHtml = `
+            <span class="pill ${batch.total_success > 0 ? 'pill-success' : 'pill-muted-success'}">✓ ${batch.total_success} Success</span>
+            ${batch.total_failure > 0 ? `<span class="pill pill-fail">✗ ${batch.total_failure} Failure</span>` : `<span class="pill pill-muted-fail">0 Failure</span>`}
+          `;
+        } else {
+          headerMetricsHtml = `
+            <span class="pill pill-progress">
+              <span class="live-dot" style="width: 6px; height: 6px; background: #fde047; box-shadow: 0 0 6px #fde047; margin-right: 4px;"></span>
+              In Progress
+            </span>
+          `;
+        }
+
+        return `
+          <div class="batch-card ${isOpen ? 'open' : ''}" data-batch-id="${batchNum}">
+            <div class="batch-header" onclick="toggleBatch(${batchNum})">
+              <div class="batch-left">
+                <span class="batch-badge">BATCH #${batchNum}</span>
+                <span class="batch-time">${escapeHtml(batch.starting_date || "Unknown Time")}</span>
+              </div>
+              <div class="batch-right">
+                <span class="pill pill-accounts">${batch.total_accounts} Account${batch.total_accounts > 1 ? 's' : ''}</span>
+                ${headerMetricsHtml}
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="batch-content">
+              <div class="payload-meta">
+                <span><strong>Comment IDs:</strong> <code>${escapeHtml(commentDisplay)}</code></span>
+                <span><strong>User IDs:</strong> <code>${escapeHtml(userDisplay)}</code></span>
+              </div>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width: 40px;">#</th>
+                      <th>Account Email</th>
+                      <th>Status</th>
+                      <th>Execution Result</th>
+                      <th>Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${rowsHtml}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    window.toggleBatch = function(batchNum) {
+      const card = document.querySelector(`.batch-card[data-batch-id="${batchNum}"]`);
+      if (!card) return;
+      if (card.classList.contains("open")) {
+        card.classList.remove("open");
+        openBatchIds.delete(batchNum);
+      } else {
+        card.classList.add("open");
+        openBatchIds.add(batchNum);
+      }
+    };
+
+    async function loadLogs(isBackground = false) {
+      if (!isBackground) {
+        refreshLogsBtn.disabled = true;
+      }
+      try {
+        const res = await fetch(LOGS_API_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.batches)) {
+          // If first load and openBatchIds default was 1, ensure latest batch is opened
+          if (data.batches.length > 0 && openBatchIds.size === 0) {
+            openBatchIds.add(data.batches[0].batch_number || 1);
+          }
+          renderBatches(data.batches);
+        } else if (!isBackground) {
+          batchListContainer.innerHTML = `<div class="empty-state" style="color: var(--danger);">Failed to load logs: ${escapeHtml(data.error || "Unknown error")}</div>`;
+        }
+      } catch (err) {
+        if (!isBackground) {
+          batchListContainer.innerHTML = `<div class="empty-state" style="color: var(--danger);">Error connecting to logs API: ${escapeHtml(err.message)}</div>`;
+        }
+      } finally {
+        if (!isBackground) {
+          refreshLogsBtn.disabled = false;
+        }
+      }
+    }
+
+    refreshLogsBtn.addEventListener("click", () => loadLogs(false));
+    // Initial fetch on page load
+    loadLogs(false);
+
+    // Auto-refresh live data from DB every 30 seconds
+    setInterval(() => {
+      loadLogs(true);
+    }, 30000);
+
+    // --- FORM SUBMISSION ---
     form.addEventListener("submit", async event => {
       event.preventDefault();
       const comment_ids = idsFrom(commentIdsInput);
@@ -180,38 +655,52 @@
           body: JSON.stringify(payload),
         });
         const storageText = await storageResponse.text();
-        let storageBody = storageText;
         let storageJson = null;
         try {
           storageJson = storageText ? JSON.parse(storageText) : null;
-          storageBody = storageJson ? JSON.stringify(storageJson, null, 2) : "No response body";
         } catch (_) {}
 
         if (!storageResponse.ok) {
-          throw new Error(`Could not save the request (HTTP ${storageResponse.status}).\n${storageBody}`);
+          const errMsg = (storageJson && storageJson.error) || storageText || `HTTP ${storageResponse.status}`;
+          throw new Error(`Could not save the request: ${errMsg}`);
         }
 
+        const processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : "—";
         const targetLambdaUrl = (storageJson && storageJson.lambda_api_url) || lambdaApiUrl;
         if (!targetLambdaUrl) {
           throw new Error("Lambda API URL is not configured in .env");
         }
 
-        showStatus("Request saved. Starting the Lambda job...", "success");
+        showStatus(`Request saved successfully (Processing ID: ${processingId})\nStarting the Lambda job...`, "success");
         const lambdaResponse = await fetch(targetLambdaUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
         const lambdaText = await lambdaResponse.text();
-        let lambdaBody = lambdaText;
-        try { lambdaBody = lambdaText ? JSON.stringify(JSON.parse(lambdaText), null, 2) : "No response body"; } catch (_) {}
+        let lambdaJson = null;
+        try {
+          lambdaJson = lambdaText ? JSON.parse(lambdaText) : null;
+        } catch (_) {}
 
         if (!lambdaResponse.ok) {
-          throw new Error(`Reporting API returned HTTP ${lambdaResponse.status}.\n${lambdaBody}`);
+          const lambdaErrMsg = (lambdaJson && (lambdaJson.message || lambdaJson.error)) || lambdaText || `HTTP ${lambdaResponse.status}`;
+          throw new Error(`Reporting API returned HTTP ${lambdaResponse.status}: ${lambdaErrMsg}`);
         }
-        showStatus(`Reporting job submitted successfully.\nSaved request: ${storageBody}\n\nAPI response: ${lambdaBody}`, "success");
+
+        const lambdaStatus = (lambdaJson && lambdaJson.statusCode) || lambdaResponse.status || 200;
+        showStatus(`Request saved successfully (Processing ID: ${processingId})\nReporting job submitted successfully (Status: ${lambdaStatus})`, "success");
+        
+        // Auto reload batch logs immediately upon 200 OK
+        await loadLogs(true);
+
+        // Continue background polling to reflect live DB changes as accounts process
+        setTimeout(() => loadLogs(true), 2500);
+        setTimeout(() => loadLogs(true), 6000);
+        setTimeout(() => loadLogs(true), 12000);
+        setTimeout(() => loadLogs(true), 20000);
       } catch (error) {
-        showStatus(`Could not start the reporting job.\n${error.message}\n\nThe database request may have been saved. If the API call is blocked by CORS, allow this frontend origin in API Gateway CORS settings.`, "error");
+        showStatus(`Could not start the reporting job: ${error.message}`, "error");
       } finally {
         runButton.disabled = false;
         runButton.textContent = "Run reporting job";
@@ -220,3 +709,4 @@
   </script>
 </body>
 </html>
+
