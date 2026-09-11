@@ -1,17 +1,22 @@
-"""Investing Reporter frontend request store.
+"""Investing Reporter frontend request store with Authentication.
 
-The browser calls POST /api/store to record the request in SQL Server. It then
-calls API Gateway directly; API Gateway is responsible for invoking Lambda.
+The browser authenticates via POST /api/login using hardcoded/env credentials.
+Subsequent calls to /api/store, /api/logs, and /api/config require Authorization: Bearer <token>.
 """
 
 import json
 import os
 from pathlib import Path
 import re
-import pyodbc
+import secrets
+import time
+from functools import wraps
+try:
+    import pyodbc
+except ImportError:
+    pyodbc = None
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory
-
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
@@ -22,10 +27,170 @@ LAMBDA_API_URL = os.getenv(
     "https://nr9andj3qe.execute-api.us-east-2.amazonaws.com/dev/investing-dev",
 ).strip()
 
+# ---------------------------------------------------------------------------
+# Authentication Configuration (configured via .env or hardcoded fallback)
+# ---------------------------------------------------------------------------
+AUTH_EMAIL = (
+    os.getenv("AUTH_EMAIL")
+    or os.getenv("ADMIN_EMAIL")
+    or os.getenv("LOGIN_EMAIL")
+    or "admin@investing.com"
+).strip()
+
+AUTH_ID = (
+    os.getenv("AUTH_ID")
+    or os.getenv("ADMIN_ID")
+    or os.getenv("LOGIN_ID")
+    or ""
+).strip()
+
+AUTH_PASSWORD = (
+    os.getenv("AUTH_PASSWORD")
+    or os.getenv("ADMIN_PASSWORD")
+    or os.getenv("LOGIN_PASSWORD")
+    or os.getenv("AUTH_PASS")
+    or os.getenv("LOGIN_PASS")
+    or "Admin@Investing2026"
+).strip()
+
+# In-memory active session tokens: token -> {"email": email, "expires_at": epoch_seconds}
+_ACTIVE_TOKENS: dict[str, dict] = {}
+TOKEN_TTL_SECONDS = 24 * 3600  # 24 hours validity
+
+
+def _clean_expired_tokens():
+    """Purge expired sessions from memory."""
+    now = time.time()
+    expired = [tok for tok, data in _ACTIVE_TOKENS.items() if data["expires_at"] < now]
+    for tok in expired:
+        _ACTIVE_TOKENS.pop(tok, None)
+
+
+def _get_bearer_token() -> str:
+    auth_header = request.headers.get("Authorization", "").strip()
+    if auth_header.startswith("Bearer "):
+        return auth_header[7:].strip()
+    return request.args.get("token", "").strip()
+
+
+def _is_valid_token(token: str) -> tuple[bool, dict | None]:
+    if not token:
+        return False, None
+    _clean_expired_tokens()
+    session = _ACTIVE_TOKENS.get(token)
+    if not session:
+        return False, None
+    if time.time() > session["expires_at"]:
+        _ACTIVE_TOKENS.pop(token, None)
+        return False, None
+    return True, session
+
+
+def require_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = _get_bearer_token()
+        valid, _ = _is_valid_token(token)
+        if not valid:
+            return jsonify({
+                "success": False,
+                "error": "Unauthorized. Please log in.",
+                "code": "UNAUTHORIZED"
+            }), 401
+        return f(*args, **kwargs)
+    return decorated
+
+
 app = Flask(__name__)
 
 
+# ---------------------------------------------------------------------------
+# Auth Endpoints
+# ---------------------------------------------------------------------------
+
+@app.post("/api/login")
+def login():
+    data = request.get_json(silent=True) or {}
+    identifier = str(data.get("email") or data.get("username") or data.get("id") or "").strip()
+    password = str(data.get("password") or data.get("pass") or "").strip()
+
+    if not identifier or not password:
+        return jsonify({
+            "success": False,
+            "error": "Email/User ID and password are required."
+        }), 400
+
+    # Match against configured AUTH_EMAIL or AUTH_ID
+    allowed_identifiers = set()
+    if AUTH_EMAIL:
+        allowed_identifiers.add(AUTH_EMAIL.lower())
+    if AUTH_ID:
+        allowed_identifiers.add(AUTH_ID.lower())
+
+    # Fallback to AUTH_EMAIL if no identifier configured
+    if not allowed_identifiers:
+        allowed_identifiers.add("admin@investing.com")
+
+    if identifier.lower() not in allowed_identifiers or password != AUTH_PASSWORD:
+        return jsonify({
+            "success": False,
+            "error": "Invalid email/ID or password. Login failed."
+        }), 401
+
+    token = secrets.token_hex(32)
+    expires_at = time.time() + TOKEN_TTL_SECONDS
+    display_name = AUTH_EMAIL if identifier.lower() == AUTH_EMAIL.lower() else identifier
+
+    _ACTIVE_TOKENS[token] = {
+        "email": display_name,
+        "expires_at": expires_at,
+    }
+
+    return jsonify({
+        "success": True,
+        "message": "Login successful",
+        "token": token,
+        "email": display_name,
+        "expires_in": TOKEN_TTL_SECONDS,
+    })
+
+
+
+@app.get("/api/auth/verify")
+def verify_auth():
+    token = _get_bearer_token()
+    valid, session = _is_valid_token(token)
+    if not valid or not session:
+        return jsonify({
+            "success": False,
+            "authenticated": False,
+            "error": "Session is invalid or has expired."
+        }), 401
+
+    return jsonify({
+        "success": True,
+        "authenticated": True,
+        "email": session["email"],
+    })
+
+
+@app.post("/api/logout")
+def logout():
+    token = _get_bearer_token()
+    if token:
+        _ACTIVE_TOKENS.pop(token, None)
+    return jsonify({
+        "success": True,
+        "message": "Logged out successfully"
+    })
+
+
+# ---------------------------------------------------------------------------
+# App & Protected API Endpoints
+# ---------------------------------------------------------------------------
+
 @app.get("/api/config")
+@require_auth
 def get_config():
     return jsonify({
         "lambda_api_url": LAMBDA_API_URL,
@@ -67,6 +232,8 @@ def _validate_payload(payload: object) -> dict[str, object]:
 
 def _save_processing_request(payload: dict[str, object]) -> int:
     """Insert a request; the table default populates StartingDate."""
+    if pyodbc is None:
+        raise RuntimeError("pyodbc is not installed")
     if not DB_CONNECTION_STRING:
         raise RuntimeError("DB_CONNECTION_STRING is not configured")
 
@@ -90,13 +257,9 @@ def _save_processing_request(payload: dict[str, object]) -> int:
 
 
 def _fetch_batches_from_tracker():
-    """Fetch all rows from BackendProcessingTracker and group into batches.
-    
-    Batches are grouped by:
-    1. Records starting within 60 seconds of each other.
-    2. Exact matching comment_ids and user_ids.
-    Ordered newest batch first.
-    """
+    """Fetch all rows from BackendProcessingTracker and group into batches."""
+    if pyodbc is None:
+        raise RuntimeError("pyodbc is not installed")
     if not DB_CONNECTION_STRING:
         raise RuntimeError("DB_CONNECTION_STRING is not configured")
 
@@ -124,7 +287,6 @@ def _fetch_batches_from_tracker():
 
         start_dt_str = starting_date.strftime("%Y-%m-%d %H:%M:%S") if starting_date else ""
 
-        # Check if consecutive row belongs to the current batch (gap <= 60s and same IDs)
         is_same = False
         if current_batch is not None:
             time_diff = (
@@ -135,7 +297,6 @@ def _fetch_batches_from_tracker():
             if time_diff <= 60 and current_batch["comment_ids"] == comment_ids and current_batch["user_ids"] == user_ids:
                 is_same = True
 
-        # Parse completion and success/failure counts
         succ_match = re.search(r"success:\s*(\d+)", is_success, re.IGNORECASE)
         fail_match = re.search(r"failure:\s*(\d+)", is_success, re.IGNORECASE)
 
@@ -157,7 +318,6 @@ def _fetch_batches_from_tracker():
             s_count = 0
             f_count = 1
         else:
-            # Status is still in-progress (e.g. "Starting on investing", "created from lambda")
             is_completed = False
             s_count = 0
             f_count = 0
@@ -195,7 +355,6 @@ def _fetch_batches_from_tracker():
             }
             batches.append(current_batch)
 
-    # Assign sequential batch numbers and remove temporary keys
     total_batches = len(batches)
     for idx, b in enumerate(batches):
         b["batch_number"] = total_batches - idx
@@ -210,6 +369,7 @@ def index():
 
 
 @app.get("/api/logs")
+@require_auth
 def get_logs():
     try:
         batches = _fetch_batches_from_tracker()
@@ -218,32 +378,27 @@ def get_logs():
             "total_batches": len(batches),
             "batches": batches,
         })
-    except pyodbc.Error as error:
+    except Exception as error:
         app.logger.exception("Could not fetch logs from SQL Server")
         return jsonify({
             "success": False,
             "error": f"Database error: {str(error)}"
         }), 500
-    except RuntimeError as error:
-        app.logger.exception("Frontend database is not configured")
-        return jsonify({"success": False, "error": str(error)}), 500
 
 
 @app.post("/api/store")
+@require_auth
 def store_processing_request():
     try:
         payload = _validate_payload(request.get_json(silent=True))
         processing_id = _save_processing_request(payload)
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
-    except pyodbc.Error as error:
+    except Exception as error:
         app.logger.exception("Could not save reporting request to SQL Server")
         return jsonify({
             "error": f"Database error: {str(error)}"
         }), 500
-    except RuntimeError as error:
-        app.logger.exception("Frontend database is not configured")
-        return jsonify({"error": str(error)}), 500
 
     return jsonify({
         "processing_id": processing_id,

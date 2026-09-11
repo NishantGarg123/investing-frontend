@@ -3,66 +3,578 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Investing Comment Reporter</title>
+  <title>Investing Comment Reporter — Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
       color-scheme: dark;
-      --page: #0b1020;
-      --panel: rgba(19, 28, 51, 0.9);
-      --panel-border: rgba(148, 163, 184, 0.2);
+      --page: #080d1a;
+      --panel: rgba(17, 24, 39, 0.82);
+      --panel-elevated: rgba(26, 34, 56, 0.92);
+      --panel-border: rgba(148, 163, 184, 0.16);
+      --panel-border-glow: rgba(49, 196, 141, 0.35);
       --text: #f8fafc;
-      --muted: #9aa8bd;
+      --muted: #94a3b8;
+      --muted-dark: #64748b;
       --accent: #31c48d;
-      --accent-dark: #159466;
-      --danger: #fb7185;
-      --warning: #fbbf24;
+      --accent-hover: #4ade80;
+      --accent-dark: #15803d;
+      --accent-glow: rgba(49, 196, 141, 0.22);
+      --danger: #f43f5e;
+      --danger-bg: rgba(244, 63, 94, 0.12);
+      --danger-border: rgba(244, 63, 94, 0.3);
+      --warning: #f59e0b;
       --info: #38bdf8;
+      --input-bg: #0b1222;
+      --input-border: #334155;
+      --radius: 12px;
+      --radius-lg: 20px;
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
       min-width: 320px;
       min-height: 100vh;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at 0% 0%, rgba(49, 196, 141, 0.18), transparent 35rem),
-        radial-gradient(circle at 100% 5%, rgba(59, 130, 246, 0.17), transparent 30rem),
+        radial-gradient(circle at 15% 10%, rgba(49, 196, 141, 0.14), transparent 40rem),
+        radial-gradient(circle at 85% 15%, rgba(59, 130, 246, 0.14), transparent 35rem),
+        radial-gradient(circle at 50% 90%, rgba(99, 102, 241, 0.08), transparent 45rem),
         var(--page);
+      background-attachment: fixed;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .shell { width: min(100% - 32px, 1040px); margin: 0 auto; padding: 56px 0 72px; }
-    .eyebrow { color: var(--accent); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
-    h1 { margin: 10px 0 10px; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.1; letter-spacing: -0.045em; }
-    .intro { max-width: 660px; color: var(--muted); line-height: 1.65; margin: 0 0 32px; }
+    /* ── Subtle animated grid ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 36px 36px;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-    .card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 18px; padding: clamp(20px, 4vw, 34px); box-shadow: 0 24px 80px rgba(0,0,0,0.25); }
-    .section-title { margin: 0 0 7px; font-size: 1.05rem; }
-    .hint { color: var(--muted); font-size: 0.9rem; line-height: 1.5; margin: 0 0 18px; }
-    .pairs { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-    label { display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; }
-    textarea, input {
-      display: block; width: 100%; border: 1px solid #334155; border-radius: 10px;
-      background: #0c1428; color: var(--text); font: inherit; outline: none;
+    .view-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+    }
+
+    /* ─────────────────────────────────────────────────────────────────
+       LOGIN SCREEN VIEW
+    ───────────────────────────────────────────────────────────────── */
+    #login-view {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--panel);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-lg);
+      padding: clamp(28px, 6vw, 42px);
+      box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.65),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        0 0 40px -10px rgba(49, 196, 141, 0.15);
+      animation: fadeInScale 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .login-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(49, 196, 141, 0.12);
+      border: 1px solid rgba(49, 196, 141, 0.25);
+      padding: 5px 12px;
+      border-radius: 9999px;
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .login-badge .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulseDot 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .login-header h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+
+    .login-header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      color: var(--muted);
+      pointer-events: none;
+      display: flex;
+    }
+
+    .login-input {
+      width: 100%;
+      height: 48px;
+      padding: 0 14px 0 42px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .login-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+      background: #0e172e;
+    }
+
+    .login-input.has-toggle {
+      padding-right: 44px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: auto;
+      border-radius: 6px;
+      transition: color 0.15s ease;
+    }
+
+    .password-toggle:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+      transform: none;
+    }
+
+    .form-extra {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      font-size: 0.85rem;
+    }
+
+    .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      font-size: 0.85rem;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .login-btn {
+      width: 100%;
+      height: 48px;
+      background: var(--accent);
+      color: #022013;
+      border: 0;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(49, 196, 141, 0.3);
+    }
+
+    .login-btn:hover:not(:disabled) {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(49, 196, 141, 0.45);
+    }
+
+    .login-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .login-alert {
+      display: none;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      border-radius: var(--radius);
+      color: #fda4af;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      margin-bottom: 20px;
+      animation: shake 0.3s ease;
+    }
+
+    .login-alert.show {
+      display: flex;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-4px); }
+      40%, 80% { transform: translateX(4px); }
+    }
+
+    .login-footer {
+      margin-top: 24px;
+      text-align: center;
+      color: var(--muted-dark);
+      font-size: 0.78rem;
+    }
+
+    /* ─────────────────────────────────────────────────────────────────
+       AUTHENTICATED APP HEADER & TOPBAR
+    ───────────────────────────────────────────────────────────────── */
+    .app-nav {
+      width: 100%;
+      border-bottom: 1px solid var(--panel-border);
+      background: rgba(11, 16, 32, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-content {
+      width: min(100% - 32px, 1080px);
+      margin: 0 auto;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(49, 196, 141, 0.25), rgba(59, 130, 246, 0.25));
+      border: 1px solid rgba(49, 196, 141, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+    }
+
+    .brand-text {
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-text span {
+      color: var(--accent);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--panel-border);
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .user-pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+    }
+
+    .btn-logout {
+      background: rgba(244, 63, 94, 0.1);
+      color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.25);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      min-height: auto;
+    }
+
+    .btn-logout:hover {
+      background: rgba(244, 63, 94, 0.2);
+      border-color: rgba(244, 63, 94, 0.4);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* ─────────────────────────────────────────────────────────────────
+       MAIN APPLICATION VIEW (REPORTS & BATCH LOGS)
+    ───────────────────────────────────────────────────────────────── */
+    #app-view {
+      display: none;
+    }
+
+    .shell {
+      width: min(100% - 32px, 1080px);
+      margin: 0 auto;
+      padding: 40px 0 72px;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 8px 0 10px;
+      font-size: clamp(2rem, 4.5vw, 2.75rem);
+      line-height: 1.15;
+      letter-spacing: -0.04em;
+      font-weight: 800;
+    }
+
+    .intro {
+      max-width: 660px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 0 0 32px;
+      font-size: 0.96rem;
+    }
+
+    .card {
+      background: var(--panel);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-lg);
+      padding: clamp(20px, 4vw, 34px);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+    }
+
+    .section-title {
+      margin: 0 0 7px;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+      margin: 0 0 18px;
+    }
+
+    .pairs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    textarea, input[type="number"] {
+      display: block;
+      width: 100%;
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      background: var(--input-bg);
+      color: var(--text);
+      font: inherit;
+      outline: none;
       transition: border-color 150ms ease, box-shadow 150ms ease;
     }
-    textarea { min-height: 220px; resize: vertical; padding: 13px; line-height: 1.55; }
-    input { max-width: 180px; padding: 12px 13px; }
-    textarea:focus, input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(49, 196, 141, 0.15); }
-    .counts { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 0.8rem; margin-top: 8px; }
-    .divider { height: 1px; background: var(--panel-border); margin: 30px 0; }
-    .options { display: flex; align-items: end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
-    .field-note { color: var(--muted); font-size: 0.8rem; margin: 7px 0 0; }
+
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+      padding: 13px;
+      line-height: 1.55;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+    }
+
+    input[type="number"] {
+      max-width: 180px;
+      padding: 12px 13px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+
+    textarea:focus, input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .counts {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 8px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--panel-border);
+      margin: 30px 0;
+    }
+
+    .options {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .field-note {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin: 7px 0 0;
+    }
     
     button {
-      min-height: 46px; padding: 0 20px; border: 0; border-radius: 10px; cursor: pointer;
-      color: #032217; background: var(--accent); font: inherit; font-weight: 800;
+      min-height: 46px;
+      padding: 0 22px;
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      color: #032217;
+      background: var(--accent);
+      font: inherit;
+      font-weight: 800;
       transition: transform 150ms ease, background 150ms ease, opacity 150ms ease;
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(49, 196, 141, 0.25);
     }
-    button:hover:not(:disabled) { background: #5ee8b1; transform: translateY(-1px); }
-    button:disabled { cursor: wait; opacity: 0.65; }
+
+    button:hover:not(:disabled) {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.65;
+      transform: none;
+    }
 
     .btn-secondary {
       background: rgba(51, 65, 85, 0.7);
@@ -72,46 +584,77 @@
       font-size: 0.88rem;
       min-height: 38px;
       padding: 0 14px;
+      box-shadow: none;
     }
+
     .btn-secondary:hover:not(:disabled) {
       background: rgba(71, 85, 105, 0.9);
       color: #fff;
     }
 
-    .status { display: none; margin-top: 22px; border-radius: 10px; padding: 14px 16px; line-height: 1.5; font-size: 0.92rem; white-space: pre-wrap; }
-    .status.show { display: block; }
-    .status.error { color: #fecdd3; background: rgba(190, 24, 93, 0.15); border: 1px solid rgba(251, 113, 133, 0.35); }
-    .status.success { color: #bbf7d0; background: rgba(22, 163, 74, 0.14); border: 1px solid rgba(74, 222, 128, 0.35); }
-    .api-note { margin-top: 22px; color: #71829b; font-size: 0.76rem; overflow-wrap: anywhere; }
-    code { color: #93c5fd; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.85em; }
+    .status {
+      display: none;
+      margin-top: 22px;
+      padding: 16px 18px;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      white-space: pre-line;
+      font-family: 'JetBrains Mono', monospace;
+    }
 
-    /* Logs Section */
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background: rgba(49, 196, 141, 0.12);
+      border: 1px solid rgba(49, 196, 141, 0.35);
+      color: #a7f3d0;
+    }
+
+    .status.error {
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      color: #fda4af;
+    }
+
+    .api-note {
+      margin-top: 14px;
+      color: var(--muted-dark);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    /* ── Logs Section ── */
     .logs-section {
       margin-top: 48px;
     }
+
     .logs-header {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: center;
+      margin-bottom: 18px;
       flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-    .logs-title-area h2 {
-      margin: 0;
-      font-size: 1.5rem;
-      letter-spacing: -0.02em;
-    }
-    .logs-subtitle {
-      color: var(--muted);
-      font-size: 0.88rem;
-      margin-top: 4px;
-    }
-    .logs-actions {
-      display: flex;
-      align-items: center;
       gap: 12px;
     }
+
+    .logs-title-area h2 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .logs-subtitle {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .live-dot {
       display: inline-block;
       width: 8px;
@@ -119,12 +662,7 @@
       border-radius: 50%;
       background: var(--accent);
       box-shadow: 0 0 8px var(--accent);
-      margin-right: 4px;
-      animation: pulse 2s infinite ease-in-out;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
+      animation: pulseDot 2s infinite ease-in-out;
     }
 
     .batch-list {
@@ -132,196 +670,208 @@
       flex-direction: column;
       gap: 14px;
     }
+
     .batch-card {
-      background: rgba(15, 23, 42, 0.75);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
       overflow: hidden;
-      transition: border-color 150ms ease, box-shadow 150ms ease;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
+
     .batch-card:hover {
-      border-color: rgba(49, 196, 141, 0.35);
+      border-color: rgba(148, 163, 184, 0.35);
     }
+
     .batch-header {
       padding: 16px 20px;
-      cursor: pointer;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 14px;
+      justify-content: space-between;
+      cursor: pointer;
       user-select: none;
-      background: rgba(24, 34, 58, 0.5);
+      background: rgba(255, 255, 255, 0.02);
+      transition: background 0.15s ease;
+      gap: 16px;
     }
+
     .batch-header:hover {
-      background: rgba(30, 41, 69, 0.8);
+      background: rgba(255, 255, 255, 0.04);
     }
+
     .batch-left {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       flex-wrap: wrap;
     }
+
     .batch-badge {
       background: rgba(49, 196, 141, 0.15);
-      color: #6ee7b7;
+      color: var(--accent);
       border: 1px solid rgba(49, 196, 141, 0.3);
-      padding: 4px 10px;
+      padding: 3px 9px;
       border-radius: 6px;
-      font-weight: 700;
-      font-size: 0.82rem;
-      letter-spacing: 0.04em;
-      min-width: 95px;
-      text-align: center;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      font-size: 0.76rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.05em;
     }
+
     .batch-time {
-      font-size: 0.92rem;
-      font-weight: 600;
-      color: #e2e8f0;
-      min-width: 165px;
+      font-size: 0.86rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
     }
+
     .batch-right {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-left: auto;
     }
+
     .pill {
-      font-size: 0.8rem;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      justify-content: center;
-      white-space: nowrap;
-      text-align: center;
     }
+
     .pill-accounts {
-      width: 115px;
-      background: rgba(56, 189, 248, 0.15);
-      color: #7dd3fc;
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      background: rgba(59, 130, 246, 0.15);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.25);
     }
+
     .pill-success {
-      width: 115px;
-      background: rgba(34, 197, 94, 0.16);
+      background: rgba(34, 197, 94, 0.15);
       color: #86efac;
-      border: 1px solid rgba(34, 197, 94, 0.3);
+      border: 1px solid rgba(34, 197, 94, 0.25);
     }
-    .pill-fail {
-      width: 105px;
-      background: rgba(244, 63, 94, 0.16);
-      color: #fda4af;
-      border: 1px solid rgba(244, 63, 94, 0.3);
-    }
-    .pill-progress {
-      width: 230px;
-      background: rgba(251, 191, 36, 0.15);
-      color: #fde047;
-      border: 1px solid rgba(251, 191, 36, 0.3);
-    }
-    .pill-muted {
-      background: rgba(148, 163, 184, 0.1);
-      color: #94a3b8;
-    }
+
     .pill-muted-success {
-      width: 115px;
-      background: rgba(148, 163, 184, 0.1);
-      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted-dark);
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
+
+    .pill-fail {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.25);
+    }
+
     .pill-muted-fail {
-      width: 105px;
-      background: rgba(148, 163, 184, 0.1);
-      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted-dark);
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
+
+    .pill-progress {
+      background: rgba(234, 179, 8, 0.15);
+      color: #fde047;
+      border: 1px solid rgba(234, 179, 8, 0.25);
+    }
+
     .chevron {
       width: 18px;
       height: 18px;
-      transition: transform 200ms ease;
       color: var(--muted);
-      flex-shrink: 0;
+      transition: transform 0.2s ease;
     }
+
     .batch-card.open .chevron {
       transform: rotate(180deg);
-      color: var(--accent);
     }
 
     .batch-content {
       display: none;
-      padding: 16px 20px 22px;
-      border-top: 1px solid rgba(148, 163, 184, 0.15);
-      background: rgba(11, 17, 34, 0.6);
+      border-top: 1px solid var(--panel-border);
+      padding: 16px 20px 20px;
+      background: rgba(0, 0, 0, 0.2);
     }
+
     .batch-card.open .batch-content {
       display: block;
     }
 
     .payload-meta {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 0.82rem;
       display: flex;
       flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 16px;
-      padding: 10px 14px;
-      background: rgba(15, 23, 42, 0.9);
-      border-radius: 8px;
-      font-size: 0.82rem;
-      color: var(--muted);
+      gap: 20px;
     }
-    .payload-meta span strong {
-      color: #cbd5e1;
+
+    .payload-meta code {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      word-break: break-all;
     }
 
     .table-container {
-      width: 100%;
       overflow-x: auto;
+      border: 1px solid var(--panel-border);
       border-radius: 8px;
-      border: 1px solid rgba(148, 163, 184, 0.12);
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.86rem;
       text-align: left;
+      font-size: 0.85rem;
     }
+
     th {
       background: rgba(30, 41, 59, 0.7);
-      color: #94a3b8;
-      font-weight: 600;
+      color: var(--muted);
+      font-weight: 700;
       padding: 10px 14px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+      border-bottom: 1px solid var(--panel-border);
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
     }
+
     td {
-      padding: 10px 14px;
+      padding: 12px 14px;
       border-bottom: 1px solid rgba(148, 163, 184, 0.08);
       color: #e2e8f0;
     }
+
     tr:last-child td {
       border-bottom: none;
     }
+
     tr:hover td {
-      background: rgba(51, 65, 85, 0.2);
+      background: rgba(51, 65, 85, 0.25);
     }
 
     .status-tag {
       display: inline-block;
       padding: 2px 8px;
       border-radius: 4px;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 600;
     }
+
     .status-completed {
       background: rgba(34, 197, 94, 0.15);
       color: #86efac;
     }
+
     .status-created {
       background: rgba(234, 179, 8, 0.15);
       color: #fde047;
     }
+
     .status-failed {
       background: rgba(244, 63, 94, 0.15);
       color: #fda4af;
@@ -334,84 +884,389 @@
       font-size: 0.92rem;
     }
 
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: currentColor;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     @media (max-width: 640px) {
-      .shell { width: min(100% - 24px, 980px); padding-top: 34px; }
+      .shell { width: min(100% - 24px, 980px); padding-top: 24px; }
       .pairs { grid-template-columns: 1fr; }
       .options { align-items: stretch; }
       button { width: 100%; }
       .batch-header { flex-direction: column; align-items: flex-start; }
       .batch-right { width: 100%; justify-content: space-between; }
+      .nav-content { height: 56px; }
+      .brand-text span { display: none; }
     }
   </style>
 </head>
 <body>
-  <main class="shell">
-    <div class="eyebrow">Investing automation</div>
-    <h1>Run comment reports</h1>
-    <p class="intro">Enter matching comment and user IDs. The request is sent to the Lambda API, which selects the configured account credentials on the server.</p>
 
-    <form class="card" id="report-form" novalidate>
-      <h2 class="section-title">Comment / user pairs</h2>
-      <p class="hint">Add one ID per line in each column. Line 1 of Comment IDs is paired with line 1 of User IDs.</p>
-      <div class="pairs">
-        <div>
-          <label for="comment-ids">Comment IDs</label>
-          <textarea id="comment-ids" placeholder="47529613&#10;47529792" spellcheck="false" required></textarea>
-          <div class="counts"><span>One ID per line</span><span id="comment-count">0 IDs</span></div>
-        </div>
-        <div>
-          <label for="user-ids">User IDs</label>
-          <textarea id="user-ids" placeholder="271492777&#10;271492777" spellcheck="false" required></textarea>
-          <div class="counts"><span>Must match comment rows</span><span id="user-count">0 IDs</span></div>
-        </div>
+  <!-- ================================================================= -->
+  <!-- 1. LOGIN SCREEN                                                   -->
+  <!-- ================================================================= -->
+  <div class="view-container" id="login-view">
+    <div class="login-card">
+      <div class="login-badge">
+        <span class="dot"></span>
+        <span>Secure Access</span>
       </div>
 
-      <div class="divider"></div>
-
-      <div class="options">
-        <div>
-          <label for="account-count">Number of accounts to run</label>
-          <input id="account-count" type="number" value="1" min="1" step="1" inputmode="numeric" required />
-          <p class="field-note">Credentials remain in Lambda; they are never sent from this UI.</p>
-        </div>
-        <button id="run-button" type="submit">Run reporting job</button>
+      <div class="login-header">
+        <h1>Investing Reporter</h1>
+        <p>Please enter your authorized credentials to access the automation console.</p>
       </div>
 
-      <div class="status" id="status" role="status" aria-live="polite"></div>
-      <div class="api-note">The request is saved first, then submitted directly to the reporting API.</div>
-    </form>
+      <div class="login-alert" id="login-alert" role="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="login-alert-text">Invalid email or password</span>
+      </div>
 
-    <!-- LIVE BATCH LOGS SECTION -->
-    <section class="logs-section">
-      <div class="logs-header">
-        <div class="logs-title-area">
-          <h2>Execution Batch Logs</h2>
-          <div class="logs-subtitle"><span class="live-dot"></span> Live records grouped by execution run directly from database</div>
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label for="login-email">Email Address or User ID</label>
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+            <input
+              type="text"
+              id="login-email"
+              class="login-input"
+              autocomplete="username"
+              required
+            />
+          </div>
         </div>
-        <div class="logs-actions">
-          <button type="button" class="btn-secondary" id="refresh-logs-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            Refresh Logs
+
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <input
+              type="password"
+              id="login-password"
+              class="login-input has-toggle"
+              autocomplete="current-password"
+              required
+            />
+            <button type="button" class="password-toggle" id="toggle-password" title="Toggle password visibility">
+              <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-extra">
+          <label class="checkbox-label">
+            <input type="checkbox" id="remember-me" checked />
+            <span>Keep me signed in</span>
+          </label>
+        </div>
+
+        <button type="submit" class="login-btn" id="login-submit-btn">
+          <span>Sign In to Console</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </form>
+
+      <div class="login-footer">
+        Protected &bull; Configured with hardcoded server authentication
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- 2. MAIN CONSOLE VIEW (PROTECTED)                                  -->
+  <!-- ================================================================= -->
+  <div class="view-container" id="app-view">
+    <!-- Topbar -->
+    <header class="app-nav">
+      <div class="nav-content">
+        <div class="brand-group">
+          <div class="brand-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div class="brand-text">Investing <span>Reporter</span></div>
+        </div>
+        <div class="nav-actions">
+          <div class="user-pill">
+            <span class="user-pill-dot"></span>
+            <span id="nav-user-email">admin@investing.com</span>
+          </div>
+          <button type="button" class="btn-logout" id="logout-btn" title="Sign out">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign Out
           </button>
         </div>
       </div>
+    </header>
 
-      <div class="card" style="padding: 16px;">
-        <div id="batch-list" class="batch-list">
-          <div class="loading-state">Loading live run batches from database...</div>
+    <main class="shell">
+      <div class="eyebrow">Investing automation</div>
+      <h1>Run comment reports</h1>
+      <p class="intro">Enter matching comment and user IDs. The request is sent to the Lambda API, which selects the configured account credentials on the server.</p>
+
+      <form class="card" id="report-form" novalidate>
+        <h2 class="section-title">Comment / user pairs</h2>
+        <p class="hint">Add one ID per line in each column. Line 1 of Comment IDs is paired with line 1 of User IDs.</p>
+        <div class="pairs">
+          <div>
+            <label for="comment-ids">Comment IDs</label>
+            <textarea id="comment-ids" placeholder="47529613&#10;47529792" spellcheck="false" required></textarea>
+            <div class="counts"><span>One ID per line</span><span id="comment-count">0 IDs</span></div>
+          </div>
+          <div>
+            <label for="user-ids">User IDs</label>
+            <textarea id="user-ids" placeholder="271492777&#10;271492777" spellcheck="false" required></textarea>
+            <div class="counts"><span>Must match comment rows</span><span id="user-count">0 IDs</span></div>
+          </div>
         </div>
-      </div>
-    </section>
-  </main>
+
+        <div class="divider"></div>
+
+        <div class="options">
+          <div>
+            <label for="account-count">Number of accounts to run</label>
+            <input id="account-count" type="number" value="1" min="1" step="1" inputmode="numeric" required />
+            <p class="field-note">Credentials remain in Lambda; they are never sent from this UI.</p>
+          </div>
+          <button id="run-button" type="submit">
+            <span>Run reporting job</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+          </button>
+        </div>
+
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+        <div class="api-note">The request is saved first, then submitted directly to the reporting API.</div>
+      </form>
+
+      <!-- LIVE BATCH LOGS SECTION -->
+      <section class="logs-section">
+        <div class="logs-header">
+          <div class="logs-title-area">
+            <h2>Execution Batch Logs</h2>
+            <div class="logs-subtitle"><span class="live-dot"></span> Live records grouped by execution run directly from database</div>
+          </div>
+          <div class="logs-actions">
+            <button type="button" class="btn-secondary" id="refresh-logs-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              Refresh Logs
+            </button>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 16px;">
+          <div id="batch-list" class="batch-list">
+            <div class="loading-state">Loading live run batches from database...</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script>
+    // ─────────────────────────────────────────────────────────────────
+    // AUTH STATE & TOKEN MANAGEMENT
+    // ─────────────────────────────────────────────────────────────────
+    const AUTH_STORAGE_KEY = "investing_auth_token";
+    const USER_EMAIL_KEY = "investing_auth_email";
+
+    function getAuthToken() {
+      return localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY) || "";
+    }
+
+    function saveAuthToken(token, email, remember) {
+      if (remember) {
+        localStorage.setItem(AUTH_STORAGE_KEY, token);
+        localStorage.setItem(USER_EMAIL_KEY, email);
+      } else {
+        sessionStorage.setItem(AUTH_STORAGE_KEY, token);
+        sessionStorage.setItem(USER_EMAIL_KEY, email);
+      }
+    }
+
+    function clearAuth() {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem(USER_EMAIL_KEY);
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
+      sessionStorage.removeItem(USER_EMAIL_KEY);
+    }
+
+    function getStoredEmail() {
+      return localStorage.getItem(USER_EMAIL_KEY) || sessionStorage.getItem(USER_EMAIL_KEY) || "admin@investing.com";
+    }
+
+    // Helper to add Authorization header automatically
+    async function authFetch(url, options = {}) {
+      const token = getAuthToken();
+      const headers = Object.assign({}, options.headers || {});
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      options.headers = headers;
+
+      const response = await fetch(url, options);
+      if (response.status === 401) {
+        // Session expired or invalid -> switch back to login view
+        clearAuth();
+        showLoginView("Your session has expired. Please sign in again.");
+      }
+      return response;
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // VIEW SWITCHING
+    // ─────────────────────────────────────────────────────────────────
+    const loginView = document.getElementById("login-view");
+    const appView = document.getElementById("app-view");
+    const loginAlert = document.getElementById("login-alert");
+    const loginAlertText = document.getElementById("login-alert-text");
+    const navUserEmail = document.getElementById("nav-user-email");
+
+    function showLoginView(errorMessage = "") {
+      loginView.style.display = "flex";
+      appView.style.display = "none";
+      if (errorMessage) {
+        loginAlertText.textContent = errorMessage;
+        loginAlert.classList.add("show");
+      } else {
+        loginAlert.classList.remove("show");
+      }
+    }
+
+    function showAppView(email) {
+      loginView.style.display = "none";
+      appView.style.display = "block";
+      navUserEmail.textContent = email || getStoredEmail();
+      // Initialize app data once authenticated
+      initConfig();
+      loadLogs(false);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // LOGIN FORM LOGIC
+    // ─────────────────────────────────────────────────────────────────
+    const loginForm = document.getElementById("login-form");
+    const loginEmailInput = document.getElementById("login-email");
+    const loginPasswordInput = document.getElementById("login-password");
+    const rememberMeCheckbox = document.getElementById("remember-me");
+    const loginSubmitBtn = document.getElementById("login-submit-btn");
+    const togglePasswordBtn = document.getElementById("toggle-password");
+
+    // Password visibility toggle
+    togglePasswordBtn.addEventListener("click", () => {
+      const isPassword = loginPasswordInput.type === "password";
+      loginPasswordInput.type = isPassword ? "text" : "password";
+      togglePasswordBtn.innerHTML = isPassword
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    });
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      loginAlert.classList.remove("show");
+
+      const email = loginEmailInput.value.trim();
+      const password = loginPasswordInput.value;
+
+      if (!email || !password) {
+        loginAlertText.textContent = "Please enter both Email/User ID and password.";
+        loginAlert.classList.add("show");
+        return;
+      }
+
+      loginSubmitBtn.disabled = true;
+      loginSubmitBtn.innerHTML = `<span class="spinner"></span><span>Verifying...</span>`;
+
+      try {
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Authentication failed.");
+        }
+
+        // Save token and email
+        saveAuthToken(data.token, data.email, rememberMeCheckbox.checked);
+        loginPasswordInput.value = "";
+        showAppView(data.email);
+      } catch (err) {
+        loginAlertText.textContent = err.message || "Invalid credentials.";
+        loginAlert.classList.add("show");
+      } finally {
+        loginSubmitBtn.disabled = false;
+        loginSubmitBtn.innerHTML = `<span>Sign In to Console</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────
+    // LOGOUT LOGIC
+    // ─────────────────────────────────────────────────────────────────
+    const logoutBtn = document.getElementById("logout-btn");
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await authFetch("/api/logout", { method: "POST" });
+      } catch (_) {}
+      clearAuth();
+      showLoginView();
+    });
+
+    // ─────────────────────────────────────────────────────────────────
+    // AUTO-AUTH CHECK ON PAGE LOAD
+    // ─────────────────────────────────────────────────────────────────
+    async function checkExistingAuth() {
+      const token = getAuthToken();
+      if (!token) {
+        showLoginView();
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/auth/verify", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated) {
+            showAppView(data.email);
+            return;
+          }
+        }
+      } catch (_) {}
+
+      clearAuth();
+      showLoginView();
+    }
+
+    checkExistingAuth();
+
+    // ─────────────────────────────────────────────────────────────────
+    // MAIN APP: CONFIG, FORM & LIVE BATCH LOGS
+    // ─────────────────────────────────────────────────────────────────
     const STORAGE_API_URL = "/api/store";
     const LOGS_API_URL = "/api/logs";
     let lambdaApiUrl = "";
 
     async function initConfig() {
       try {
-        const response = await fetch("/api/config");
+        const response = await authFetch("/api/config");
         if (response.ok) {
           const config = await response.json();
           lambdaApiUrl = config.lambda_api_url || "";
@@ -420,7 +1275,6 @@
         console.warn("Could not load /api/config:", err);
       }
     }
-    initConfig();
 
     const form = document.getElementById("report-form");
     const commentIdsInput = document.getElementById("comment-ids");
@@ -449,7 +1303,7 @@
     userIdsInput.addEventListener("input", updateCounts);
 
     // --- LOGS RENDERING LOGIC ---
-    let openBatchIds = new Set([1]); // default expand latest batch
+    let openBatchIds = new Set([1]);
 
     function escapeHtml(str) {
       if (!str) return "";
@@ -516,12 +1370,11 @@
           `;
         }).join("");
 
-        // Header pills: only show success/failure counts when the batch is fully completed
         let headerMetricsHtml = "";
         if (batch.is_completed) {
           headerMetricsHtml = `
             <span class="pill ${batch.total_success > 0 ? 'pill-success' : 'pill-muted-success'}">✓ ${batch.total_success} Success</span>
-            ${batch.total_failure > 0 ? `<span class="pill pill-fail">✗ ${batch.total_failure} Failure</span>` : `<span class="pill pill-muted-fail">0 Failure</span>`}
+            ${batch.total_failure > 0 ? `<span class="pill pill-fail">✕ ${batch.total_failure} Failure</span>` : `<span class="pill pill-muted-fail">0 Failure</span>`}
           `;
         } else {
           headerMetricsHtml = `
@@ -591,11 +1444,13 @@
         refreshLogsBtn.disabled = true;
       }
       try {
-        const res = await fetch(LOGS_API_URL);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const res = await authFetch(LOGS_API_URL);
+        if (!res.ok) {
+          if (res.status === 401) return;
+          throw new Error(`HTTP ${res.status}`);
+        }
         const data = await res.json();
         if (data.success && Array.isArray(data.batches)) {
-          // If first load and openBatchIds default was 1, ensure latest batch is opened
           if (data.batches.length > 0 && openBatchIds.size === 0) {
             openBatchIds.add(data.batches[0].batch_number || 1);
           }
@@ -615,12 +1470,12 @@
     }
 
     refreshLogsBtn.addEventListener("click", () => loadLogs(false));
-    // Initial fetch on page load
-    loadLogs(false);
 
-    // Auto-refresh live data from DB every 30 seconds
+    // Auto-refresh live data from DB every 30 seconds when authenticated
     setInterval(() => {
-      loadLogs(true);
+      if (getAuthToken()) {
+        loadLogs(true);
+      }
     }, 30000);
 
     // --- FORM SUBMISSION ---
@@ -645,11 +1500,11 @@
 
       const payload = { comment_ids, user_ids, number_of_accounts };
       runButton.disabled = true;
-      runButton.textContent = "Starting job...";
+      runButton.innerHTML = `<span class="spinner"></span><span>Starting job...</span>`;
       showStatus("Saving the request...", "success");
 
       try {
-        const storageResponse = await fetch(STORAGE_API_URL, {
+        const storageResponse = await authFetch(STORAGE_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -671,7 +1526,8 @@
           throw new Error("Lambda API URL is not configured in .env");
         }
 
-        showStatus(`Request saved successfully (Processing ID: ${processingId})\nStarting the Lambda job...`, "success");
+        showStatus(`Request saved successfully (Processing ID: ${processingId})
+Starting the Lambda job...`, "success");
         const lambdaResponse = await fetch(targetLambdaUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -689,12 +1545,10 @@
         }
 
         const lambdaStatus = (lambdaJson && lambdaJson.statusCode) || lambdaResponse.status || 200;
-        showStatus(`Request saved successfully (Processing ID: ${processingId})\nReporting job submitted successfully (Status: ${lambdaStatus})`, "success");
+        showStatus(`Request saved successfully (Processing ID: ${processingId})
+Reporting job submitted successfully (Status: ${lambdaStatus})`, "success");
         
-        // Auto reload batch logs immediately upon 200 OK
         await loadLogs(true);
-
-        // Continue background polling to reflect live DB changes as accounts process
         setTimeout(() => loadLogs(true), 2500);
         setTimeout(() => loadLogs(true), 6000);
         setTimeout(() => loadLogs(true), 12000);
@@ -703,10 +1557,9 @@
         showStatus(`Could not start the reporting job: ${error.message}`, "error");
       } finally {
         runButton.disabled = false;
-        runButton.textContent = "Run reporting job";
+        runButton.innerHTML = `<span>Run reporting job</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`;
       }
     });
   </script>
 </body>
 </html>
-
