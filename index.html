@@ -11,6 +11,7 @@
     :root {
       color-scheme: dark;
       --page: #080d1a;
+      --sidebar: rgba(11, 16, 32, 0.95);
       --panel: rgba(17, 24, 39, 0.82);
       --panel-elevated: rgba(26, 34, 56, 0.92);
       --panel-border: rgba(148, 163, 184, 0.16);
@@ -29,6 +30,7 @@
       --info: #38bdf8;
       --input-bg: #0b1222;
       --input-border: #334155;
+      --radius-sm: 8px;
       --radius: 12px;
       --radius-lg: 20px;
     }
@@ -41,8 +43,8 @@
       font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at 15% 10%, rgba(49, 196, 141, 0.14), transparent 40rem),
-        radial-gradient(circle at 85% 15%, rgba(59, 130, 246, 0.14), transparent 35rem),
+        radial-gradient(circle at 15% 10%, rgba(49, 196, 141, 0.12), transparent 40rem),
+        radial-gradient(circle at 85% 15%, rgba(59, 130, 246, 0.12), transparent 35rem),
         radial-gradient(circle at 50% 90%, rgba(99, 102, 241, 0.08), transparent 45rem),
         var(--page);
       background-attachment: fixed;
@@ -51,7 +53,6 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Subtle animated grid ── */
     body::before {
       content: '';
       position: fixed;
@@ -70,9 +71,7 @@
       width: 100%;
     }
 
-    /* ─────────────────────────────────────────────────────────────────
-       LOGIN SCREEN VIEW
-    ───────────────────────────────────────────────────────────────── */
+    /* ── 1. LOGIN VIEW ── */
     #login-view {
       display: flex;
       align-items: center;
@@ -118,7 +117,7 @@
       margin-bottom: 20px;
     }
 
-    .login-badge .dot {
+    .login-badge .dot, .live-dot {
       width: 6px;
       height: 6px;
       background: var(--accent);
@@ -147,9 +146,7 @@
       margin-bottom: 28px;
     }
 
-    .form-group {
-      margin-bottom: 20px;
-    }
+    .form-group { margin-bottom: 20px; }
 
     .form-group label {
       display: block;
@@ -193,9 +190,7 @@
       background: #0e172e;
     }
 
-    .login-input.has-toggle {
-      padding-right: 44px;
-    }
+    .login-input.has-toggle { padding-right: 44px; }
 
     .password-toggle {
       position: absolute;
@@ -216,7 +211,6 @@
     .password-toggle:hover {
       color: var(--text);
       background: rgba(255, 255, 255, 0.05);
-      transform: none;
     }
 
     .form-extra {
@@ -269,10 +263,6 @@
       box-shadow: 0 6px 20px rgba(49, 196, 141, 0.45);
     }
 
-    .login-btn:active:not(:disabled) {
-      transform: translateY(0);
-    }
-
     .login-btn:disabled {
       opacity: 0.65;
       cursor: not-allowed;
@@ -294,9 +284,7 @@
       animation: shake 0.3s ease;
     }
 
-    .login-alert.show {
-      display: flex;
-    }
+    .login-alert.show { display: flex; }
 
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
@@ -311,38 +299,45 @@
       font-size: 0.78rem;
     }
 
-    /* ─────────────────────────────────────────────────────────────────
-       AUTHENTICATED APP HEADER & TOPBAR
-    ───────────────────────────────────────────────────────────────── */
-    .app-nav {
+    /* ── 2. AUTHENTICATED APP LAYOUT (SIDEBAR + MAIN CONTENT) ── */
+    #app-view {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .app-layout {
+      display: flex;
+      min-height: 100vh;
       width: 100%;
-      border-bottom: 1px solid var(--panel-border);
-      background: rgba(11, 16, 32, 0.75);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .app-sidebar {
+      width: 270px;
+      background: var(--sidebar);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-right: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
       position: sticky;
       top: 0;
+      height: 100vh;
       z-index: 100;
+      flex-shrink: 0;
+      transition: transform 0.25s ease;
     }
 
-    .nav-content {
-      width: min(100% - 32px, 1080px);
-      margin: 0 auto;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .brand-group {
+    .sidebar-header {
+      padding: 24px 20px;
       display: flex;
       align-items: center;
       gap: 12px;
+      border-bottom: 1px solid var(--panel-border);
     }
 
     .brand-icon {
-      width: 34px;
-      height: 34px;
+      width: 38px;
+      height: 38px;
       border-radius: 10px;
       background: linear-gradient(135deg, rgba(49, 196, 141, 0.25), rgba(59, 130, 246, 0.25));
       border: 1px solid rgba(49, 196, 141, 0.35);
@@ -350,57 +345,183 @@
       align-items: center;
       justify-content: center;
       color: var(--accent);
+      flex-shrink: 0;
     }
 
-    .brand-text {
-      font-weight: 700;
-      font-size: 1rem;
+    .brand-text-area { display: flex; flex-direction: column; }
+
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.05rem;
       letter-spacing: -0.02em;
+      line-height: 1.2;
     }
 
-    .brand-text span {
-      color: var(--accent);
+    .brand-title span { color: var(--accent); }
+
+    .brand-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-top: 2px;
     }
 
-    .nav-actions {
+    .sidebar-nav {
+      padding: 20px 14px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+    }
+
+    .nav-section-title {
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      color: var(--muted-dark);
+      text-transform: uppercase;
+      padding: 0 10px 8px;
+    }
+
+    .nav-item {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.92rem;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      transition: all 0.18s ease;
+      position: relative;
     }
 
-    .user-pill {
-      display: inline-flex;
+    .nav-item:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+      background: rgba(49, 196, 141, 0.12);
+      border-color: rgba(49, 196, 141, 0.28);
+      font-weight: 700;
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      background: var(--accent);
+      border-radius: 0 4px 4px 0;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(30, 41, 59, 0.8);
-      border: 1px solid var(--panel-border);
-      padding: 6px 12px;
-      border-radius: 9999px;
-      font-size: 0.82rem;
-      color: var(--muted);
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .nav-label { flex: 1; }
+
+    .nav-badge {
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      background: rgba(49, 196, 141, 0.2);
+      color: var(--accent);
+      border: 1px solid rgba(49, 196, 141, 0.3);
       font-family: 'JetBrains Mono', monospace;
     }
 
-    .user-pill-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 6px var(--accent);
+    .sidebar-footer {
+      padding: 16px 14px 20px;
+      border-top: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: rgba(8, 13, 26, 0.6);
+    }
+
+    .user-profile-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-sm);
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(49, 196, 141, 0.25), rgba(59, 130, 246, 0.25));
+      border: 1px solid rgba(49, 196, 141, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 0.85rem;
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .user-email-text {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-status-text {
+      font-size: 0.72rem;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
     .btn-logout {
+      width: 100%;
       background: rgba(244, 63, 94, 0.1);
       color: #fda4af;
       border: 1px solid rgba(244, 63, 94, 0.25);
       font-size: 0.82rem;
       font-weight: 600;
-      padding: 7px 14px;
+      padding: 9px 14px;
       border-radius: 8px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      gap: 8px;
       transition: all 0.15s ease;
       min-height: auto;
     }
@@ -412,17 +533,29 @@
       transform: translateY(-1px);
     }
 
-    /* ─────────────────────────────────────────────────────────────────
-       MAIN APPLICATION VIEW (REPORTS & BATCH LOGS)
-    ───────────────────────────────────────────────────────────────── */
-    #app-view {
-      display: none;
+    .app-main-area {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
     }
 
     .shell {
-      width: min(100% - 32px, 1080px);
+      width: min(100% - 48px, 1140px);
       margin: 0 auto;
-      padding: 40px 0 72px;
+      padding: 36px 0 72px;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .tab-content.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .eyebrow {
@@ -435,18 +568,18 @@
 
     h1 {
       margin: 8px 0 10px;
-      font-size: clamp(2rem, 4.5vw, 2.75rem);
+      font-size: clamp(1.85rem, 4vw, 2.5rem);
       line-height: 1.15;
       letter-spacing: -0.04em;
       font-weight: 800;
     }
 
     .intro {
-      max-width: 660px;
+      max-width: 720px;
       color: var(--muted);
       line-height: 1.6;
-      margin: 0 0 32px;
-      font-size: 0.96rem;
+      margin: 0 0 28px;
+      font-size: 0.94rem;
     }
 
     .card {
@@ -485,7 +618,7 @@
       margin-bottom: 8px;
     }
 
-    textarea, input[type="number"] {
+    textarea, input[type="text"], input[type="number"], select {
       display: block;
       width: 100%;
       border: 1px solid var(--input-border);
@@ -498,7 +631,7 @@
     }
 
     textarea {
-      min-height: 220px;
+      min-height: 200px;
       resize: vertical;
       padding: 13px;
       line-height: 1.55;
@@ -506,14 +639,12 @@
       font-size: 0.88rem;
     }
 
-    input[type="number"] {
-      max-width: 180px;
-      padding: 12px 13px;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 600;
+    input[type="text"], input[type="number"], select {
+      padding: 10px 14px;
+      font-size: 0.9rem;
     }
 
-    textarea:focus, input[type="number"]:focus {
+    textarea:focus, input[type="text"]:focus, input[type="number"]:focus, select:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-glow);
     }
@@ -530,7 +661,7 @@
     .divider {
       height: 1px;
       background: var(--panel-border);
-      margin: 30px 0;
+      margin: 26px 0;
     }
 
     .options {
@@ -548,8 +679,8 @@
     }
     
     button {
-      min-height: 46px;
-      padding: 0 22px;
+      min-height: 44px;
+      padding: 0 20px;
       border: 0;
       border-radius: 10px;
       cursor: pointer;
@@ -571,9 +702,10 @@
     }
 
     button:disabled {
-      cursor: wait;
-      opacity: 0.65;
+      cursor: not-allowed;
+      opacity: 0.55;
       transform: none;
+      box-shadow: none;
     }
 
     .btn-secondary {
@@ -581,7 +713,7 @@
       color: #f1f5f9;
       border: 1px solid rgba(148, 163, 184, 0.25);
       font-weight: 600;
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       min-height: 38px;
       padding: 0 14px;
       box-shadow: none;
@@ -590,6 +722,25 @@
     .btn-secondary:hover:not(:disabled) {
       background: rgba(71, 85, 105, 0.9);
       color: #fff;
+    }
+
+    .btn-text {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 4px 8px;
+      min-height: auto;
+      box-shadow: none;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .btn-text:hover {
+      color: var(--text);
+      background: none;
+      transform: none;
     }
 
     .status {
@@ -603,9 +754,7 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
-    .status.show {
-      display: block;
-    }
+    .status.show { display: block; }
 
     .status.success {
       background: rgba(49, 196, 141, 0.12);
@@ -627,9 +776,7 @@
     }
 
     /* ── Logs Section ── */
-    .logs-section {
-      margin-top: 48px;
-    }
+    .logs-section { margin-top: 48px; }
 
     .logs-header {
       display: flex;
@@ -655,16 +802,6 @@
       gap: 6px;
     }
 
-    .live-dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 8px var(--accent);
-      animation: pulseDot 2s infinite ease-in-out;
-    }
-
     .batch-list {
       display: flex;
       flex-direction: column;
@@ -679,9 +816,7 @@
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .batch-card:hover {
-      border-color: rgba(148, 163, 184, 0.35);
-    }
+    .batch-card:hover { border-color: rgba(148, 163, 184, 0.35); }
 
     .batch-header {
       padding: 16px 20px;
@@ -695,9 +830,7 @@
       gap: 16px;
     }
 
-    .batch-header:hover {
-      background: rgba(255, 255, 255, 0.04);
-    }
+    .batch-header:hover { background: rgba(255, 255, 255, 0.04); }
 
     .batch-left {
       display: flex;
@@ -783,9 +916,7 @@
       transition: transform 0.2s ease;
     }
 
-    .batch-card.open .chevron {
-      transform: rotate(180deg);
-    }
+    .batch-card.open .chevron { transform: rotate(180deg); }
 
     .batch-content {
       display: none;
@@ -794,9 +925,7 @@
       background: rgba(0, 0, 0, 0.2);
     }
 
-    .batch-card.open .batch-content {
-      display: block;
-    }
+    .batch-card.open .batch-content { display: block; }
 
     .payload-meta {
       background: rgba(30, 41, 59, 0.5);
@@ -816,69 +945,73 @@
       word-break: break-all;
     }
 
+    /* ── Tables & Common Data Styles ── */
     .table-container {
       overflow-x: auto;
       border: 1px solid var(--panel-border);
-      border-radius: 8px;
+      border-radius: 10px;
+      background: rgba(11, 16, 32, 0.5);
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       text-align: left;
-      font-size: 0.85rem;
+      font-size: 0.86rem;
     }
 
     th {
-      background: rgba(30, 41, 59, 0.7);
+      background: rgba(30, 41, 59, 0.8);
       color: var(--muted);
       font-weight: 700;
-      padding: 10px 14px;
+      padding: 12px 14px;
       border-bottom: 1px solid var(--panel-border);
       text-transform: uppercase;
       font-size: 0.72rem;
       letter-spacing: 0.06em;
+      white-space: nowrap;
     }
 
     td {
       padding: 12px 14px;
       border-bottom: 1px solid rgba(148, 163, 184, 0.08);
       color: #e2e8f0;
+      vertical-align: middle;
     }
 
-    tr:last-child td {
-      border-bottom: none;
-    }
-
-    tr:hover td {
-      background: rgba(51, 65, 85, 0.25);
-    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(51, 65, 85, 0.2); }
+    tr.row-selected td { background: rgba(49, 196, 141, 0.08); }
 
     .status-tag {
       display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.76rem;
-      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: capitalize;
     }
 
-    .status-completed {
-      background: rgba(34, 197, 94, 0.15);
-      color: #86efac;
-    }
-
-    .status-created {
+    .status-not-processed, .status-created, .status-starting, .status-in-progress {
       background: rgba(234, 179, 8, 0.15);
       color: #fde047;
+      border: 1px solid rgba(234, 179, 8, 0.3);
     }
 
-    .status-failed {
+    .status-reported, .status-runned, .status-completed, .status-success {
+      background: rgba(34, 197, 94, 0.15);
+      color: #86efac;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .status-failed, .status-error {
       background: rgba(244, 63, 94, 0.15);
       color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.3);
     }
 
     .loading-state, .empty-state {
-      padding: 36px 20px;
+      padding: 40px 20px;
       text-align: center;
       color: var(--muted);
       font-size: 0.92rem;
@@ -894,26 +1027,209 @@
       animation: spin 0.7s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Comments & Users Toolbar Styles ── */
+    .comments-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
     }
 
-    @media (max-width: 640px) {
+    .comments-actions-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .account-stepper-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 4px 10px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .account-stepper-box input {
+      width: 60px;
+      height: 34px;
+      padding: 4px 8px;
+      text-align: center;
+    }
+
+    .comments-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      padding: 14px 18px;
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+    }
+
+    .toolbar-left, .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .comment-bubble {
+      max-width: 440px;
+      position: relative;
+    }
+
+    .comment-text-preview {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 420px;
+      color: #f1f5f9;
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+
+    .comment-text-full {
+      display: none;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #f8fafc;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      background: rgba(15, 23, 42, 0.7);
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--panel-border);
+      margin-top: 6px;
+    }
+
+    .comment-bubble.expanded .comment-text-preview { display: none; }
+    .comment-bubble.expanded .comment-text-full { display: block; }
+
+    .read-toggle-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 2px 0;
+      cursor: pointer;
+      display: inline-block;
+      margin-top: 4px;
+      min-height: auto;
+      box-shadow: none;
+    }
+
+    .read-toggle-btn:hover {
+      text-decoration: underline;
+      background: none;
+      transform: none;
+    }
+
+    .comment-id-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--info);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .comment-id-badge:hover {
+      text-decoration: underline;
+      color: #7dd3fc;
+    }
+
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 20px;
+      padding-top: 10px;
+    }
+
+    .pagination-info {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .page-btn {
+      min-height: 36px;
+      min-width: 36px;
+      padding: 0 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border-radius: 8px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--panel-border);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      background: rgba(51, 65, 85, 0.8);
+      color: #fff;
+    }
+
+    .page-btn.active {
+      background: var(--accent);
+      color: #032217;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .page-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 900px) {
+      .app-layout { flex-direction: column; }
+      .app-sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid var(--panel-border);
+      }
+      .sidebar-nav { flex-direction: row; flex-wrap: wrap; padding: 12px 16px; }
+      .nav-item { width: auto; }
+      .nav-item.active::before { left: 8px; right: 8px; bottom: 0; top: auto; width: auto; height: 3px; }
+      .sidebar-footer { flex-direction: row; justify-content: space-between; align-items: center; }
       .shell { width: min(100% - 24px, 980px); padding-top: 24px; }
       .pairs { grid-template-columns: 1fr; }
-      .options { align-items: stretch; }
-      button { width: 100%; }
-      .batch-header { flex-direction: column; align-items: flex-start; }
-      .batch-right { width: 100%; justify-content: space-between; }
-      .nav-content { height: 56px; }
-      .brand-text span { display: none; }
+      .comments-header-bar { flex-direction: column; align-items: stretch; }
+      .comments-actions-group { justify-content: space-between; }
     }
   </style>
 </head>
 <body>
 
   <!-- ================================================================= -->
-  <!-- 1. LOGIN SCREEN                                                   -->
+  <!-- 1. LOGIN VIEW                                                     -->
   <!-- ================================================================= -->
   <div class="view-container" id="login-view">
     <div class="login-card">
@@ -982,98 +1298,314 @@
       </form>
 
       <div class="login-footer">
-        Protected &bull; Configured with hardcoded server authentication
+        Protected &bull; Configured with server authentication
       </div>
     </div>
   </div>
 
   <!-- ================================================================= -->
-  <!-- 2. MAIN CONSOLE VIEW (PROTECTED)                                  -->
+  <!-- 2. AUTHENTICATED APP SHELL WITH LEFT SIDEBAR                      -->
   <!-- ================================================================= -->
   <div class="view-container" id="app-view">
-    <!-- Topbar -->
-    <header class="app-nav">
-      <div class="nav-content">
-        <div class="brand-group">
+    <div class="app-layout">
+      <!-- LEFT SIDEBAR -->
+      <aside class="app-sidebar">
+        <div class="sidebar-header">
           <div class="brand-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
-          <div class="brand-text">Investing <span>Reporter</span></div>
+          <div class="brand-text-area">
+            <div class="brand-title">Investing <span>Reporter</span></div>
+            <div class="brand-sub">Automation Suite</div>
+          </div>
         </div>
-        <div class="nav-actions">
-          <div class="user-pill">
-            <span class="user-pill-dot"></span>
-            <span id="nav-user-email">admin@investing.com</span>
+
+        <div class="sidebar-nav">
+          <div class="nav-section-title">Navigation</div>
+          
+          <button type="button" class="nav-item active" id="nav-btn-dashboard" data-tab="dashboard">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </span>
+            <span class="nav-label">Dashboard</span>
+          </button>
+
+          <button type="button" class="nav-item" id="nav-btn-comments" data-tab="comments">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </span>
+            <span class="nav-label">Comments</span>
+            <span class="nav-badge" id="sidebar-comments-badge">24h</span>
+          </button>
+
+          <button type="button" class="nav-item" id="nav-btn-users" data-tab="users">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </span>
+            <span class="nav-label">Users</span>
+            <span class="nav-badge" id="sidebar-users-badge">DB</span>
+          </button>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="user-profile-card">
+            <div class="user-avatar" id="user-avatar-initial">A</div>
+            <div class="user-details">
+              <span class="user-email-text" id="nav-user-email">admin@investing.com</span>
+              <span class="user-status-text"><span class="live-dot" style="width:5px; height:5px;"></span> Connected</span>
+            </div>
           </div>
           <button type="button" class="btn-logout" id="logout-btn" title="Sign out">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign Out
           </button>
         </div>
-      </div>
-    </header>
+      </aside>
 
-    <main class="shell">
-      <div class="eyebrow">Investing automation</div>
-      <h1>Run comment reports</h1>
-      <p class="intro">Enter matching comment and user IDs. The request is sent to the Lambda API, which selects the configured account credentials on the server.</p>
+      <!-- MAIN CONTENT -->
+      <main class="app-main-area">
+        <div class="shell">
+          
+          <!-- TAB 1: DASHBOARD (PRESENT UI) -->
+          <div class="tab-content active" id="tab-dashboard">
+            <div class="eyebrow">Investing automation</div>
+            <h1>Run comment reports</h1>
+            <p class="intro">Enter matching comment and user IDs. The request is saved and sent to the Lambda API, which executes reporting across configured accounts on the server.</p>
 
-      <form class="card" id="report-form" novalidate>
-        <h2 class="section-title">Comment / user pairs</h2>
-        <p class="hint">Add one ID per line in each column. Line 1 of Comment IDs is paired with line 1 of User IDs.</p>
-        <div class="pairs">
-          <div>
-            <label for="comment-ids">Comment IDs</label>
-            <textarea id="comment-ids" placeholder="47529613&#10;47529792" spellcheck="false" required></textarea>
-            <div class="counts"><span>One ID per line</span><span id="comment-count">0 IDs</span></div>
+            <form class="card" id="report-form" novalidate>
+              <h2 class="section-title">Comment / user pairs</h2>
+              <p class="hint">Add one ID per line in each column. Line 1 of Comment IDs is paired with line 1 of User IDs.</p>
+              <div class="pairs">
+                <div>
+                  <label for="comment-ids">Comment IDs</label>
+                  <textarea id="comment-ids" placeholder="47529613&#10;47529792" spellcheck="false" required></textarea>
+                  <div class="counts"><span>One ID per line</span><span id="comment-count">0 IDs</span></div>
+                </div>
+                <div>
+                  <label for="user-ids">User IDs</label>
+                  <textarea id="user-ids" placeholder="271492777&#10;271492777" spellcheck="false" required></textarea>
+                  <div class="counts"><span>Must match comment rows</span><span id="user-count">0 IDs</span></div>
+                </div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="options">
+                <div>
+                  <label for="account-count">Number of accounts to run</label>
+                  <input id="account-count" type="number" value="1" min="1" step="1" inputmode="numeric" required />
+                  <p class="field-note">Credentials remain in Lambda; they are never sent from this UI.</p>
+                </div>
+                <button id="run-button" type="submit">
+                  <span>Run reporting job</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+                </button>
+              </div>
+
+              <div class="status" id="status" role="status" aria-live="polite"></div>
+              <div class="api-note">The request is saved first, then submitted directly to the reporting API.</div>
+            </form>
+
+            <!-- LIVE BATCH LOGS SECTION -->
+            <section class="logs-section">
+              <div class="logs-header">
+                <div class="logs-title-area">
+                  <h2>Execution Batch Logs</h2>
+                  <div class="logs-subtitle"><span class="live-dot"></span> Live records grouped by execution run directly from database</div>
+                </div>
+                <div class="logs-actions">
+                  <button type="button" class="btn-secondary" id="refresh-logs-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    Refresh Logs
+                  </button>
+                </div>
+              </div>
+
+              <div class="card" style="padding: 16px;">
+                <div id="batch-list" class="batch-list">
+                  <div class="loading-state">Loading live run batches from database...</div>
+                </div>
+              </div>
+            </section>
           </div>
-          <div>
-            <label for="user-ids">User IDs</label>
-            <textarea id="user-ids" placeholder="271492777&#10;271492777" spellcheck="false" required></textarea>
-            <div class="counts"><span>Must match comment rows</span><span id="user-count">0 IDs</span></div>
+
+          <!-- TAB 2: COMMENTS VIEW (24H SCRAPED COMMENTS) -->
+          <div class="tab-content" id="tab-comments">
+            <div class="eyebrow">Scraped Feed &bull; Last 24 Hours</div>
+            <div class="comments-header-bar">
+              <div>
+                <h1>24-Hour Scraped Comments</h1>
+                <p class="intro" style="margin-bottom:0;">Live commentary feed fetched from the database within the last 24 hours. Ordered descending by latest fetch time.</p>
+              </div>
+              <div class="comments-actions-group">
+                <div class="account-stepper-box">
+                  <span>Accounts:</span>
+                  <input type="number" id="comments-account-count" value="1" min="1" step="1" title="Number of accounts to run" />
+                </div>
+                <button type="button" id="comments-report-btn" disabled>
+                  <span>Report Selected (<span id="selected-count-btn">0</span>)</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+                </button>
+                <button type="button" class="btn-secondary" id="comments-refresh-btn" title="Refresh comments list">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            <div class="card" style="padding: 20px;">
+              <!-- Comments Toolbar -->
+              <div class="comments-toolbar">
+                <div class="toolbar-left">
+                  <label class="checkbox-label" style="font-weight: 700; color: var(--text);">
+                    <input type="checkbox" id="select-all-page-checkbox" />
+                    <span>Select All on Page (<span id="page-comments-count">0</span>)</span>
+                  </label>
+                  <span class="pill pill-accounts" id="selected-counter-badge">0 Total Selected</span>
+                  <button type="button" id="clear-selection-btn" class="btn-text" style="display:none;">Clear All Selected</button>
+                </div>
+                <div class="toolbar-right">
+                  <select id="comments-status-filter" style="width: auto; min-width: 140px; padding: 6px 10px; font-size: 0.82rem;">
+                    <option value="">All Statuses</option>
+                    <option value="not processed">Not Processed</option>
+                    <option value="reported">Reported / Runned</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Comments Table -->
+              <div class="table-container">
+                <table id="comments-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 44px; text-align: center;">Select</th>
+                      <th style="width: 120px;">Comment ID</th>
+                      <th style="width: 130px;">User ID</th>
+                      <th style="width: 150px;">User Name</th>
+                      <th>Comment</th>
+                      <th style="width: 160px;">Fetched At &darr; (Latest)</th>
+                      <th style="width: 110px;">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="comments-table-body">
+                    <tr>
+                      <td colspan="7" class="loading-state">Loading comments from database...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination Bar -->
+              <div class="pagination-bar">
+                <div class="pagination-info" id="pagination-info">
+                  Showing 0 to 0 of 0 comments
+                </div>
+                <div class="pagination-controls" id="pagination-controls"></div>
+              </div>
+            </div>
           </div>
+
+          <!-- TAB 3: USERS VIEW (DATABASE USER MANAGEMENT) -->
+          <div class="tab-content" id="tab-users">
+            <div class="eyebrow">User Profiles &bull; Database</div>
+            <div class="comments-header-bar">
+              <div>
+                <h1>Manage Users</h1>
+                <p class="intro" style="margin-bottom:0;">Add and view user records in <code>InvestingDB.dbo.users</code>. Users are inserted only if not already present.</p>
+              </div>
+              <div class="comments-actions-group">
+                <button type="button" class="btn-secondary" id="users-refresh-btn" title="Refresh users list">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            <!-- ADD USER FORM CARD -->
+            <form class="card" id="add-user-form" style="margin-bottom: 24px;" novalidate>
+              <h2 class="section-title">Add New User</h2>
+              <p class="hint">Enter the User ID and User Name to insert into <code>InvestingDB.dbo.users</code>.</p>
+              
+              <div class="pairs" style="grid-template-columns: 1fr 1fr;">
+                <div>
+                  <label for="new-user-id">User ID</label>
+                  <input
+                    type="text"
+                    id="new-user-id"
+                    placeholder="e.g. 271492777"
+                    required
+                    style="padding: 12px 14px; font-family: 'JetBrains Mono', monospace;"
+                  />
+                  <p class="field-note">Numeric User ID (bigint)</p>
+                </div>
+                <div>
+                  <label for="new-user-name">User Name</label>
+                  <input
+                    type="text"
+                    id="new-user-name"
+                    placeholder="e.g. John Doe / Trader_Alpha"
+                    required
+                    style="padding: 12px 14px;"
+                  />
+                  <p class="field-note">Display Name or Profile Handle</p>
+                </div>
+              </div>
+
+              <div class="divider" style="margin: 20px 0;"></div>
+
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                <button type="submit" id="add-user-submit-btn">
+                  <span>Add User to Database</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                <div id="add-user-status" class="status" style="margin: 0; padding: 10px 16px; font-size: 0.85rem; flex: 1; max-width: 480px;"></div>
+              </div>
+            </form>
+
+            <!-- EXISTING USERS LIST CARD -->
+            <div class="card" style="padding: 20px;">
+              <div class="comments-toolbar">
+                <div class="toolbar-left">
+                  <h3 style="font-size: 1.05rem; font-weight: 700;">Existing Users</h3>
+                  <span class="pill pill-accounts" id="users-total-badge">0 Users</span>
+                </div>
+                <div class="toolbar-right">
+                  <input
+                    type="text"
+                    id="users-search-input"
+                    placeholder="Search User ID or Name..."
+                    style="padding: 7px 12px; font-size: 0.82rem; min-width: 220px; width: auto;"
+                  />
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table id="users-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 50px;">#</th>
+                      <th style="width: 200px;">User ID</th>
+                      <th>User Name</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-table-body">
+                    <tr>
+                      <td colspan="3" class="loading-state">Loading users from database...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="pagination-bar">
+                <div class="pagination-info" id="users-pagination-info">Showing 0 to 0 of 0 users</div>
+                <div class="pagination-controls" id="users-pagination-controls"></div>
+              </div>
+            </div>
+          </div>
+
         </div>
-
-        <div class="divider"></div>
-
-        <div class="options">
-          <div>
-            <label for="account-count">Number of accounts to run</label>
-            <input id="account-count" type="number" value="1" min="1" step="1" inputmode="numeric" required />
-            <p class="field-note">Credentials remain in Lambda; they are never sent from this UI.</p>
-          </div>
-          <button id="run-button" type="submit">
-            <span>Run reporting job</span>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
-          </button>
-        </div>
-
-        <div class="status" id="status" role="status" aria-live="polite"></div>
-        <div class="api-note">The request is saved first, then submitted directly to the reporting API.</div>
-      </form>
-
-      <!-- LIVE BATCH LOGS SECTION -->
-      <section class="logs-section">
-        <div class="logs-header">
-          <div class="logs-title-area">
-            <h2>Execution Batch Logs</h2>
-            <div class="logs-subtitle"><span class="live-dot"></span> Live records grouped by execution run directly from database</div>
-          </div>
-          <div class="logs-actions">
-            <button type="button" class="btn-secondary" id="refresh-logs-btn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-              Refresh Logs
-            </button>
-          </div>
-        </div>
-
-        <div class="card" style="padding: 16px;">
-          <div id="batch-list" class="batch-list">
-            <div class="loading-state">Loading live run batches from database...</div>
-          </div>
-        </div>
-      </section>
-    </main>
+      </main>
+    </div>
   </div>
 
   <script>
@@ -1108,7 +1640,6 @@
       return localStorage.getItem(USER_EMAIL_KEY) || sessionStorage.getItem(USER_EMAIL_KEY) || "admin@investing.com";
     }
 
-    // Helper to add Authorization header automatically
     async function authFetch(url, options = {}) {
       const token = getAuthToken();
       const headers = Object.assign({}, options.headers || {});
@@ -1119,7 +1650,6 @@
 
       const response = await fetch(url, options);
       if (response.status === 401) {
-        // Session expired or invalid -> switch back to login view
         clearAuth();
         showLoginView("Your session has expired. Please sign in again.");
       }
@@ -1127,13 +1657,14 @@
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // VIEW SWITCHING
+    // VIEW SWITCHING & NAVIGATION
     // ─────────────────────────────────────────────────────────────────
     const loginView = document.getElementById("login-view");
     const appView = document.getElementById("app-view");
     const loginAlert = document.getElementById("login-alert");
     const loginAlertText = document.getElementById("login-alert-text");
     const navUserEmail = document.getElementById("nav-user-email");
+    const userAvatarInitial = document.getElementById("user-avatar-initial");
 
     function showLoginView(errorMessage = "") {
       loginView.style.display = "flex";
@@ -1149,11 +1680,44 @@
     function showAppView(email) {
       loginView.style.display = "none";
       appView.style.display = "block";
-      navUserEmail.textContent = email || getStoredEmail();
-      // Initialize app data once authenticated
+      const userMail = email || getStoredEmail();
+      navUserEmail.textContent = userMail;
+      userAvatarInitial.textContent = (userMail.charAt(0) || "A").toUpperCase();
+      
       initConfig();
       loadLogs(false);
+      loadComments(1);
     }
+
+    // Navigation Tabs Switching (Dashboard vs Comments vs Users)
+    const navBtnDashboard = document.getElementById("nav-btn-dashboard");
+    const navBtnComments = document.getElementById("nav-btn-comments");
+    const navBtnUsers = document.getElementById("nav-btn-users");
+    const tabDashboard = document.getElementById("tab-dashboard");
+    const tabComments = document.getElementById("tab-comments");
+    const tabUsers = document.getElementById("tab-users");
+
+    function switchTab(tabName) {
+      [navBtnDashboard, navBtnComments, navBtnUsers].forEach(btn => btn.classList.remove("active"));
+      [tabDashboard, tabComments, tabUsers].forEach(tab => tab.classList.remove("active"));
+
+      if (tabName === "dashboard") {
+        navBtnDashboard.classList.add("active");
+        tabDashboard.classList.add("active");
+      } else if (tabName === "comments") {
+        navBtnComments.classList.add("active");
+        tabComments.classList.add("active");
+        loadComments(currentCommentsPage);
+      } else if (tabName === "users") {
+        navBtnUsers.classList.add("active");
+        tabUsers.classList.add("active");
+        loadUsers(currentUsersPage);
+      }
+    }
+
+    navBtnDashboard.addEventListener("click", () => switchTab("dashboard"));
+    navBtnComments.addEventListener("click", () => switchTab("comments"));
+    navBtnUsers.addEventListener("click", () => switchTab("users"));
 
     // ─────────────────────────────────────────────────────────────────
     // LOGIN FORM LOGIC
@@ -1165,7 +1729,6 @@
     const loginSubmitBtn = document.getElementById("login-submit-btn");
     const togglePasswordBtn = document.getElementById("toggle-password");
 
-    // Password visibility toggle
     togglePasswordBtn.addEventListener("click", () => {
       const isPassword = loginPasswordInput.type === "password";
       loginPasswordInput.type = isPassword ? "text" : "password";
@@ -1203,7 +1766,6 @@
           throw new Error(data.error || "Authentication failed.");
         }
 
-        // Save token and email
         saveAuthToken(data.token, data.email, rememberMeCheckbox.checked);
         loginPasswordInput.value = "";
         showAppView(data.email);
@@ -1216,9 +1778,6 @@
       }
     });
 
-    // ─────────────────────────────────────────────────────────────────
-    // LOGOUT LOGIC
-    // ─────────────────────────────────────────────────────────────────
     const logoutBtn = document.getElementById("logout-btn");
     logoutBtn.addEventListener("click", async () => {
       try {
@@ -1228,9 +1787,6 @@
       showLoginView();
     });
 
-    // ─────────────────────────────────────────────────────────────────
-    // AUTO-AUTH CHECK ON PAGE LOAD
-    // ─────────────────────────────────────────────────────────────────
     async function checkExistingAuth() {
       const token = getAuthToken();
       if (!token) {
@@ -1258,24 +1814,593 @@
     checkExistingAuth();
 
     // ─────────────────────────────────────────────────────────────────
-    // MAIN APP: CONFIG, FORM & LIVE BATCH LOGS
+    // CONFIG & APIS
     // ─────────────────────────────────────────────────────────────────
     const STORAGE_API_URL = "/api/store";
     const LOGS_API_URL = "/api/logs";
-    let lambdaApiUrl = "";
+    const COMMENTS_API_URL = "/api/comments";
+    const COMMENTS_STATUS_API_URL = "/api/comments/status";
+    const USERS_API_URL = "/api/users";
+    let lambdaApiUrl = "https://nr9andj3qe.execute-api.us-east-2.amazonaws.com/dev/investing-dev";
 
     async function initConfig() {
       try {
         const response = await authFetch("/api/config");
         if (response.ok) {
           const config = await response.json();
-          lambdaApiUrl = config.lambda_api_url || "";
+          if (config.lambda_api_url) {
+            lambdaApiUrl = config.lambda_api_url;
+          }
         }
       } catch (err) {
         console.warn("Could not load /api/config:", err);
       }
     }
 
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // 3. COMMENTS VIEW LOGIC
+    // ─────────────────────────────────────────────────────────────────
+    let currentCommentsPage = 1;
+    let totalCommentsPages = 1;
+    let totalCommentsCount = 0;
+    const commentsPageSize = 10;
+    let currentCommentsList = [];
+    const selectedComments = new Map();
+
+    const commentsTableBody = document.getElementById("comments-table-body");
+    const selectAllPageCheckbox = document.getElementById("select-all-page-checkbox");
+    const pageCommentsCountSpan = document.getElementById("page-comments-count");
+    const selectedCounterBadge = document.getElementById("selected-counter-badge");
+    const selectedCountBtnSpan = document.getElementById("selected-count-btn");
+    const clearSelectionBtn = document.getElementById("clear-selection-btn");
+    const commentsReportBtn = document.getElementById("comments-report-btn");
+    const commentsRefreshBtn = document.getElementById("comments-refresh-btn");
+    const commentsStatusFilter = document.getElementById("comments-status-filter");
+    const paginationInfo = document.getElementById("pagination-info");
+    const paginationControls = document.getElementById("pagination-controls");
+    const commentsAccountCount = document.getElementById("comments-account-count");
+    const sidebarCommentsBadge = document.getElementById("sidebar-comments-badge");
+
+    function updateSelectionUI() {
+      const count = selectedComments.size;
+      selectedCounterBadge.textContent = `${count} Total Selected`;
+      selectedCountBtnSpan.textContent = count;
+      commentsReportBtn.disabled = count === 0;
+
+      if (count > 0) {
+        clearSelectionBtn.style.display = "inline-block";
+        selectedCounterBadge.style.background = "rgba(49, 196, 141, 0.2)";
+        selectedCounterBadge.style.color = "var(--accent)";
+      } else {
+        clearSelectionBtn.style.display = "none";
+        selectedCounterBadge.style.background = "rgba(59, 130, 246, 0.15)";
+        selectedCounterBadge.style.color = "#93c5fd";
+      }
+
+      if (currentCommentsList.length > 0 && currentCommentsList.every(c => selectedComments.has(c.id))) {
+        selectAllPageCheckbox.checked = true;
+        selectAllPageCheckbox.indeterminate = false;
+      } else if (currentCommentsList.some(c => selectedComments.has(c.id))) {
+        selectAllPageCheckbox.checked = false;
+        selectAllPageCheckbox.indeterminate = true;
+      } else {
+        selectAllPageCheckbox.checked = false;
+        selectAllPageCheckbox.indeterminate = false;
+      }
+
+      document.querySelectorAll(".comment-row").forEach(row => {
+        const id = Number(row.dataset.commentDbId);
+        const cb = row.querySelector(".row-select-checkbox");
+        if (selectedComments.has(id)) {
+          row.classList.add("row-selected");
+          if (cb) cb.checked = true;
+        } else {
+          row.classList.remove("row-selected");
+          if (cb) cb.checked = false;
+        }
+      });
+    }
+
+    window.toggleCommentSelect = function(dbId) {
+      const item = currentCommentsList.find(c => c.id === dbId);
+      if (!item) return;
+
+      if (selectedComments.has(dbId)) {
+        selectedComments.delete(dbId);
+      } else {
+        selectedComments.set(dbId, item);
+      }
+      updateSelectionUI();
+    };
+
+    selectAllPageCheckbox.addEventListener("change", () => {
+      const isChecked = selectAllPageCheckbox.checked;
+      currentCommentsList.forEach(item => {
+        if (isChecked) {
+          selectedComments.set(item.id, item);
+        } else {
+          selectedComments.delete(item.id);
+        }
+      });
+      updateSelectionUI();
+    });
+
+    clearSelectionBtn.addEventListener("click", () => {
+      selectedComments.clear();
+      updateSelectionUI();
+    });
+
+    commentsStatusFilter.addEventListener("change", () => {
+      currentCommentsPage = 1;
+      loadComments(1);
+    });
+
+    commentsRefreshBtn.addEventListener("click", () => {
+      loadComments(currentCommentsPage);
+    });
+
+    window.toggleCommentExpand = function(btn) {
+      const bubble = btn.closest(".comment-bubble");
+      if (!bubble) return;
+      const isExpanded = bubble.classList.contains("expanded");
+      if (isExpanded) {
+        bubble.classList.remove("expanded");
+        btn.textContent = "Read more";
+      } else {
+        bubble.classList.add("expanded");
+        btn.textContent = "Read less";
+      }
+    };
+
+    async function loadComments(page = 1) {
+      currentCommentsPage = page;
+      commentsRefreshBtn.disabled = true;
+      commentsTableBody.innerHTML = `<tr><td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading 24h comments from database...</td></tr>`;
+
+      try {
+        const filterVal = commentsStatusFilter.value;
+        let url = `${COMMENTS_API_URL}?page=${page}&page_size=${commentsPageSize}&hours=24`;
+        if (filterVal) {
+          url += `&status=${encodeURIComponent(filterVal)}`;
+        }
+
+        const res = await authFetch(url);
+        if (!res.ok) {
+          if (res.status === 401) return;
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || "Failed to load comments");
+        }
+
+        currentCommentsList = data.comments || [];
+        totalCommentsCount = data.total || 0;
+        totalCommentsPages = data.total_pages || 1;
+        pageCommentsCountSpan.textContent = currentCommentsList.length;
+
+        if (sidebarCommentsBadge) {
+          sidebarCommentsBadge.textContent = totalCommentsCount > 0 ? `${totalCommentsCount}` : "24h";
+        }
+
+        renderCommentsTable(currentCommentsList);
+        renderPagination(data.page, data.total_pages, data.total);
+        updateSelectionUI();
+      } catch (err) {
+        commentsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color: var(--danger);">Error loading comments: ${escapeHtml(err.message)}</td></tr>`;
+      } finally {
+        commentsRefreshBtn.disabled = false;
+      }
+    }
+
+    function renderCommentsTable(comments) {
+      if (!comments.length) {
+        commentsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state">No comments found within the last 24 hours.</td></tr>`;
+        return;
+      }
+
+      commentsTableBody.innerHTML = comments.map(c => {
+        const isChecked = selectedComments.has(c.id);
+        const commentIdDisplay = c.comment_id || "—";
+        const commentUrl = c.url || "#";
+        const userNameDisplay = c.user_name ? escapeHtml(c.user_name) : "—";
+        const userIdDisplay = c.user_id ? escapeHtml(c.user_id) : "—";
+        const fetchedAtDisplay = c.fetched_at || "—";
+
+        const stLower = (c.status || "not processed").toLowerCase();
+        let statusTagClass = "status-not-processed";
+        if (stLower.includes("reported") || stLower.includes("runned") || stLower.includes("completed")) {
+          statusTagClass = "status-reported";
+        } else if (stLower.includes("fail") || stLower.includes("error")) {
+          statusTagClass = "status-failed";
+        }
+
+        const commentText = c.comment_text || "";
+        const isLong = commentText.length > 55 || commentText.includes("\n");
+
+        return `
+          <tr class="comment-row ${isChecked ? 'row-selected' : ''}" data-comment-db-id="${c.id}">
+            <td style="text-align: center;">
+              <input
+                type="checkbox"
+                class="row-select-checkbox"
+                ${isChecked ? 'checked' : ''}
+                onchange="toggleCommentSelect(${c.id})"
+                style="width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer;"
+              />
+            </td>
+            <td>
+              <a href="${escapeHtml(commentUrl)}" target="_blank" rel="noopener noreferrer" class="comment-id-badge" title="Open comment on investing.com">
+                ${escapeHtml(commentIdDisplay)}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+            </td>
+            <td><code style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #cbd5e1;">${userIdDisplay}</code></td>
+            <td><span style="font-weight: 600; color: #f1f5f9;">${userNameDisplay}</span></td>
+            <td>
+              <div class="comment-bubble">
+                <div class="comment-text-preview" title="${escapeHtml(commentText)}">${escapeHtml(commentText || "—")}</div>
+                ${isLong ? `
+                  <div class="comment-text-full">${escapeHtml(commentText)}</div>
+                  <button type="button" class="read-toggle-btn" onclick="toggleCommentExpand(this)">Read more</button>
+                ` : ''}
+              </div>
+            </td>
+            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--muted);">${escapeHtml(fetchedAtDisplay)}</td>
+            <td>
+              <span class="status-tag ${statusTagClass}">${escapeHtml(c.status || "not processed")}</span>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderPagination(page, totalPages, totalCount) {
+      const start = totalCount === 0 ? 0 : (page - 1) * commentsPageSize + 1;
+      const end = Math.min(page * commentsPageSize, totalCount);
+      paginationInfo.textContent = `Showing ${start}–${end} of ${totalCount} comments`;
+
+      if (totalPages <= 1) {
+        paginationControls.innerHTML = "";
+        return;
+      }
+
+      let buttonsHtml = "";
+      buttonsHtml += `
+        <button type="button" class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="loadComments(${page - 1})" title="Previous page">&lt;</button>
+      `;
+
+      let pagesToShow = [];
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
+      } else {
+        pagesToShow.push(1);
+        if (page > 3) pagesToShow.push("...");
+        const startP = Math.max(2, page - 1);
+        const endP = Math.min(totalPages - 1, page + 1);
+        for (let i = startP; i <= endP; i++) {
+          if (!pagesToShow.includes(i)) pagesToShow.push(i);
+        }
+        if (page < totalPages - 2) pagesToShow.push("...");
+        if (!pagesToShow.includes(totalPages)) pagesToShow.push(totalPages);
+      }
+
+      pagesToShow.forEach(p => {
+        if (p === "...") {
+          buttonsHtml += `<span style="color: var(--muted); padding: 0 4px;">...</span>`;
+        } else {
+          buttonsHtml += `
+            <button type="button" class="page-btn ${p === page ? 'active' : ''}" onclick="loadComments(${p})">${p}</button>
+          `;
+        }
+      });
+
+      buttonsHtml += `
+        <button type="button" class="page-btn" ${page >= totalPages ? 'disabled' : ''} onclick="loadComments(${page + 1})" title="Next page">&gt;</button>
+      `;
+
+      paginationControls.innerHTML = buttonsHtml;
+    }
+
+    commentsReportBtn.addEventListener("click", async () => {
+      if (selectedComments.size === 0) return;
+
+      const numAccounts = Number(commentsAccountCount.value) || 1;
+      if (!Number.isInteger(numAccounts) || numAccounts < 1) {
+        alert("Number of accounts must be at least 1.");
+        return;
+      }
+
+      const comment_ids = [];
+      const user_ids = [];
+      const db_ids = [];
+
+      for (const [id, item] of selectedComments.entries()) {
+        const cId = item.comment_id ? String(item.comment_id).trim() : "";
+        const uId = item.user_id ? String(item.user_id).trim() : "";
+        if (cId && uId) {
+          comment_ids.push(cId);
+          user_ids.push(uId);
+          db_ids.push(item.id);
+        }
+      }
+
+      if (!comment_ids.length) {
+        alert("Could not find valid numeric Comment ID and User ID pairs in the selected items.");
+        return;
+      }
+
+      const payload = {
+        comment_ids,
+        user_ids,
+        number_of_accounts: numAccounts,
+      };
+
+      commentsReportBtn.disabled = true;
+      commentsReportBtn.innerHTML = `<span class="spinner"></span><span>Reporting ${comment_ids.length} item(s)...</span>`;
+
+      try {
+        const storageResponse = await authFetch(STORAGE_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const storageText = await storageResponse.text();
+        let storageJson = null;
+        try { storageJson = storageText ? JSON.parse(storageText) : null; } catch (_) {}
+
+        if (!storageResponse.ok) {
+          const errMsg = (storageJson && storageJson.error) || storageText || `HTTP ${storageResponse.status}`;
+          throw new Error(`Could not save request: ${errMsg}`);
+        }
+
+        const processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : "—";
+        const targetLambdaUrl = (storageJson && storageJson.lambda_api_url) || lambdaApiUrl;
+
+        const lambdaResponse = await fetch(targetLambdaUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const lambdaText = await lambdaResponse.text();
+        let lambdaJson = null;
+        try { lambdaJson = lambdaText ? JSON.parse(lambdaText) : null; } catch (_) {}
+
+        if (!lambdaResponse.ok) {
+          const lambdaErrMsg = (lambdaJson && (lambdaJson.message || lambdaJson.error)) || lambdaText || `HTTP ${lambdaResponse.status}`;
+          throw new Error(`Reporting API returned HTTP ${lambdaResponse.status}: ${lambdaErrMsg}`);
+        }
+
+        try {
+          await authFetch(COMMENTS_STATUS_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: db_ids, comment_ids: comment_ids, status: "reported" }),
+          });
+        } catch (_) {}
+
+        currentCommentsList.forEach(c => {
+          if (db_ids.includes(c.id)) {
+            c.status = "reported";
+          }
+        });
+
+        selectedComments.clear();
+        updateSelectionUI();
+
+        commentIdsInput.value = comment_ids.join("\n");
+        userIdsInput.value = user_ids.join("\n");
+        accountCountInput.value = numAccounts;
+        updateCounts();
+
+        switchTab("dashboard");
+        showStatus(`Report job submitted successfully for ${comment_ids.length} comment(s) using ${numAccounts} account(s)!
+Processing ID: ${processingId}
+Live execution batch logs are updating below...`, "success");
+
+        await loadLogs(true);
+        setTimeout(() => loadLogs(true), 2500);
+        setTimeout(() => loadLogs(true), 6000);
+        setTimeout(() => loadLogs(true), 12000);
+        setTimeout(() => loadLogs(true), 20000);
+      } catch (err) {
+        alert(`Error reporting comments: ${err.message}`);
+      } finally {
+        commentsReportBtn.disabled = selectedComments.size === 0;
+        commentsReportBtn.innerHTML = `<span>Report Selected (<span id="selected-count-btn">${selectedComments.size}</span>)</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`;
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────
+    // 4. USERS VIEW LOGIC
+    // ─────────────────────────────────────────────────────────────────
+    let currentUsersPage = 1;
+    const usersPageSize = 20;
+    const addUserForm = document.getElementById("add-user-form");
+    const newUserIdInput = document.getElementById("new-user-id");
+    const newUserNameInput = document.getElementById("new-user-name");
+    const addUserSubmitBtn = document.getElementById("add-user-submit-btn");
+    const addUserStatus = document.getElementById("add-user-status");
+    const usersRefreshBtn = document.getElementById("users-refresh-btn");
+    const usersSearchInput = document.getElementById("users-search-input");
+    const usersTableBody = document.getElementById("users-table-body");
+    const usersTotalBadge = document.getElementById("users-total-badge");
+    const usersPaginationInfo = document.getElementById("users-pagination-info");
+    const usersPaginationControls = document.getElementById("users-pagination-controls");
+
+    function showAddUserStatus(message, kind) {
+      addUserStatus.textContent = message;
+      addUserStatus.className = `status show ${kind}`;
+    }
+
+    addUserForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userId = newUserIdInput.value.trim();
+      const userName = newUserNameInput.value.trim();
+
+      if (!userId || !/^\d+$/.test(userId)) {
+        showAddUserStatus("User ID must be a valid positive number.", "error");
+        return;
+      }
+      if (!userName) {
+        showAddUserStatus("Please enter a User Name.", "error");
+        return;
+      }
+
+      addUserSubmitBtn.disabled = true;
+      addUserSubmitBtn.innerHTML = `<span class="spinner"></span><span>Adding...</span>`;
+
+      try {
+        const res = await authFetch(USERS_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: userId, user_name: userName }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "Failed to add user.");
+        }
+
+        showAddUserStatus(`✓ ${data.message || 'User added successfully!'}`, "success");
+        newUserIdInput.value = "";
+        newUserNameInput.value = "";
+        loadUsers(1);
+      } catch (err) {
+        showAddUserStatus(err.message, "error");
+      } finally {
+        addUserSubmitBtn.disabled = false;
+        addUserSubmitBtn.innerHTML = `<span>Add User to Database</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+      }
+    });
+
+    let userSearchTimeout = null;
+    usersSearchInput.addEventListener("input", () => {
+      clearTimeout(userSearchTimeout);
+      userSearchTimeout = setTimeout(() => {
+        loadUsers(1);
+      }, 300);
+    });
+
+    usersRefreshBtn.addEventListener("click", () => {
+      loadUsers(currentUsersPage);
+    });
+
+    async function loadUsers(page = 1) {
+      currentUsersPage = page;
+      usersRefreshBtn.disabled = true;
+      usersTableBody.innerHTML = `<tr><td colspan="3" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading users from database...</td></tr>`;
+
+      try {
+        const query = usersSearchInput.value.trim();
+        let url = `${USERS_API_URL}?page=${page}&page_size=${usersPageSize}`;
+        if (query) {
+          url += `&search=${encodeURIComponent(query)}`;
+        }
+
+        const res = await authFetch(url);
+        if (!res.ok) {
+          if (res.status === 401) return;
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || "Failed to load users");
+        }
+
+        usersTotalBadge.textContent = `${data.total || 0} Users`;
+        renderUsersTable(data.users || []);
+        renderUsersPagination(data.page, data.total_pages, data.total);
+      } catch (err) {
+        usersTableBody.innerHTML = `<tr><td colspan="3" class="empty-state" style="color: var(--danger);">Error: ${escapeHtml(err.message)}</td></tr>`;
+      } finally {
+        usersRefreshBtn.disabled = false;
+      }
+    }
+
+    function renderUsersTable(users) {
+      if (!users.length) {
+        usersTableBody.innerHTML = `<tr><td colspan="3" class="empty-state">No users found in database.</td></tr>`;
+        return;
+      }
+
+      usersTableBody.innerHTML = users.map((u, index) => {
+        const rowNum = (currentUsersPage - 1) * usersPageSize + index + 1;
+        return `
+          <tr>
+            <td style="color: var(--muted);">${rowNum}</td>
+            <td><code style="font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; color: var(--accent); font-weight: 700;">${escapeHtml(u.id)}</code></td>
+            <td><span style="font-weight: 600; color: #f8fafc;">${escapeHtml(u.user_name || "—")}</span></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderUsersPagination(page, totalPages, totalCount) {
+      const start = totalCount === 0 ? 0 : (page - 1) * usersPageSize + 1;
+      const end = Math.min(page * usersPageSize, totalCount);
+      usersPaginationInfo.textContent = `Showing ${start}–${end} of ${totalCount} users`;
+
+      if (totalPages <= 1) {
+        usersPaginationControls.innerHTML = "";
+        return;
+      }
+
+      let buttonsHtml = "";
+      buttonsHtml += `
+        <button type="button" class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="loadUsers(${page - 1})" title="Previous page">&lt;</button>
+      `;
+
+      let pagesToShow = [];
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
+      } else {
+        pagesToShow.push(1);
+        if (page > 3) pagesToShow.push("...");
+        const startP = Math.max(2, page - 1);
+        const endP = Math.min(totalPages - 1, page + 1);
+        for (let i = startP; i <= endP; i++) {
+          if (!pagesToShow.includes(i)) pagesToShow.push(i);
+        }
+        if (page < totalPages - 2) pagesToShow.push("...");
+        if (!pagesToShow.includes(totalPages)) pagesToShow.push(totalPages);
+      }
+
+      pagesToShow.forEach(p => {
+        if (p === "...") {
+          buttonsHtml += `<span style="color: var(--muted); padding: 0 4px;">...</span>`;
+        } else {
+          buttonsHtml += `
+            <button type="button" class="page-btn ${p === page ? 'active' : ''}" onclick="loadUsers(${p})">${p}</button>
+          `;
+        }
+      });
+
+      buttonsHtml += `
+        <button type="button" class="page-btn" ${page >= totalPages ? 'disabled' : ''} onclick="loadUsers(${page + 1})" title="Next page">&gt;</button>
+      `;
+
+      usersPaginationControls.innerHTML = buttonsHtml;
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // 5. DASHBOARD FORM & LIVE BATCH LOGS
+    // ─────────────────────────────────────────────────────────────────
     const form = document.getElementById("report-form");
     const commentIdsInput = document.getElementById("comment-ids");
     const userIdsInput = document.getElementById("user-ids");
@@ -1302,18 +2427,7 @@
     commentIdsInput.addEventListener("input", updateCounts);
     userIdsInput.addEventListener("input", updateCounts);
 
-    // --- LOGS RENDERING LOGIC ---
     let openBatchIds = new Set([1]);
-
-    function escapeHtml(str) {
-      if (!str) return "";
-      return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
 
     function renderBatches(batches) {
       if (!batches || !batches.length) {
@@ -1343,7 +2457,7 @@
         const rowsHtml = batch.records.map((r, rIdx) => {
           let statusClass = "status-created";
           const stLower = (r.status || "").toLowerCase();
-          if (stLower.includes("completed")) {
+          if (stLower.includes("completed") || stLower.includes("success")) {
             statusClass = "status-completed";
           } else if (stLower.includes("fail") || stLower.includes("error")) {
             statusClass = "status-failed";
@@ -1471,14 +2585,12 @@
 
     refreshLogsBtn.addEventListener("click", () => loadLogs(false));
 
-    // Auto-refresh live data from DB every 30 seconds when authenticated
     setInterval(() => {
       if (getAuthToken()) {
         loadLogs(true);
       }
     }, 30000);
 
-    // --- FORM SUBMISSION ---
     form.addEventListener("submit", async event => {
       event.preventDefault();
       const comment_ids = idsFrom(commentIdsInput);
@@ -1526,8 +2638,7 @@
           throw new Error("Lambda API URL is not configured in .env");
         }
 
-        showStatus(`Request saved successfully (Processing ID: ${processingId})
-Starting the Lambda job...`, "success");
+        showStatus(`Request saved successfully (Processing ID: ${processingId})\nStarting the Lambda job...`, "success");
         const lambdaResponse = await fetch(targetLambdaUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1545,8 +2656,7 @@ Starting the Lambda job...`, "success");
         }
 
         const lambdaStatus = (lambdaJson && lambdaJson.statusCode) || lambdaResponse.status || 200;
-        showStatus(`Request saved successfully (Processing ID: ${processingId})
-Reporting job submitted successfully (Status: ${lambdaStatus})`, "success");
+        showStatus(`Request saved successfully (Processing ID: ${processingId})\nReporting job submitted successfully (Status: ${lambdaStatus})`, "success");
         
         await loadLogs(true);
         setTimeout(() => loadLogs(true), 2500);

@@ -386,12 +386,301 @@ def get_logs():
         }), 500
 
 
+def _extract_comment_id(url: str) -> str:
+    """Extract numeric comment ID from investing.com commentary URL."""
+    if not url:
+        return ""
+    match = re.search(r'[?&]comment=(\d+)', url, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    match = re.search(r'/comment/(\d+)', url, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    match = re.search(r'(\d{6,})', url)
+    if match:
+        return match.group(1)
+    return ""
+
+
+def _fetch_24h_comments(page: int = 1, page_size: int = 10, hours: int = 24, status_filter: str = "") -> dict:
+    """Fetch comments fetched within the last 24 hours from InvestingDB.dbo.comment_urls."""
+    if pyodbc is None:
+        raise RuntimeError("pyodbc is not installed")
+    if not DB_CONNECTION_STRING:
+        raise RuntimeError("DB_CONNECTION_STRING is not configured")
+
+    offset = max(0, (page - 1) * page_size)
+    where_clauses = ["fetched_at >= DATEADD(hour, -?, sysdatetime())"]
+    params = [hours]
+
+    if status_filter:
+        where_clauses.append("status = ?")
+        params.append(status_filter)
+
+    where_sql = " AND ".join(where_clauses)
+
+    count_query = f"SELECT COUNT(*) FROM dbo.comment_urls WHERE {where_sql}"
+    data_query = f"""
+        SELECT id, url, fetched_at, user_id, status, Comments, user_name
+        FROM dbo.comment_urls
+        WHERE {where_sql}
+        ORDER BY fetched_at DESC, id DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """
+
+    with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
+        cursor = connection.cursor()
+        cursor.execute(count_query, *params)
+        total_count = cursor.fetchone()[0]
+
+        cursor.execute(data_query, *(params + [offset, page_size]))
+        rows = cursor.fetchall()
+
+    comments = []
+    for row in rows:
+        row_id = row[0]
+        url = row[1] or ""
+        fetched_at = row[2]
+        user_id = str(row[3]) if row[3] is not None else ""
+        status = row[4] or "not processed"
+        comment_text = row[5] or ""
+        user_name = row[6] or ""
+
+        fetched_at_str = fetched_at.strftime("%Y-%m-%d %H:%M:%S") if fetched_at else ""
+        comment_id = _extract_comment_id(url)
+
+        comments.append({
+            "id": row_id,
+            "url": url,
+            "comment_id": comment_id,
+            "user_id": user_id,
+            "user_name": user_name,
+            "comment_text": comment_text,
+            "status": status,
+            "fetched_at": fetched_at_str,
+        })
+
+    total_pages = max(1, (total_count + page_size - 1) // page_size) if total_count > 0 else 1
+
+    return {
+        "total": total_count,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+        "comments": comments,
+    }
+
+
+def _update_comments_status(ids: list[int] = None, comment_ids: list[str] = None, new_status: str = "reported") -> int:
+    """Update status of comments in dbo.comment_urls."""
+    if pyodbc is None:
+        raise RuntimeError("pyodbc is not installed")
+    if not DB_CONNECTION_STRING:
+        raise RuntimeError("DB_CONNECTION_STRING is not configured")
+
+    if not ids and not comment_ids:
+        return 0
+
+    updated_count = 0
+    with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
+        cursor = connection.cursor()
+
+        if ids:
+            int_ids = [int(i) for i in ids if str(i).isdigit()]
+            if int_ids:
+                placeholders = ",".join("?" for _ in int_ids)
+                sql = f"UPDATE dbo.comment_urls SET status = ? WHERE id IN ({placeholders})"
+                cursor.execute(sql, new_status, *int_ids)
+                updated_count += cursor.rowcount
+
+        if comment_ids:
+            for cid in comment_ids:
+                if str(cid).strip():
+                    sql = "UPDATE dbo.comment_urls SET status = ? WHERE url LIKE ?"
+                    cursor.execute(sql, new_status, f"%comment={str(cid).strip()}%")
+                    updated_count += cursor.rowcount
+
+        connection.commit()
+    return updated_count
+
+
+@app.get("/api/comments")
+@require_auth
+def get_comments():
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+        page_size = max(1, min(100, int(request.args.get("page_size", 10))))
+        hours = max(1, int(request.args.get("hours", 24)))
+        status_filter = request.args.get("status", "").strip()
+
+        data = _fetch_24h_comments(page=page, page_size=page_size, hours=hours, status_filter=status_filter)
+        return jsonify({"success": True, **data})
+    except Exception as error:
+        app.logger.exception("Could not fetch comments from SQL Server")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
+@app.post("/api/comments/status")
+@require_auth
+def update_comments_status_endpoint():
+    try:
+        data = request.get_json(silent=True) or {}
+        ids = data.get("ids") or []
+        comment_ids = data.get("comment_ids") or []
+        status = str(data.get("status") or "reported").strip()
+
+        updated = _update_comments_status(ids=ids, comment_ids=comment_ids, new_status=status)
+        return jsonify({"success": True, "updated_count": updated, "status": status})
+    except Exception as error:
+        app.logger.exception("Could not update comment status in SQL Server")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
+def _fetch_users(page: int = 1, page_size: int = 20, search: str = "") -> dict:
+    """Fetch paginated list of users from dbo.users table."""
+    if pyodbc is None:
+        raise RuntimeError("pyodbc is not installed")
+    if not DB_CONNECTION_STRING:
+        raise RuntimeError("DB_CONNECTION_STRING is not configured")
+
+    offset = max(0, (page - 1) * page_size)
+    where_clauses = []
+    params = []
+
+    if search:
+        where_clauses.append("(CAST(id AS NVARCHAR) LIKE ? OR user_name LIKE ?)")
+        search_param = f"%{search}%"
+        params.extend([search_param, search_param])
+
+    where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+
+    count_query = f"SELECT COUNT(*) FROM dbo.users {where_sql}"
+    data_query = f"""
+        SELECT id, user_name
+        FROM dbo.users
+        {where_sql}
+        ORDER BY id DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """
+
+    with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
+        cursor = connection.cursor()
+        cursor.execute(count_query, *params)
+        total_count = cursor.fetchone()[0]
+
+        cursor.execute(data_query, *(params + [offset, page_size]))
+        rows = cursor.fetchall()
+
+    users = [{"id": str(r[0]), "user_name": r[1] or ""} for r in rows]
+    total_pages = max(1, (total_count + page_size - 1) // page_size) if total_count > 0 else 1
+
+    return {
+        "total": total_count,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+        "users": users,
+    }
+
+
+def _add_user(user_id: int, user_name: str) -> tuple[bool, str]:
+    """Insert a user into dbo.users only if not already present."""
+    if pyodbc is None:
+        raise RuntimeError("pyodbc is not installed")
+    if not DB_CONNECTION_STRING:
+        raise RuntimeError("DB_CONNECTION_STRING is not configured")
+
+    with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
+        cursor = connection.cursor()
+        # Check if user already exists
+        cursor.execute("SELECT COUNT(*) FROM dbo.users WHERE id = ?", user_id)
+        count = cursor.fetchone()[0]
+        if count > 0:
+            return False, f"User with ID {user_id} already exists in database."
+
+        cursor.execute("INSERT INTO dbo.users (id, user_name) VALUES (?, ?)", user_id, user_name)
+        connection.commit()
+    return True, f"User {user_name} (ID: {user_id}) added successfully."
+
+
+@app.get("/api/users")
+@require_auth
+def get_users():
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+        page_size = max(1, min(100, int(request.args.get("page_size", 20))))
+        search = request.args.get("search", "").strip()
+
+        data = _fetch_users(page=page, page_size=page_size, search=search)
+        return jsonify({"success": True, **data})
+    except Exception as error:
+        app.logger.exception("Could not fetch users from SQL Server")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
+@app.post("/api/users")
+@require_auth
+def add_user_endpoint():
+    try:
+        data = request.get_json(silent=True) or {}
+        raw_user_id = str(data.get("user_id") or data.get("id") or "").strip()
+        user_name = str(data.get("user_name") or "").strip()
+
+        if not raw_user_id or not raw_user_id.isdigit():
+            return jsonify({
+                "success": False,
+                "error": "User ID must be a valid positive integer."
+            }), 400
+
+        if not user_name:
+            return jsonify({
+                "success": False,
+                "error": "User name is required."
+            }), 400
+
+        user_id = int(raw_user_id)
+        success, message = _add_user(user_id, user_name)
+
+        if not success:
+            return jsonify({
+                "success": False,
+                "error": message,
+                "already_exists": True
+            }), 409
+
+        return jsonify({
+            "success": True,
+            "message": message,
+            "user": {"id": str(user_id), "user_name": user_name}
+        }), 201
+    except Exception as error:
+        app.logger.exception("Could not add user to SQL Server")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
 @app.post("/api/store")
 @require_auth
 def store_processing_request():
     try:
         payload = _validate_payload(request.get_json(silent=True))
         processing_id = _save_processing_request(payload)
+        # Automatically mark reported comment URLs in dbo.comment_urls
+        try:
+            _update_comments_status(comment_ids=payload.get("comment_ids", []), new_status="reported")
+        except Exception:
+            app.logger.warning("Could not auto-update comment status in comment_urls table")
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
     except Exception as error:
