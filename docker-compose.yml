@@ -1,0 +1,11 @@
+services:
+  investing-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: investing-frontend
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    restart: unless-stopped
