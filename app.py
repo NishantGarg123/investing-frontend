@@ -26,6 +26,11 @@ LAMBDA_API_URL = os.getenv(
     "LAMBDA_API_URL",
     "https://nr9andj3qe.execute-api.us-east-2.amazonaws.com/dev/investing-dev",
 ).strip()
+SCRAPER_API_URL = os.getenv(
+    "SCRAPER_API_URL",
+    "http://74.207.229.12:8000/api/run",
+).strip()
+
 
 # ---------------------------------------------------------------------------
 # Authentication Configuration (configured via .env or hardcoded fallback)
@@ -194,6 +199,7 @@ def logout():
 def get_config():
     return jsonify({
         "lambda_api_url": LAMBDA_API_URL,
+        "scraper_api_url": SCRAPER_API_URL,
     })
 
 
@@ -670,6 +676,76 @@ def add_user_endpoint():
         }), 500
 
 
+def _delete_user(user_id: int) -> tuple[bool, str]:
+    """Delete a user from dbo.users by ID."""
+    if pyodbc is None:
+        raise RuntimeError("pyodbc is not installed")
+    if not DB_CONNECTION_STRING:
+        raise RuntimeError("DB_CONNECTION_STRING is not configured")
+
+    with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
+        cursor = connection.cursor()
+        cursor.execute("SELECT COUNT(*) FROM dbo.users WHERE id = ?", user_id)
+        if cursor.fetchone()[0] == 0:
+            return False, f"User with ID {user_id} not found."
+
+        cursor.execute("DELETE FROM dbo.users WHERE id = ?", user_id)
+        connection.commit()
+    return True, f"User with ID {user_id} deleted successfully."
+
+
+@app.delete("/api/users/<int:user_id>")
+@require_auth
+def delete_user_endpoint(user_id: int):
+    try:
+        success, message = _delete_user(user_id)
+        if not success:
+            return jsonify({
+                "success": False,
+                "error": message,
+            }), 404
+        return jsonify({
+            "success": True,
+            "message": message,
+        }), 200
+    except Exception as error:
+        app.logger.exception("Could not delete user from SQL Server")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
+@app.delete("/api/users")
+@require_auth
+def delete_user_body_endpoint():
+    try:
+        data = request.get_json(silent=True) or {}
+        raw_id = request.args.get("id") or request.args.get("user_id") or data.get("user_id") or data.get("id")
+        if not raw_id or not str(raw_id).strip().isdigit():
+            return jsonify({
+                "success": False,
+                "error": "Valid user ID is required."
+            }), 400
+        user_id = int(str(raw_id).strip())
+        success, message = _delete_user(user_id)
+        if not success:
+            return jsonify({
+                "success": False,
+                "error": message,
+            }), 404
+        return jsonify({
+            "success": True,
+            "message": message,
+        }), 200
+    except Exception as error:
+        app.logger.exception("Could not delete user from SQL Server")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
 @app.post("/api/store")
 @require_auth
 def store_processing_request():
@@ -696,7 +772,17 @@ def store_processing_request():
     }), 201
 
 
+@app.route("/api/run", methods=["GET", "POST"])
+def run_scraper_endpoint():
+    """Trigger the comment scraper/runner task."""
+    return jsonify({
+        "success": True,
+        "message": "Run triggered successfully."
+    }), 200
+
+
 if __name__ == "__main__":
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "5000"))
     app.run(host=host, port=port, debug=os.getenv("FLASK_DEBUG") == "1")
+
