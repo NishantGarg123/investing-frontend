@@ -28,7 +28,7 @@ LAMBDA_API_URL = os.getenv(
 ).strip()
 SCRAPER_API_URL = os.getenv(
     "SCRAPER_API_URL",
-    "http://74.207.229.12:8000/api/run",
+    "http://74.207.229.12:3000/api/run",
 ).strip()
 
 
