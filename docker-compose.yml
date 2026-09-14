@@ -6,6 +6,9 @@ services:
     container_name: investing-frontend
     ports:
       - "5000:5000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - .env
     restart: unless-stopped
+

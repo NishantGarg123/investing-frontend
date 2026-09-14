@@ -1181,8 +1181,278 @@
     .toolbar-right {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       flex-wrap: wrap;
+    }
+
+    .comments-search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      min-width: 220px;
+      flex: 1;
+      max-width: 320px;
+    }
+
+    .comments-search-wrapper input {
+      width: 100%;
+      padding: 7px 30px 7px 32px;
+      font-size: 0.82rem;
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .comments-search-wrapper input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .comments-search-wrapper .search-icon {
+      position: absolute;
+      left: 10px;
+      color: var(--muted);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .comments-search-wrapper .clear-btn {
+      position: absolute;
+      right: 8px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      display: none;
+      padding: 2px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+
+    .comments-search-wrapper .clear-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .search-highlight {
+      background: rgba(49, 196, 141, 0.28);
+      color: #a7f3d0;
+      border-radius: 3px;
+      padding: 0 2px;
+      font-weight: 700;
+    }
+
+    /* ── Multi-Select User Filter Dropdown ── */
+    .multiselect-dropdown-wrapper {
+      position: relative;
+      display: inline-block;
+      user-select: none;
+    }
+
+    .multiselect-trigger-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      cursor: pointer;
+      min-height: 33px;
+      transition: all 0.15s ease;
+      max-width: 240px;
+      box-shadow: none;
+    }
+
+    .multiselect-trigger-btn:hover {
+      border-color: rgba(49, 196, 141, 0.5);
+      background: rgba(30, 41, 59, 0.8);
+    }
+
+    .multiselect-trigger-btn.has-selection {
+      border-color: var(--accent);
+      background: rgba(49, 196, 141, 0.12);
+      color: #ecfdf5;
+    }
+
+    .multiselect-trigger-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 145px;
+    }
+
+    .multiselect-count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1px 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #042f2e;
+    }
+
+    .multiselect-clear-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0;
+      margin-left: 2px;
+      border-radius: 50%;
+      transition: color 0.15s ease;
+      box-shadow: none;
+      min-height: auto;
+    }
+
+    .multiselect-clear-btn:hover {
+      color: var(--danger);
+      background: none;
+      transform: none;
+    }
+
+    .multiselect-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 260px;
+      max-width: 320px;
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+      padding: 8px;
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .multiselect-menu.open {
+      display: flex;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    .multiselect-menu-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 6px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.75rem;
+    }
+
+    .multiselect-menu-header .quick-toggle-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: background 0.15s ease;
+      box-shadow: none;
+      min-height: auto;
+    }
+
+    .multiselect-menu-header .quick-toggle-btn:hover {
+      background: rgba(49, 196, 141, 0.15);
+      text-decoration: underline;
+      transform: none;
+    }
+
+    .multiselect-search-box {
+      padding: 4px 4px;
+    }
+
+    .multiselect-search-box input {
+      width: 100%;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+    }
+
+    .multiselect-search-box input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .multiselect-list {
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 2px;
+    }
+
+    .multiselect-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.15s ease;
+      font-size: 0.8rem;
+      color: var(--text);
+    }
+
+    .multiselect-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .multiselect-item.selected {
+      background: rgba(49, 196, 141, 0.14);
+      color: #ecfdf5;
+    }
+
+    .multiselect-item input[type="checkbox"] {
+      cursor: pointer;
+      accent-color: var(--accent);
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .multiselect-item-label {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      overflow: hidden;
+    }
+
+    .multiselect-item-name {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .multiselect-item-id {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
     }
 
     .comment-bubble {
@@ -1500,7 +1770,7 @@
               </svg>
             </span>
             <span class="nav-label">Comments</span>
-            <span class="nav-badge" id="sidebar-comments-badge">24h</span>
+            <span class="nav-badge" id="sidebar-comments-badge">6h</span>
           </button>
 
           <button type="button" class="nav-item" id="nav-btn-users" data-tab="users">
@@ -1572,7 +1842,7 @@
               <div class="options">
                 <div>
                   <label for="account-count">Number of accounts to run</label>
-                  <input id="account-count" type="number" value="1" min="1" step="1" inputmode="numeric" required />
+                  <input id="account-count" type="number" value="29" min="1" step="1" inputmode="numeric" required />
                   <p class="field-note">Credentials remain in Lambda; they are never sent from this UI.</p>
                 </div>
                 <button id="run-button" type="submit">
@@ -1616,19 +1886,19 @@
             </section>
           </div>
 
-          <!-- TAB 2: COMMENTS VIEW (24H SCRAPED COMMENTS) -->
+          <!-- TAB 2: COMMENTS VIEW (6H SCRAPED COMMENTS) -->
           <div class="tab-content" id="tab-comments">
-            <div class="eyebrow">Scraped Feed &bull; Last 24 Hours</div>
+            <div class="eyebrow">Scraped Feed &bull; Last 6 Hours</div>
             <div class="comments-header-bar">
               <div>
-                <h1>24-Hour Scraped Comments</h1>
+                <h1>6-Hour Scraped Comments</h1>
                 <p class="intro" style="margin-bottom:0;">Live commentary feed fetched from the database within the last
-                  24 hours. Ordered descending by latest fetch time.</p>
+                  6 hours. Ordered descending by latest fetch time.</p>
               </div>
               <div class="comments-actions-group">
                 <div class="account-stepper-box">
                   <span>Accounts:</span>
-                  <input type="number" id="comments-account-count" value="1" min="1" step="1"
+                  <input type="number" id="comments-account-count" value="29" min="1" step="1"
                     title="Number of accounts to run" />
                 </div>
                 <button type="button" id="comments-report-btn" disabled>
@@ -1685,12 +1955,88 @@
                     Selected</button>
                 </div>
                 <div class="toolbar-right">
+                  <!-- Multi-Select User Filter Component -->
+                  <div class="multiselect-dropdown-wrapper" id="comments-user-multiselect">
+                    <button type="button" class="multiselect-trigger-btn" id="multiselect-trigger"
+                      title="Filter comments by one or multiple users">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                      <span class="multiselect-trigger-text" id="multiselect-trigger-text">All Users</span>
+                      <span class="multiselect-count-badge" id="multiselect-count-badge" style="display:none;">0</span>
+                      <button type="button" class="multiselect-clear-btn" id="multiselect-clear-btn"
+                        title="Clear selected users" style="display:none;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                      <svg class="chevron-user" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                        style="color:var(--muted); flex-shrink:0; transition: transform 0.2s ease;">
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+
+                    <div class="multiselect-menu" id="multiselect-menu">
+                      <div class="multiselect-menu-header">
+                        <span style="color:var(--muted);" id="multiselect-menu-title">Users</span>
+                        <div style="display:flex; gap:8px;">
+                          <button type="button" class="quick-toggle-btn" id="multiselect-select-all-btn">Select
+                            All</button>
+                          <button type="button" class="quick-toggle-btn" id="multiselect-clear-all-btn"
+                            style="color:var(--muted);">Clear</button>
+                        </div>
+                      </div>
+                      <div class="multiselect-search-box">
+                        <input type="text" id="multiselect-search-input" placeholder="Search user..."
+                          autocomplete="off" />
+                      </div>
+                      <div class="multiselect-list" id="multiselect-list">
+                        <!-- User checkbox items dynamically rendered -->
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Comment Search Input -->
+                  <div class="comments-search-wrapper">
+                    <span class="search-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                    </span>
+                    <input type="text" id="comments-search-input" placeholder="Search comments..." autocomplete="off"
+                      title="Search by comment text (part or whole), user name, or ID" />
+                    <button type="button" id="comments-clear-search-btn" class="clear-btn" title="Clear search">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Status Filter -->
                   <select id="comments-status-filter"
-                    style="width: auto; min-width: 140px; padding: 6px 10px; font-size: 0.82rem;">
+                    style="width: auto; min-width: 130px; padding: 6px 10px; font-size: 0.82rem;">
                     <option value="">All Statuses</option>
                     <option value="not processed">Not Processed</option>
                     <option value="reported">Reported / Runned</option>
                   </select>
+
+                  <!-- Reset Filters Button -->
+                  <button type="button" id="comments-reset-filters-btn" class="btn-text"
+                    style="display:none; color: #f43f5e; font-size: 0.78rem; font-weight: 600;"
+                    title="Reset user, search and status filters">
+                    Reset Filters
+                  </button>
                 </div>
               </div>
 
@@ -1905,6 +2251,7 @@
 
       initConfig();
       loadLogs(false);
+      loadCommentUsers();
       loadComments(1);
     }
 
@@ -1926,6 +2273,7 @@
       } else if (tabName === "comments") {
         navBtnComments.classList.add("active");
         tabComments.classList.add("active");
+        loadCommentUsers();
         loadComments(currentCommentsPage);
       } else if (tabName === "users") {
         navBtnUsers.classList.add("active");
@@ -2044,22 +2392,132 @@
     let lambdaApiUrl = "https://nr9andj3qe.execute-api.us-east-2.amazonaws.com/dev/investing-dev";
     let scraperApiUrl = "http://74.207.229.12:3000/api/run";
 
-    async function triggerRunApi() {
-      const url = scraperApiUrl || RUN_API_URL;
-      const headers = {};
-      const token = getAuthToken();
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
+    async function triggerRunApi(rawUsers = [], rawUserNames = [], rawUserIds = []) {
+      const url = "/api/run";
 
       try {
-        const res = await fetch(url, {
-          method: "GET",
-          headers: headers
-        });
+        let res;
+        let normalizedUsers = [];
+        if (Array.isArray(rawUsers)) {
+          normalizedUsers = rawUsers;
+        } else if (rawUsers && typeof rawUsers === "object") {
+          normalizedUsers = [rawUsers];
+        } else if (typeof rawUsers === "string" && rawUsers.trim()) {
+          normalizedUsers = [{ user_name: rawUsers.trim(), user_id: "" }];
+        }
+
+        const hasUsers = normalizedUsers.length > 0;
+
+        if (hasUsers) {
+          // Build CLEAN user objects with ONLY user_name and user_id
+          const cleanUsers = normalizedUsers.map(u => {
+            let nameStr = "";
+            let uidStr = "";
+
+            if (typeof u === "string") {
+              const trimmed = u.trim();
+              if (/^\d+$/.test(trimmed)) {
+                uidStr = trimmed;
+              } else {
+                nameStr = trimmed;
+              }
+            } else if (u && typeof u === "object") {
+              nameStr = String(u.user_name || u.userName || u.username || u.name || "").trim();
+              uidStr = String(u.user_id || u.userId || u.id || "").trim();
+              // If uid equals name and is not numeric, it's not a real ID
+              if (uidStr === nameStr && !/^\d+$/.test(uidStr)) {
+                uidStr = "";
+              }
+            }
+
+            // Cross-match with availableUsersList to fill missing identifier
+            if (!uidStr && nameStr && Array.isArray(availableUsersList)) {
+              const match = availableUsersList.find(au =>
+                au.user_name && au.user_name.trim().toLowerCase() === nameStr.toLowerCase()
+              );
+              if (match && match.user_id) {
+                uidStr = String(match.user_id).trim();
+              }
+            }
+            if (!nameStr && uidStr && Array.isArray(availableUsersList)) {
+              const match = availableUsersList.find(au =>
+                String(au.user_id || "").trim() === uidStr
+              );
+              if (match && match.user_name) {
+                nameStr = String(match.user_name).trim();
+              }
+            }
+
+            return { user_name: nameStr, user_id: uidStr };
+          });
+
+          const namesList = cleanUsers.map(u => u.user_name).filter(Boolean);
+          const idsList = cleanUsers.map(u => u.user_id).filter(Boolean);
+          const firstName = cleanUsers[0] ? cleanUsers[0].user_name : "";
+
+          // Clean minimal payload — matches exact Postman format
+          const payload = {
+            users: cleanUsers,
+            user_names: namesList,
+            user_ids: idsList,
+            user_name: namesList.length === 1 ? firstName : namesList.join(", "),
+            user: firstName || (idsList[0] || "")
+          };
+
+          console.log("%c[SCRAPER TRIGGER] Triggering scraper API for selected users:", "background: #0284c7; color: white; font-weight: bold; padding: 3px 8px; border-radius: 4px;");
+          console.log("👉 Clean Users:", cleanUsers);
+          console.log("👉 User Names:", namesList);
+          console.log("👉 User IDs:", idsList);
+          console.log("👉 Payload sent to /api/run:", JSON.stringify(payload, null, 2));
+
+          res = await authFetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          // Also trigger directly from browser to 74.207.229.12:3000 (just like Postman)
+          try {
+            const clientTargetUrl = (typeof scraperApiUrl === "string" && scraperApiUrl.startsWith("http") && !scraperApiUrl.includes("74.207.229.12"))
+              ? scraperApiUrl
+              : "http://74.207.229.12:3000/api/run";
+
+            fetch(clientTargetUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            }).then(async r => {
+              console.log("%c[DIRECT BROWSER SCRAPER SUCCESS]", "background: #10b981; color: white; font-weight: bold; padding: 2px 6px; border-radius: 3px;", `Triggered ${clientTargetUrl}`);
+            }).catch(e => {
+              console.debug("Direct client fetch notice:", e.message);
+            });
+          } catch (_) {}
+        } else {
+          // No user selected: Send simple GET request (runs scraper for all DB users)
+          console.log("%c[SCRAPER TRIGGER] Triggering scraper for ALL database users (GET)...", "background: #0284c7; color: white; font-weight: bold; padding: 3px 8px; border-radius: 4px;");
+          res = await authFetch(url, { method: "GET" });
+
+          try {
+            const clientTargetUrl = (typeof scraperApiUrl === "string" && scraperApiUrl.startsWith("http") && !scraperApiUrl.includes("74.207.229.12"))
+              ? scraperApiUrl
+              : "http://74.207.229.12:3000/api/run";
+
+            fetch(clientTargetUrl, { method: "GET" })
+              .then(() => console.log("%c[DIRECT BROWSER SCRAPER SUCCESS]", "background: #10b981; color: white; padding: 2px 6px;", `Triggered ${clientTargetUrl} GET`))
+              .catch(() => {});
+          } catch (_) {}
+        }
+
+        if (res && res.ok) {
+          const resData = await res.clone().json().catch(() => ({}));
+          console.log("%c[SCRAPER SUCCESS] Server responded:", "background: #10b981; color: white; font-weight: bold; padding: 3px 8px; border-radius: 4px;", resData);
+        } else if (res) {
+          const errData = await res.clone().json().catch(() => ({}));
+          console.warn("%c[SCRAPER WARNING] Server status " + res.status + ":", "background: #f59e0b; color: white; font-weight: bold; padding: 3px 8px; border-radius: 4px;", errData);
+        }
         return res;
       } catch (err) {
-        console.warn("Could not reach /api/run endpoint:", err);
+        console.error("Could not reach scraper API endpoint:", err);
       }
     }
 
@@ -2093,12 +2551,17 @@
     // ─────────────────────────────────────────────────────────────────
     // 3. COMMENTS VIEW LOGIC
     // ─────────────────────────────────────────────────────────────────
+    const COMMENTS_USERS_API_URL = "/api/comments/users";
     let currentCommentsPage = 1;
     let totalCommentsPages = 1;
     let totalCommentsCount = 0;
     const commentsPageSize = 10;
     let currentCommentsList = [];
     const selectedComments = new Map();
+
+    // Multi-Select User Filter State
+    const selectedUserFilters = new Set();
+    let availableUsersList = [];
 
     const commentsTableBody = document.getElementById("comments-table-body");
     const selectAllPageCheckbox = document.getElementById("select-all-page-checkbox");
@@ -2109,7 +2572,10 @@
     const commentsReportBtn = document.getElementById("comments-report-btn");
     const commentsRunScraperBtn = document.getElementById("comments-run-scraper-btn");
     const commentsRefreshBtn = document.getElementById("comments-refresh-btn");
+    const commentsSearchInput = document.getElementById("comments-search-input");
+    const commentsClearSearchBtn = document.getElementById("comments-clear-search-btn");
     const commentsStatusFilter = document.getElementById("comments-status-filter");
+    const commentsResetFiltersBtn = document.getElementById("comments-reset-filters-btn");
     const paginationInfo = document.getElementById("pagination-info");
     const paginationControls = document.getElementById("pagination-controls");
     const commentsAccountCount = document.getElementById("comments-account-count");
@@ -2118,8 +2584,225 @@
     const scraperStatusText = document.getElementById("scraper-status-text");
     const scraperCountdownSpan = document.getElementById("scraper-countdown");
     const stopScraperPollingBtn = document.getElementById("stop-scraper-polling-btn");
+
+    // Multi-Select DOM Elements
+    const multiselectTrigger = document.getElementById("multiselect-trigger");
+    const multiselectMenu = document.getElementById("multiselect-menu");
+    const multiselectTriggerText = document.getElementById("multiselect-trigger-text");
+    const multiselectCountBadge = document.getElementById("multiselect-count-badge");
+    const multiselectClearBtn = document.getElementById("multiselect-clear-btn");
+    const multiselectMenuTitle = document.getElementById("multiselect-menu-title");
+    const multiselectSearchInput = document.getElementById("multiselect-search-input");
+    const multiselectList = document.getElementById("multiselect-list");
+    const multiselectSelectAllBtn = document.getElementById("multiselect-select-all-btn");
+    const multiselectClearAllBtn = document.getElementById("multiselect-clear-all-btn");
+
     let scraperPollInterval = null;
     let scraperRemainingSeconds = 0;
+    let commentsSearchDebounceTimer = null;
+
+    function updateResetFiltersBtnVisibility() {
+      const hasUser = selectedUserFilters.size > 0;
+      const hasSearch = Boolean(commentsSearchInput && commentsSearchInput.value.trim());
+      const hasStatus = Boolean(commentsStatusFilter && commentsStatusFilter.value);
+      if (commentsResetFiltersBtn) {
+        commentsResetFiltersBtn.style.display = (hasUser || hasSearch || hasStatus) ? "inline-block" : "none";
+      }
+    }
+
+    function updateMultiSelectUI() {
+      if (!multiselectTriggerText) return;
+      const count = selectedUserFilters.size;
+      if (count === 0) {
+        multiselectTriggerText.textContent = `All Users (${availableUsersList.length})`;
+        if (multiselectCountBadge) multiselectCountBadge.style.display = "none";
+        if (multiselectClearBtn) multiselectClearBtn.style.display = "none";
+        if (multiselectTrigger) multiselectTrigger.classList.remove("has-selection");
+      } else if (count === 1) {
+        const firstVal = Array.from(selectedUserFilters)[0];
+        const userObj = availableUsersList.find(u => u.key === firstVal || u.user_name === firstVal || u.user_id === firstVal);
+        multiselectTriggerText.textContent = userObj ? (userObj.user_name || `ID: ${userObj.user_id}`) : firstVal;
+        if (multiselectCountBadge) multiselectCountBadge.style.display = "none";
+        if (multiselectClearBtn) multiselectClearBtn.style.display = "inline-flex";
+        if (multiselectTrigger) multiselectTrigger.classList.add("has-selection");
+      } else {
+        multiselectTriggerText.textContent = `${count} Users Selected`;
+        if (multiselectCountBadge) {
+          multiselectCountBadge.textContent = count;
+          multiselectCountBadge.style.display = "inline-flex";
+        }
+        if (multiselectClearBtn) multiselectClearBtn.style.display = "inline-flex";
+        if (multiselectTrigger) multiselectTrigger.classList.add("has-selection");
+      }
+      updateResetFiltersBtnVisibility();
+    }
+
+    function renderMultiSelectList(filterText = "") {
+      if (!multiselectList) return;
+      const q = (filterText || "").trim().toLowerCase();
+      const filtered = availableUsersList.filter(u => {
+        if (!q) return true;
+        const name = (u.user_name || "").toLowerCase();
+        const id = (u.user_id || "").toLowerCase();
+        return name.includes(q) || id.includes(q);
+      });
+
+      if (!filtered.length) {
+        multiselectList.innerHTML = `<div style="padding: 10px; color: var(--muted); text-align: center; font-size: 0.78rem;">No users found</div>`;
+        return;
+      }
+
+      multiselectList.innerHTML = filtered.map(u => {
+        const isChecked = selectedUserFilters.has(u.key);
+        const nameDisplay = u.user_name || "—";
+        const idDisplay = u.user_id ? `ID: ${u.user_id}` : "";
+        return `
+          <label class="multiselect-item ${isChecked ? 'selected' : ''}" data-user-key="${escapeHtml(u.key)}">
+            <input type="checkbox" class="multiselect-checkbox" data-user-key="${escapeHtml(u.key)}" ${isChecked ? 'checked' : ''} />
+            <div class="multiselect-item-label">
+              <span class="multiselect-item-name">${escapeHtml(nameDisplay)}</span>
+              ${idDisplay ? `<span class="multiselect-item-id">${escapeHtml(idDisplay)}</span>` : ''}
+            </div>
+          </label>
+        `;
+      }).join("");
+
+      multiselectList.querySelectorAll(".multiselect-checkbox").forEach(cb => {
+        cb.addEventListener("change", (e) => {
+          const key = e.target.getAttribute("data-user-key");
+          if (e.target.checked) {
+            selectedUserFilters.add(key);
+          } else {
+            selectedUserFilters.delete(key);
+          }
+          const itemLabel = e.target.closest(".multiselect-item");
+          if (itemLabel) {
+            itemLabel.classList.toggle("selected", e.target.checked);
+          }
+          updateMultiSelectUI();
+          currentCommentsPage = 1;
+          loadComments(1);
+        });
+      });
+    }
+
+    async function loadCommentUsers() {
+      try {
+        const res = await authFetch(`${COMMENTS_USERS_API_URL}?hours=6`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && Array.isArray(data.users)) {
+          availableUsersList = data.users.map(u => {
+            const name = (u.user_name || "").trim();
+            const uid = (u.user_id || "").trim();
+            const key = name || uid;
+            return {
+              user_name: name,
+              user_id: uid,
+              key: key,
+              label: name ? (uid ? `${name} (ID: ${uid})` : name) : `User ${uid}`
+            };
+          });
+
+          if (multiselectMenuTitle) {
+            multiselectMenuTitle.textContent = `Users (${availableUsersList.length})`;
+          }
+          renderMultiSelectList(multiselectSearchInput ? multiselectSearchInput.value : "");
+          updateMultiSelectUI();
+        }
+      } catch (err) {
+        console.warn("Could not load distinct comment users:", err);
+      }
+    }
+    window.loadCommentUsers = loadCommentUsers;
+
+    // Multi-Select Event Handlers
+    if (multiselectTrigger) {
+      multiselectTrigger.addEventListener("click", (e) => {
+        if (e.target.closest("#multiselect-clear-btn")) return;
+        const isOpen = multiselectMenu.classList.contains("open");
+        if (isOpen) {
+          multiselectMenu.classList.remove("open");
+          const chev = multiselectTrigger.querySelector(".chevron-user");
+          if (chev) chev.style.transform = "rotate(0deg)";
+        } else {
+          multiselectMenu.classList.add("open");
+          const chev = multiselectTrigger.querySelector(".chevron-user");
+          if (chev) chev.style.transform = "rotate(180deg)";
+          if (multiselectSearchInput) {
+            multiselectSearchInput.focus();
+          }
+        }
+      });
+    }
+
+    if (multiselectClearBtn) {
+      multiselectClearBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectedUserFilters.clear();
+        renderMultiSelectList(multiselectSearchInput ? multiselectSearchInput.value : "");
+        updateMultiSelectUI();
+        currentCommentsPage = 1;
+        loadComments(1);
+      });
+    }
+
+    if (multiselectSearchInput) {
+      multiselectSearchInput.addEventListener("input", () => {
+        renderMultiSelectList(multiselectSearchInput.value);
+      });
+    }
+
+    if (multiselectSelectAllBtn) {
+      multiselectSelectAllBtn.addEventListener("click", () => {
+        availableUsersList.forEach(u => selectedUserFilters.add(u.key));
+        renderMultiSelectList(multiselectSearchInput ? multiselectSearchInput.value : "");
+        updateMultiSelectUI();
+        currentCommentsPage = 1;
+        loadComments(1);
+      });
+    }
+
+    if (multiselectClearAllBtn) {
+      multiselectClearAllBtn.addEventListener("click", () => {
+        selectedUserFilters.clear();
+        renderMultiSelectList(multiselectSearchInput ? multiselectSearchInput.value : "");
+        updateMultiSelectUI();
+        currentCommentsPage = 1;
+        loadComments(1);
+      });
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest("#comments-user-multiselect")) {
+        if (multiselectMenu && multiselectMenu.classList.contains("open")) {
+          multiselectMenu.classList.remove("open");
+          const chev = multiselectTrigger.querySelector(".chevron-user");
+          if (chev) chev.style.transform = "rotate(0deg)";
+        }
+      }
+    });
+
+    function highlightText(text, query) {
+      if (!text) return "";
+      if (!query || !query.trim()) return escapeHtml(text);
+      const str = String(text);
+      const q = query.trim();
+      const escapedQuery = q.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+      try {
+        const regex = new RegExp(`(${escapedQuery})`, 'gi');
+        const parts = str.split(regex);
+        return parts.map(part => {
+          if (part.toLowerCase() === q.toLowerCase()) {
+            return `<mark class="search-highlight">${escapeHtml(part)}</mark>`;
+          }
+          return escapeHtml(part);
+        }).join("");
+      } catch (_) {
+        return escapeHtml(str);
+      }
+    }
 
     function stopScraperPolling() {
       if (scraperPollInterval) {
@@ -2137,26 +2820,35 @@
       }
     }
 
-    function startScraperPolling(durationSeconds = 120) {
+    function startScraperPolling(durationSeconds = 120, targetUser = "") {
       stopScraperPolling();
       scraperRemainingSeconds = durationSeconds;
       if (scraperStatusBanner) {
         scraperStatusBanner.style.display = "flex";
+      }
+      if (scraperStatusText) {
+        if (targetUser) {
+          scraperStatusText.innerHTML = `Scraper running for <strong>${escapeHtml(targetUser)}</strong>... Auto-syncing DB every 5s (<strong id="scraper-countdown">${scraperRemainingSeconds}s</strong> remaining)`;
+        } else {
+          scraperStatusText.innerHTML = `Scraper running in background... Auto-syncing DB every 5s (<strong id="scraper-countdown">${scraperRemainingSeconds}s</strong> remaining)`;
+        }
       }
       if (scraperCountdownSpan) {
         scraperCountdownSpan.textContent = `${scraperRemainingSeconds}s`;
       }
       if (commentsRunScraperBtn) {
         commentsRunScraperBtn.disabled = true;
+        const btnLabel = targetUser ? `Scraping: ${escapeHtml(targetUser)}` : `Scraper Running`;
         commentsRunScraperBtn.innerHTML = `
           <span class="spinner" style="width:13px; height:13px; border-width:2px; border-color:#fff; border-top-color:transparent; display:inline-block;"></span>
-          <span>Scraper Running</span>`;
+          <span>${btnLabel}</span>`;
       }
 
       scraperPollInterval = setInterval(async () => {
         scraperRemainingSeconds -= 5;
-        if (scraperCountdownSpan) {
-          scraperCountdownSpan.textContent = `${Math.max(0, scraperRemainingSeconds)}s`;
+        const countSpan = document.getElementById("scraper-countdown");
+        if (countSpan) {
+          countSpan.textContent = `${Math.max(0, scraperRemainingSeconds)}s`;
         }
         await loadComments(currentCommentsPage, true);
 
@@ -2235,20 +2927,139 @@
       updateSelectionUI();
     });
 
+    if (commentsSearchInput) {
+      commentsSearchInput.addEventListener("input", () => {
+        const val = commentsSearchInput.value.trim();
+        if (commentsClearSearchBtn) {
+          commentsClearSearchBtn.style.display = val ? "inline-flex" : "none";
+        }
+        updateResetFiltersBtnVisibility();
+        clearTimeout(commentsSearchDebounceTimer);
+        commentsSearchDebounceTimer = setTimeout(() => {
+          currentCommentsPage = 1;
+          loadComments(1);
+        }, 280);
+      });
+
+      commentsSearchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          clearTimeout(commentsSearchDebounceTimer);
+          currentCommentsPage = 1;
+          loadComments(1);
+        }
+      });
+    }
+
+    if (commentsClearSearchBtn) {
+      commentsClearSearchBtn.addEventListener("click", () => {
+        if (commentsSearchInput) {
+          commentsSearchInput.value = "";
+          commentsSearchInput.focus();
+        }
+        commentsClearSearchBtn.style.display = "none";
+        updateResetFiltersBtnVisibility();
+        currentCommentsPage = 1;
+        loadComments(1);
+      });
+    }
+
     commentsStatusFilter.addEventListener("change", () => {
+      updateResetFiltersBtnVisibility();
       currentCommentsPage = 1;
       loadComments(1);
     });
 
+    if (commentsResetFiltersBtn) {
+      commentsResetFiltersBtn.addEventListener("click", () => {
+        selectedUserFilters.clear();
+        if (multiselectSearchInput) multiselectSearchInput.value = "";
+        renderMultiSelectList("");
+        updateMultiSelectUI();
+        if (commentsSearchInput) commentsSearchInput.value = "";
+        if (commentsClearSearchBtn) commentsClearSearchBtn.style.display = "none";
+        if (commentsStatusFilter) commentsStatusFilter.value = "";
+        updateResetFiltersBtnVisibility();
+        currentCommentsPage = 1;
+        loadComments(1);
+      });
+    }
+
     if (commentsRunScraperBtn) {
       commentsRunScraperBtn.addEventListener("click", async () => {
+        const selectedUsers = Array.from(selectedUserFilters).map(key => {
+          const kStr = String(key || "").trim().toLowerCase();
+          const found = availableUsersList.find(u =>
+            String(u.key || "").trim().toLowerCase() === kStr ||
+            String(u.user_name || "").trim().toLowerCase() === kStr ||
+            String(u.user_id || "").trim() === String(key).trim() ||
+            String(u.id || "").trim() === String(key).trim()
+          );
+          if (found) {
+            return {
+              user_name: found.user_name || "",
+              user_id: found.user_id || found.id || "",
+              id: found.id || found.user_id || ""
+            };
+          }
+          const isNum = /^\d+$/.test(String(key).trim());
+          return {
+            user_name: isNum ? "" : String(key).trim(),
+            user_id: isNum ? String(key).trim() : "",
+            id: String(key).trim()
+          };
+        });
+
+        // Ensure both user_name and user_id are populated if one can be matched in availableUsersList
+        selectedUsers.forEach(u => {
+          if (!u.user_id && u.user_name) {
+            const match = availableUsersList.find(au => au.user_name && au.user_name.trim().toLowerCase() === u.user_name.trim().toLowerCase());
+            if (match && match.user_id) u.user_id = String(match.user_id).trim();
+          }
+          if (!u.user_name && u.user_id) {
+            const match = availableUsersList.find(au => String(au.user_id).trim() === String(u.user_id).trim());
+            if (match && match.user_name) u.user_name = match.user_name.trim();
+          }
+        });
+
+        const userNames = selectedUsers.map(u => u.user_name).filter(Boolean);
+        const userIds = selectedUsers.map(u => u.user_id).filter(Boolean);
+
+        let targetLabel = "";
+        if (selectedUsers.length === 1) {
+          const u = selectedUsers[0];
+          if (u.user_name && u.user_id) {
+            targetLabel = `${u.user_name} (ID: ${u.user_id})`;
+          } else {
+            targetLabel = u.user_name || (u.user_id ? `ID: ${u.user_id}` : "");
+          }
+        } else if (selectedUsers.length > 1) {
+          const formattedUsers = selectedUsers.map(u => {
+            if (u.user_name && u.user_id) return `${u.user_name} (ID: ${u.user_id})`;
+            return u.user_name || (u.user_id ? `ID: ${u.user_id}` : "");
+          }).filter(Boolean);
+          targetLabel = `${selectedUsers.length} Users (${formattedUsers.join(", ")})`;
+        }
+
+        console.log("%c[RUN SCRAPER CLICKED]", "background: #0284c7; color: white; font-weight: bold; padding: 3px 8px; border-radius: 4px;");
+        console.log("Selected User Filters:", Array.from(selectedUserFilters));
+        console.log("Resolved Selected Users:", selectedUsers);
+        console.log("Passed Names:", userNames, "Passed IDs:", userIds);
+
         try {
-          await triggerRunApi();
+          if (selectedUsers.length > 0) {
+            await triggerRunApi(selectedUsers, userNames, userIds);
+          } else {
+            await triggerRunApi();
+          }
         } catch (err) {
           console.warn("Run API error on scraper trigger:", err);
         }
-        startScraperPolling(120);
-        await loadComments(currentCommentsPage, true);
+
+        // Set to first page and load comments for selected users
+        currentCommentsPage = 1;
+        startScraperPolling(120, targetLabel);
+        await loadComments(1, false);
       });
     }
 
@@ -2259,6 +3070,7 @@
     }
 
     commentsRefreshBtn.addEventListener("click", async () => {
+      await loadCommentUsers();
       await loadComments(currentCommentsPage, false);
     });
 
@@ -2286,14 +3098,24 @@
       currentCommentsPage = page;
       if (!isSilent) {
         commentsRefreshBtn.disabled = true;
-        commentsTableBody.innerHTML = `<tr><td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading 24h comments from database...</td></tr>`;
+        commentsTableBody.innerHTML = `<tr><td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading 6h comments from database...</td></tr>`;
       }
 
       try {
-        const filterVal = commentsStatusFilter.value;
-        let url = `${COMMENTS_API_URL}?page=${page}&page_size=${commentsPageSize}&hours=24`;
+        const filterVal = commentsStatusFilter ? commentsStatusFilter.value : "";
+        const searchVal = commentsSearchInput ? commentsSearchInput.value.trim() : "";
+
+        let url = `${COMMENTS_API_URL}?page=${page}&page_size=${commentsPageSize}&hours=6`;
         if (filterVal) {
           url += `&status=${encodeURIComponent(filterVal)}`;
+        }
+        if (selectedUserFilters.size > 0) {
+          Array.from(selectedUserFilters).forEach(u => {
+            url += `&user=${encodeURIComponent(u)}`;
+          });
+        }
+        if (searchVal) {
+          url += `&search=${encodeURIComponent(searchVal)}`;
         }
 
         const res = await authFetch(url);
@@ -2313,12 +3135,13 @@
         pageCommentsCountSpan.textContent = currentCommentsList.length;
 
         if (sidebarCommentsBadge) {
-          sidebarCommentsBadge.textContent = totalCommentsCount > 0 ? `${totalCommentsCount}` : "24h";
+          sidebarCommentsBadge.textContent = totalCommentsCount > 0 ? `${totalCommentsCount}` : "6h";
         }
 
-        renderCommentsTable(currentCommentsList);
+        renderCommentsTable(currentCommentsList, searchVal);
         renderPagination(data.page, data.total_pages, data.total);
         updateSelectionUI();
+        updateResetFiltersBtnVisibility();
       } catch (err) {
         if (!isSilent) {
           commentsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color: var(--danger);">Error loading comments: ${escapeHtml(err.message)}</td></tr>`;
@@ -2331,9 +3154,13 @@
     }
     window.loadComments = loadComments;
 
-    function renderCommentsTable(comments) {
+    function renderCommentsTable(comments, searchQuery = "") {
       if (!comments.length) {
-        commentsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state">No comments found within the last 24 hours.</td></tr>`;
+        const hasFilters = Boolean((commentsStatusFilter && commentsStatusFilter.value) || searchQuery || selectedUserFilters.size > 0);
+        const emptyMsg = hasFilters
+          ? "No comments found matching your search and filter criteria."
+          : "No comments found within the last 6 hours.";
+        commentsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state">${escapeHtml(emptyMsg)}</td></tr>`;
         return;
       }
 
@@ -2341,9 +3168,13 @@
         const isChecked = selectedComments.has(c.id);
         const commentIdDisplay = c.comment_id || "—";
         const commentUrl = c.url || "#";
-        const userNameDisplay = c.user_name ? escapeHtml(c.user_name) : "—";
-        const userIdDisplay = c.user_id ? escapeHtml(c.user_id) : "—";
+        const rawUserName = c.user_name || "";
+        const rawUserId = c.user_id ? String(c.user_id) : "";
         const fetchedAtDisplay = c.fetched_at || "—";
+
+        // Highlight matching query in username and user ID
+        const userNameDisplay = highlightText(rawUserName || "—", searchQuery);
+        const userIdDisplay = highlightText(rawUserId || "—", searchQuery);
 
         const stLower = (c.status || "not processed").toLowerCase();
         let statusTagClass = "status-not-processed";
@@ -2355,6 +3186,8 @@
 
         const commentText = c.comment_text || "";
         const isLong = commentText.length > 55 || commentText.includes("\n");
+        const highlightedCommentPreview = highlightText(commentText || "—", searchQuery);
+        const highlightedCommentFull = highlightText(commentText, searchQuery);
 
         return `
           <tr class="comment-row ${isChecked ? 'row-selected' : ''}" data-comment-db-id="${c.id}">
@@ -2377,9 +3210,9 @@
             <td><span style="font-weight: 600; color: #f1f5f9;">${userNameDisplay}</span></td>
             <td>
               <div class="comment-bubble">
-                <div class="comment-text-preview" title="${escapeHtml(commentText)}">${escapeHtml(commentText || "—")}</div>
+                <div class="comment-text-preview" title="${escapeHtml(commentText)}">${highlightedCommentPreview}</div>
                 ${isLong ? `
-                  <div class="comment-text-full">${escapeHtml(commentText)}</div>
+                  <div class="comment-text-full">${highlightedCommentFull}</div>
                   <button type="button" class="read-toggle-btn" onclick="toggleCommentExpand(this)">Read more</button>
                 ` : ''}
               </div>
@@ -2443,7 +3276,7 @@
     commentsReportBtn.addEventListener("click", async () => {
       if (selectedComments.size === 0) return;
 
-      const numAccounts = Number(commentsAccountCount.value) || 1;
+      const numAccounts = Number(commentsAccountCount.value) || 29;
       if (!Number.isInteger(numAccounts) || numAccounts < 1) {
         alert("Number of accounts must be at least 1.");
         return;
@@ -2607,6 +3440,7 @@ Live execution batch logs are updating below...`, "success");
         newUserIdInput.value = "";
         newUserNameInput.value = "";
         loadUsers(1);
+        loadCommentUsers();
       } catch (err) {
         showAddUserStatus(err.message, "error");
       } finally {
@@ -2716,6 +3550,7 @@ Live execution batch logs are updating below...`, "success");
 
         showAddUserStatus(`✓ ${data.message || 'User deleted successfully!'}`, "success");
         loadUsers(currentUsersPage);
+        loadCommentUsers();
       } catch (err) {
         showAddUserStatus(`Error deleting user: ${err.message}`, "error");
         alert(`Could not delete user: ${err.message}`);
