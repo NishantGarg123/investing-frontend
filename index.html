@@ -2389,7 +2389,8 @@
     const COMMENTS_STATUS_API_URL = "/api/comments/status";
     const USERS_API_URL = "/api/users";
     const RUN_API_URL = "http://74.207.229.12:3000/api/run";
-    let lambdaApiUrl = "https://nr9andj3qe.execute-api.us-east-2.amazonaws.com/dev/investing-dev";
+    let lambdaApiUrl = "https://al4vj8u8yh.execute-api.us-west-2.amazonaws.com/test-stage/investing-scrapper";
+    let lambdaApiKey = "";
     let scraperApiUrl = "http://74.207.229.12:3000/api/run";
 
     async function triggerRunApi(rawUsers = [], rawUserNames = [], rawUserIds = []) {
@@ -2528,6 +2529,9 @@
           const config = await response.json();
           if (config.lambda_api_url) {
             lambdaApiUrl = config.lambda_api_url;
+          }
+          if (config.lambda_api_key || config.x_api_key) {
+            lambdaApiKey = config.lambda_api_key || config.x_api_key;
           }
           if (config.scraper_api_url) {
             scraperApiUrl = config.scraper_api_url;
@@ -3328,10 +3332,16 @@
 
         const processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : "—";
         const targetLambdaUrl = (storageJson && storageJson.lambda_api_url) || lambdaApiUrl;
+        const effectiveApiKey = (storageJson && (storageJson.x_api_key || storageJson.lambda_api_key)) || lambdaApiKey;
+
+        const lambdaHeaders = { "Content-Type": "application/json" };
+        if (effectiveApiKey) {
+          lambdaHeaders["x-api-key"] = effectiveApiKey;
+        }
 
         const lambdaResponse = await fetch(targetLambdaUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: lambdaHeaders,
           body: JSON.stringify(payload),
         });
 
@@ -3843,11 +3853,17 @@ Live execution batch logs are updating below...`, "success");
         if (!targetLambdaUrl) {
           throw new Error("Lambda API URL is not configured in .env");
         }
+        const effectiveApiKey = (storageJson && (storageJson.x_api_key || storageJson.lambda_api_key)) || lambdaApiKey;
+
+        const lambdaHeaders = { "Content-Type": "application/json" };
+        if (effectiveApiKey) {
+          lambdaHeaders["x-api-key"] = effectiveApiKey;
+        }
 
         showStatus(`Request saved successfully (Processing ID: ${processingId})\nStarting the Lambda job...`, "success");
         const lambdaResponse = await fetch(targetLambdaUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: lambdaHeaders,
           body: JSON.stringify(payload),
         });
         const lambdaText = await lambdaResponse.text();

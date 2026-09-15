@@ -32,7 +32,13 @@ if not DB_CONNECTION_STRING and os.getenv("DB_SERVER"):
 
 LAMBDA_API_URL = os.getenv(
     "LAMBDA_API_URL",
-    "https://nr9andj3qe.execute-api.us-east-2.amazonaws.com/dev/investing-dev",
+    "https://al4vj8u8yh.execute-api.us-west-2.amazonaws.com/test-stage/investing-scrapper",
+).strip()
+LAMBDA_API_KEY = (
+    os.getenv("X_API_KEY")
+    or os.getenv("LAMBDA_API_KEY")
+    or os.getenv("API_KEY")
+    or ""
 ).strip()
 SCRAPER_API_URL = os.getenv(
     "SCRAPER_API_URL",
@@ -241,6 +247,8 @@ def logout():
 def get_config():
     return jsonify({
         "lambda_api_url": LAMBDA_API_URL,
+        "lambda_api_key": LAMBDA_API_KEY,
+        "x_api_key": LAMBDA_API_KEY,
         "scraper_api_url": SCRAPER_API_URL,
     })
 
@@ -949,6 +957,8 @@ def store_processing_request():
     return jsonify({
         "processing_id": processing_id,
         "lambda_api_url": LAMBDA_API_URL,
+        "lambda_api_key": LAMBDA_API_KEY,
+        "x_api_key": LAMBDA_API_KEY,
         "message": "Request saved successfully",
     }), 201
 
