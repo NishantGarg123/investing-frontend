@@ -32,7 +32,7 @@ if not DB_CONNECTION_STRING and os.getenv("DB_SERVER"):
 
 LAMBDA_API_URL = os.getenv(
     "LAMBDA_API_URL",
-    "https://nr9andj3qe.execute-api.us-east-2.amazonaws.com/dev/investing-dev",
+    "https://al4vj8u8yh.execute-api.us-west-2.amazonaws.com/dev/investing-scrapper",
 ).strip()
 SCRAPER_API_URL = os.getenv(
     "SCRAPER_API_URL",
