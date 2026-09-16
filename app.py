@@ -10,6 +10,9 @@ from pathlib import Path
 import re
 import secrets
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from functools import wraps
 try:
     import pyodbc
@@ -38,6 +41,15 @@ SCRAPER_API_URL = os.getenv(
     "SCRAPER_API_URL",
     "http://74.207.229.12:3000/api/run",
 ).strip()
+BILLING_API_URL = os.getenv(
+    "BILLING_API_URL",
+    "http://localhost:3000/api/billing/ecs-fargate",
+).strip()
+BILLING_API_KEY = os.getenv(
+    "BILLING_API_KEY",
+    "ak_live_7e8b4f1c9a3d5206e1",
+).strip()
+
 
 
 # ---------------------------------------------------------------------------
@@ -242,7 +254,94 @@ def get_config():
     return jsonify({
         "lambda_api_url": LAMBDA_API_URL,
         "scraper_api_url": SCRAPER_API_URL,
+        "billing_api_url": BILLING_API_URL,
+        "billing_api_key": BILLING_API_KEY,
     })
+
+
+@app.get("/api/billing/ecs-fargate")
+@app.get("/api/billing")
+@require_auth
+def get_billing_ecs_fargate():
+    """Fetch ECS Fargate billing data from external billing API using configured API key from .env."""
+    target_url = ""
+    try:
+        base_url = BILLING_API_URL or "http://localhost:3000/api/billing/ecs-fargate"
+        api_key = BILLING_API_KEY or "ak_live_7e8b4f1c9a3d5206e1"
+
+        def _build_url(source_url):
+            url_parts = urllib.parse.urlparse(source_url)
+            query_params = urllib.parse.parse_qs(url_parts.query)
+            if api_key:
+                query_params["api_key"] = [api_key]
+            new_query = urllib.parse.urlencode(query_params, doseq=True)
+            return urllib.parse.urlunparse((
+                url_parts.scheme,
+                url_parts.netloc,
+                url_parts.path,
+                url_parts.params,
+                new_query,
+                url_parts.fragment,
+            ))
+
+        target_url = _build_url(base_url)
+
+        req = urllib.request.Request(
+            target_url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "InvestingReporter/1.0",
+            },
+            method="GET",
+        )
+
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                resp_body = resp.read().decode("utf-8")
+                data = json.loads(resp_body)
+                return jsonify(data), resp.status
+        except urllib.error.URLError as url_err:
+            # If backend is running inside Docker container and localhost was refused, try host.docker.internal
+            if ("localhost" in target_url or "127.0.0.1" in target_url) and "host.docker.internal" not in target_url:
+                docker_host_url = base_url.replace("localhost", "host.docker.internal").replace("127.0.0.1", "host.docker.internal")
+                docker_target_url = _build_url(docker_host_url)
+                try:
+                    req_docker = urllib.request.Request(
+                        docker_target_url,
+                        headers={
+                            "Accept": "application/json",
+                            "User-Agent": "InvestingReporter/1.0",
+                        },
+                        method="GET",
+                    )
+                    with urllib.request.urlopen(req_docker, timeout=10) as resp2:
+                        resp_body2 = resp2.read().decode("utf-8")
+                        data2 = json.loads(resp_body2)
+                        return jsonify(data2), resp2.status
+                except Exception:
+                    pass
+            raise url_err
+    except urllib.error.HTTPError as http_err:
+        error_text = ""
+        try:
+            error_text = http_err.read().decode("utf-8")
+        except Exception:
+            pass
+        app.logger.warning(f"Billing API returned HTTP {http_err.code}: {error_text}")
+        return jsonify({
+            "status": "error",
+            "error": f"Billing API returned error ({http_err.code}): {error_text or http_err.reason}",
+            "target_url": target_url,
+        }), http_err.code
+    except Exception as error:
+        app.logger.exception("Could not fetch billing data")
+        return jsonify({
+            "status": "error",
+            "error": f"Could not connect to Billing API ({target_url or BILLING_API_URL}): {str(error)}",
+            "target_url": target_url,
+        }), 502
+
+
 
 
 def _normalise_ids(value: object, field_name: str) -> list[str]:

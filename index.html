@@ -1580,6 +1580,323 @@
       cursor: not-allowed;
     }
 
+    /* ── Billing Section Styles ── */
+    .billing-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .billing-kpi-card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .billing-kpi-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .billing-kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #38bdf8, #31c48d);
+      opacity: 0.8;
+    }
+
+    .billing-kpi-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .billing-kpi-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .billing-kpi-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .billing-kpi-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .billing-kpi-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ── Daily Chart Section ── */
+    .billing-chart-card {
+      margin-bottom: 24px;
+      padding: 20px;
+    }
+
+    .billing-chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .billing-chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 180px;
+      padding: 24px 12px 10px;
+      background: rgba(11, 16, 32, 0.6);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      overflow-x: auto;
+    }
+
+    .billing-bar-col {
+      flex: 1;
+      min-width: 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .billing-bar-fill {
+      width: 100%;
+      max-width: 26px;
+      border-radius: 4px 4px 0 0;
+      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+      transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease;
+      min-height: 4px;
+      position: relative;
+    }
+
+    .billing-bar-col:hover .billing-bar-fill {
+      background: linear-gradient(180deg, #4ade80 0%, #059669 100%);
+      box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+    }
+
+    .billing-bar-col.zero-cost .billing-bar-fill {
+      background: rgba(148, 163, 184, 0.15);
+      min-height: 3px;
+    }
+
+    .billing-bar-col.peak-cost .billing-bar-fill {
+      background: linear-gradient(180deg, #31c48d 0%, #0d9488 100%);
+      box-shadow: 0 0 10px rgba(49, 196, 141, 0.35);
+    }
+
+    .billing-bar-label {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+    }
+
+    .billing-bar-col:hover .billing-bar-label {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .billing-bar-tooltip {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      background: #0f172a;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.72rem;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: all 0.2s ease;
+      z-index: 20;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+      color: #f8fafc;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .billing-bar-col:hover .billing-bar-tooltip {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Usage Type Drivers ── */
+    .billing-breakdown-card {
+      margin-bottom: 24px;
+      padding: 20px;
+    }
+
+    .usage-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.08);
+      margin-bottom: 10px;
+      transition: background 0.15s ease;
+    }
+
+    .usage-item-row:hover {
+      background: rgba(30, 41, 59, 0.6);
+    }
+
+    .usage-item-left {
+      flex: 1;
+      min-width: 0;
+      margin-right: 16px;
+    }
+
+    .usage-item-name {
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .usage-item-progress-track {
+      height: 6px;
+      background: rgba(148, 163, 184, 0.15);
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .usage-item-progress-bar {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #38bdf8, #31c48d);
+      transition: width 0.6s ease;
+    }
+
+    .usage-item-right {
+      text-align: right;
+    }
+
+    .usage-item-cost {
+      font-size: 0.95rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #ffffff;
+    }
+
+    .usage-item-pct {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Filter Chips ── */
+    .billing-filter-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .billing-chip {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--panel-border);
+      color: var(--muted);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-height: auto;
+      box-shadow: none;
+    }
+
+    .billing-chip:hover {
+      color: #fff;
+      border-color: rgba(148, 163, 184, 0.3);
+    }
+
+    .billing-chip.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    /* ── Nested Accordion Rows ── */
+    .nested-breakdown-box {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 8px;
+      padding: 14px;
+      margin: 8px 0;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    .billing-expand-btn {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: #38bdf8;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: auto;
+      box-shadow: none;
+      transition: all 0.15s ease;
+    }
+
+    .billing-expand-btn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
     @media (max-width: 900px) {
       .app-layout {
         flex-direction: column;
@@ -1785,6 +2102,18 @@
             </span>
             <span class="nav-label">Users</span>
             <span class="nav-badge" id="sidebar-users-badge">DB</span>
+          </button>
+
+          <button type="button" class="nav-item" id="nav-btn-billing" data-tab="billing">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <line x1="2" y1="10" x2="22" y2="10" />
+              </svg>
+            </span>
+            <span class="nav-label">Billing</span>
+            <span class="nav-badge" id="sidebar-billing-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25);">AWS</span>
           </button>
         </div>
 
@@ -2168,6 +2497,176 @@
             </div>
           </div>
 
+          <!-- TAB 4: BILLING VIEW (AWS ECS FARGATE COST ANALYTICS) -->
+          <div class="tab-content" id="tab-billing">
+            <div class="eyebrow">Cloud Cost Analytics &bull; AWS ECS Fargate</div>
+            <div class="comments-header-bar">
+              <div>
+                <h1>ECS Fargate Billing</h1>
+                <p class="intro" style="margin-bottom:0;" id="billing-period-intro">
+                  Live daily infrastructure spend and compute resource consumption from AWS Cost Explorer.
+                </p>
+              </div>
+              <div class="comments-actions-group">
+                <span id="billing-last-updated" style="font-size: 0.78rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;"></span>
+                <button type="button" class="btn-secondary" id="billing-refresh-btn" title="Refresh AWS ECS Billing data">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                  </svg>
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- STATUS / ALERT BANNER (IF ERROR) -->
+            <div id="billing-error-banner" style="display:none; margin-bottom: 20px;" class="status error"></div>
+
+            <!-- KPI SUMMARY CARDS -->
+            <div class="billing-kpi-grid">
+              <!-- Card 1: Total Cost -->
+              <div class="billing-kpi-card">
+                <div class="billing-kpi-header">
+                  <span class="billing-kpi-title">Total Spend</span>
+                  <div class="billing-kpi-icon" style="background: rgba(49, 196, 141, 0.15); color: #31c48d;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="1" x2="12" y2="23" />
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="billing-kpi-value" id="kpi-total-cost">$0.0000</div>
+                <div class="billing-kpi-sub">
+                  <span class="pill pill-success" id="kpi-currency-badge">USD</span>
+                  <span id="kpi-granularity-badge" style="color: var(--muted);">Daily Granularity</span>
+                </div>
+              </div>
+
+              <!-- Card 2: Service & Region -->
+              <div class="billing-kpi-card">
+                <div class="billing-kpi-header">
+                  <span class="billing-kpi-title">Service & Region</span>
+                  <div class="billing-kpi-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                      <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                      <line x1="6" y1="6" x2="6.01" y2="6" />
+                      <line x1="6" y1="18" x2="6.01" y2="18" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="billing-kpi-value" id="kpi-service-name" style="font-size: 1.35rem;">AWS ECS Fargate</div>
+                <div class="billing-kpi-sub">
+                  <span class="pill pill-accounts" id="kpi-region-badge">us-west-2</span>
+                  <span>Oregon Region</span>
+                </div>
+              </div>
+
+              <!-- Card 3: Query Period -->
+              <div class="billing-kpi-card">
+                <div class="billing-kpi-header">
+                  <span class="billing-kpi-title">Query Window</span>
+                  <div class="billing-kpi-icon" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="billing-kpi-value" id="kpi-period-days" style="font-size: 1.45rem;">— Days</div>
+                <div class="billing-kpi-sub" id="kpi-period-dates" style="font-family: 'JetBrains Mono', monospace; font-size: 0.74rem;">—</div>
+              </div>
+
+              <!-- Card 4: Peak Spend Day -->
+              <div class="billing-kpi-card">
+                <div class="billing-kpi-header">
+                  <span class="billing-kpi-title">Peak Daily Spend</span>
+                  <div class="billing-kpi-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                      <polyline points="17 6 23 6 23 12" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="billing-kpi-value" id="kpi-peak-cost" style="color: #fde047;">$0.0000</div>
+                <div class="billing-kpi-sub" id="kpi-peak-date">No peak recorded</div>
+              </div>
+            </div>
+
+            <!-- DAILY SPEND VISUAL TIMELINE / CHART CARD -->
+            <div class="card billing-chart-card">
+              <div class="billing-chart-header">
+                <div>
+                  <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 4px;">Daily Spend Timeline</h3>
+                  <div style="font-size: 0.8rem; color: var(--muted);">Hover over any bar to view exact daily costs and resource breakdowns</div>
+                </div>
+                <div id="chart-legend" style="display:flex; align-items:center; gap:14px; font-size:0.75rem; color: var(--muted);">
+                  <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; background:#38bdf8; border-radius:2px;"></span> Daily Cost</span>
+                  <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; background:#31c48d; border-radius:2px;"></span> Peak Day</span>
+                  <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; background:rgba(148,163,184,0.2); border-radius:2px;"></span> Zero Cost ($0)</span>
+                </div>
+              </div>
+              <div class="billing-chart-bars" id="billing-chart-bars-container">
+                <div class="loading-state" style="width:100%;"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading cost timeline...</div>
+              </div>
+            </div>
+
+            <!-- RESOURCE TYPE COST DRIVERS BREAKDOWN -->
+            <div class="card billing-breakdown-card">
+              <div class="comments-toolbar" style="margin-bottom: 16px;">
+                <div class="toolbar-left">
+                  <h3 style="font-size: 1.05rem; font-weight: 700;">Cost Drivers by Resource Type</h3>
+                  <span class="pill pill-accounts" id="usage-types-count-badge">0 Categories</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--muted);">Aggregated over the queried billing period</div>
+              </div>
+              <div id="usage-types-list-container">
+                <div class="loading-state">Loading resource breakdown...</div>
+              </div>
+            </div>
+
+            <!-- ITEMIZED DAILY BREAKDOWN TABLE -->
+            <div class="card" style="padding: 20px;">
+              <div class="comments-toolbar">
+                <div class="toolbar-left">
+                  <h3 style="font-size: 1.05rem; font-weight: 700;">Daily Itemized Records</h3>
+                  <div class="billing-filter-chips">
+                    <button type="button" class="billing-chip active" id="filter-all-days" onclick="filterBillingDays('all')">All Days (<span id="count-all-days">0</span>)</button>
+                    <button type="button" class="billing-chip" id="filter-active-days" onclick="filterBillingDays('active')">Active Usage Only (<span id="count-active-days">0</span>)</button>
+                  </div>
+                </div>
+                <div class="toolbar-right">
+                  <input type="text" id="billing-search-input" placeholder="Search date (e.g. 2026-09-15)..."
+                    style="padding: 7px 12px; font-size: 0.82rem; min-width: 220px; width: auto;" />
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table id="billing-daily-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 50px;">#</th>
+                      <th style="width: 170px;">Date Period</th>
+                      <th style="width: 130px;">Activity Status</th>
+                      <th style="width: 150px;">Total Spend (USD)</th>
+                      <th>Primary Usage Types</th>
+                      <th style="width: 130px; text-align: center;">Itemization</th>
+                    </tr>
+                  </thead>
+                  <tbody id="billing-table-body">
+                    <tr>
+                      <td colspan="6" class="loading-state">
+                        <span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading billing data from API...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
         </div>
       </main>
     </div>
@@ -2255,17 +2754,19 @@
       loadComments(1);
     }
 
-    // Navigation Tabs Switching (Dashboard vs Comments vs Users)
+    // Navigation Tabs Switching (Dashboard vs Comments vs Users vs Billing)
     const navBtnDashboard = document.getElementById("nav-btn-dashboard");
     const navBtnComments = document.getElementById("nav-btn-comments");
     const navBtnUsers = document.getElementById("nav-btn-users");
+    const navBtnBilling = document.getElementById("nav-btn-billing");
     const tabDashboard = document.getElementById("tab-dashboard");
     const tabComments = document.getElementById("tab-comments");
     const tabUsers = document.getElementById("tab-users");
+    const tabBilling = document.getElementById("tab-billing");
 
     function switchTab(tabName) {
-      [navBtnDashboard, navBtnComments, navBtnUsers].forEach(btn => btn.classList.remove("active"));
-      [tabDashboard, tabComments, tabUsers].forEach(tab => tab.classList.remove("active"));
+      [navBtnDashboard, navBtnComments, navBtnUsers, navBtnBilling].forEach(btn => btn && btn.classList.remove("active"));
+      [tabDashboard, tabComments, tabUsers, tabBilling].forEach(tab => tab && tab.classList.remove("active"));
 
       if (tabName === "dashboard") {
         navBtnDashboard.classList.add("active");
@@ -2279,12 +2780,18 @@
         navBtnUsers.classList.add("active");
         tabUsers.classList.add("active");
         loadUsers(currentUsersPage);
+      } else if (tabName === "billing") {
+        navBtnBilling.classList.add("active");
+        tabBilling.classList.add("active");
+        loadBillingData();
       }
     }
 
     navBtnDashboard.addEventListener("click", () => switchTab("dashboard"));
     navBtnComments.addEventListener("click", () => switchTab("comments"));
     navBtnUsers.addEventListener("click", () => switchTab("users"));
+    navBtnBilling.addEventListener("click", () => switchTab("billing"));
+
 
     // ─────────────────────────────────────────────────────────────────
     // LOGIN FORM LOGIC
@@ -2388,9 +2895,14 @@
     const COMMENTS_API_URL = "/api/comments";
     const COMMENTS_STATUS_API_URL = "/api/comments/status";
     const USERS_API_URL = "/api/users";
+    const BILLING_API_URL = "/api/billing/ecs-fargate";
     const RUN_API_URL = "http://74.207.229.12:3000/api/run";
     let lambdaApiUrl = "https://al4vj8u8yh.execute-api.us-west-2.amazonaws.com/dev/investing-scrapper";
     let scraperApiUrl = "http://74.207.229.12:3000/api/run";
+    let billingApiUrl = "http://localhost:3000/api/billing/ecs-fargate";
+    let billingApiKey = "ak_live_7e8b4f1c9a3d5206e1";
+
+
 
     async function triggerRunApi(rawUsers = [], rawUserNames = [], rawUserIds = []) {
       const url = "/api/run";
@@ -2532,11 +3044,18 @@
           if (config.scraper_api_url) {
             scraperApiUrl = config.scraper_api_url;
           }
+          if (config.billing_api_url) {
+            billingApiUrl = config.billing_api_url;
+          }
+          if (config.billing_api_key) {
+            billingApiKey = config.billing_api_key;
+          }
         }
       } catch (err) {
         console.warn("Could not load /api/config:", err);
       }
     }
+
 
     function escapeHtml(str) {
       if (!str) return "";
@@ -3876,6 +4395,526 @@ Live execution batch logs are updating below...`, "success");
         runButton.innerHTML = `<span>Run reporting job</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`;
       }
     });
+
+    // ─────────────────────────────────────────────────────────────────
+    // 6. AWS ECS FARGATE BILLING ANALYTICS
+    // ─────────────────────────────────────────────────────────────────
+    const billingRefreshBtn = document.getElementById("billing-refresh-btn");
+    const billingLastUpdated = document.getElementById("billing-last-updated");
+    const billingErrorBanner = document.getElementById("billing-error-banner");
+    const billingPeriodIntro = document.getElementById("billing-period-intro");
+
+    const kpiTotalCost = document.getElementById("kpi-total-cost");
+    const kpiCurrencyBadge = document.getElementById("kpi-currency-badge");
+    const kpiGranularityBadge = document.getElementById("kpi-granularity-badge");
+    const kpiServiceName = document.getElementById("kpi-service-name");
+    const kpiRegionBadge = document.getElementById("kpi-region-badge");
+    const kpiPeriodDays = document.getElementById("kpi-period-days");
+    const kpiPeriodDates = document.getElementById("kpi-period-dates");
+    const kpiPeakCost = document.getElementById("kpi-peak-cost");
+    const kpiPeakDate = document.getElementById("kpi-peak-date");
+
+    const billingChartBarsContainer = document.getElementById("billing-chart-bars-container");
+    const usageTypesListContainer = document.getElementById("usage-types-list-container");
+    const usageTypesCountBadge = document.getElementById("usage-types-count-badge");
+    const billingTableBody = document.getElementById("billing-table-body");
+    const countAllDays = document.getElementById("count-all-days");
+    const countActiveDays = document.getElementById("count-active-days");
+    const filterAllDaysBtn = document.getElementById("filter-all-days");
+    const filterActiveDaysBtn = document.getElementById("filter-active-days");
+    const billingSearchInput = document.getElementById("billing-search-input");
+
+    let billingDataCache = null;
+    let currentBillingFilter = "all";
+    let expandedBillingDates = new Set();
+    let billingSearchQuery = "";
+
+    function formatBillingCurrency(amount, currency = "USD") {
+      const num = Number(amount) || 0;
+      if (num === 0) return "$0.0000";
+      if (num < 0.0001) return `$${num.toFixed(6)}`;
+      return `$${num.toFixed(4)}`;
+    }
+
+    function formatBillingDate(dateStr) {
+      if (!dateStr) return "—";
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const mIdx = parseInt(parts[1], 10) - 1;
+        if (mIdx >= 0 && mIdx < 12) {
+          return `${monthNames[mIdx]} ${parseInt(parts[2], 10)}, ${parts[0]}`;
+        }
+      }
+      return dateStr;
+    }
+
+    function formatUsageTypeClean(rawType) {
+      if (!rawType) return "Other Usage";
+      if (rawType.includes("Fargate-vCPU-Hours")) return "Fargate vCPU Compute Hours";
+      if (rawType.includes("Fargate-GB-Hours")) return "Fargate RAM Memory (GB-Hours)";
+      if (rawType.includes("DataTransfer-In")) return "Data Transfer In (Internet)";
+      if (rawType.includes("DataTransfer-Out")) return "Data Transfer Out (Internet)";
+      if (rawType.includes("DataTransfer-Regional")) return "Regional Data Transfer";
+      if (rawType.includes("CloudFront-In")) return "CloudFront Edge Inbound";
+      if (rawType.includes("CloudFront-Out")) return "CloudFront Edge Outbound";
+      if (rawType.includes("USE1-AWS")) return "AWS Inter-Region Transfer (US East 1)";
+      if (rawType.includes("USE2-AWS")) return "AWS Inter-Region Transfer (US East 2)";
+      if (rawType.includes("USW1-AWS")) return "AWS Inter-Region Transfer (US West 1)";
+      if (rawType.includes("APN1-AWS") || rawType.includes("APS1-AWS")) return "AWS Inter-Region Transfer (Asia Pacific)";
+      if (rawType.includes("EUC1-AWS") || rawType.includes("EU-AWS")) return "AWS Inter-Region Transfer (Europe)";
+      if (rawType.includes("CAN1-AWS")) return "AWS Inter-Region Transfer (Canada)";
+      return rawType.replace(/^USW2-/, "").replace(/-/g, " ");
+    }
+
+    async function loadBillingData(forceRefresh = false) {
+      if (billingRefreshBtn) {
+        billingRefreshBtn.disabled = true;
+        const refreshIcon = billingRefreshBtn.querySelector("svg");
+        if (refreshIcon) refreshIcon.style.animation = "spin 0.7s linear infinite";
+      }
+
+      if (billingErrorBanner) billingErrorBanner.style.display = "none";
+      if (billingTableBody) {
+        billingTableBody.innerHTML = `<tr><td colspan="6" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Fetching live billing analytics from AWS...</td></tr>`;
+      }
+      if (billingChartBarsContainer) {
+        billingChartBarsContainer.innerHTML = `<div class="loading-state" style="width:100%;"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading cost timeline...</div>`;
+      }
+      if (usageTypesListContainer) {
+        usageTypesListContainer.innerHTML = `<div class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Aggregating cost drivers...</div>`;
+      }
+
+      let data = null;
+      let lastErrorMessage = "";
+
+      // 1. First attempt: Direct fetch from browser (same machine/environment as Postman)
+      let directUrl = billingApiUrl || "http://localhost:3000/api/billing/ecs-fargate";
+      try {
+        const u = new URL(directUrl, window.location.href);
+        if (billingApiKey) u.searchParams.set("api_key", billingApiKey);
+        directUrl = u.toString();
+
+        const directRes = await fetch(directUrl, { method: "GET" });
+        if (directRes.ok) {
+          const json = await directRes.json();
+          if (json && (json.status === "success" || Array.isArray(json.results))) {
+            data = json;
+          }
+        }
+      } catch (directErr) {
+        console.warn("Direct browser billing fetch error:", directErr);
+        lastErrorMessage = directErr.message || String(directErr);
+      }
+
+      // 2. Second attempt: Backend proxy (/api/billing/ecs-fargate)
+      if (!data) {
+        try {
+          const res = await authFetch(BILLING_API_URL);
+          if (!res.ok) {
+            if (res.status === 401) return;
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.error || `Billing API returned HTTP ${res.status}`);
+          }
+          const proxyJson = await res.json();
+          if (proxyJson && (proxyJson.status === "success" || Array.isArray(proxyJson.results))) {
+            data = proxyJson;
+          } else {
+            throw new Error(proxyJson.error || "Invalid response structure from Billing API");
+          }
+        } catch (proxyErr) {
+          console.warn("Backend proxy billing fetch error:", proxyErr);
+          lastErrorMessage = proxyErr.message || lastErrorMessage;
+        }
+      }
+
+      try {
+        if (!data) {
+          throw new Error(lastErrorMessage || "Could not connect to Billing API");
+        }
+
+        billingDataCache = data;
+        renderBillingDashboard(data);
+
+        const now = new Date();
+        if (billingLastUpdated) {
+          billingLastUpdated.textContent = `Updated ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+      } catch (err) {
+
+        if (billingErrorBanner) {
+          billingErrorBanner.style.display = "block";
+          billingErrorBanner.innerHTML = `
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+              <div>
+                <strong>Failed to load billing metrics:</strong> ${escapeHtml(err.message)}
+              </div>
+              <button type="button" class="btn-secondary" style="padding:4px 12px; font-size:0.78rem;" onclick="loadBillingData(true)">Retry</button>
+            </div>
+          `;
+        }
+        if (billingTableBody) {
+          billingTableBody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color: var(--danger);">Unable to display billing data. Please verify your billing service connection and retry.</td></tr>`;
+        }
+        if (billingChartBarsContainer) {
+          billingChartBarsContainer.innerHTML = `<div class="empty-state" style="width:100%; color: var(--danger); font-size:0.85rem;">Timeline unavailable</div>`;
+        }
+        if (usageTypesListContainer) {
+          usageTypesListContainer.innerHTML = `<div class="empty-state" style="color: var(--danger); font-size:0.85rem;">Breakdown unavailable</div>`;
+        }
+      } finally {
+        if (billingRefreshBtn) {
+          billingRefreshBtn.disabled = false;
+          const refreshIcon = billingRefreshBtn.querySelector("svg");
+          if (refreshIcon) refreshIcon.style.animation = "";
+        }
+      }
+    }
+    window.loadBillingData = loadBillingData;
+
+    function renderBillingDashboard(data) {
+      const results = Array.isArray(data.results) ? data.results : [];
+      const totalCost = Number(data.total_cost_usd) || 0;
+      const currency = data.currency || "USD";
+      const service = data.service || "AWS ECS Fargate";
+      const region = data.region || "us-west-2";
+      const granularity = data.granularity || "DAILY";
+      const queryPeriod = data.query_period || {};
+
+      // 1. Update KPI Summary Cards
+      if (kpiTotalCost) kpiTotalCost.textContent = formatBillingCurrency(totalCost, currency);
+      if (kpiCurrencyBadge) kpiCurrencyBadge.textContent = currency;
+      if (kpiGranularityBadge) kpiGranularityBadge.textContent = `${granularity} Granularity`;
+      if (kpiServiceName) kpiServiceName.textContent = service;
+      if (kpiRegionBadge) kpiRegionBadge.textContent = region;
+
+      if (queryPeriod.start_date && queryPeriod.end_date) {
+        if (kpiPeriodDays) kpiPeriodDays.textContent = `${results.length} Days`;
+        if (kpiPeriodDates) kpiPeriodDates.textContent = `${formatBillingDate(queryPeriod.start_date)} – ${formatBillingDate(queryPeriod.end_date)}`;
+        if (billingPeriodIntro) billingPeriodIntro.textContent = `Live infrastructure spend from ${formatBillingDate(queryPeriod.start_date)} to ${formatBillingDate(queryPeriod.end_date)} for ${service} (${region}).`;
+      } else {
+        if (kpiPeriodDays) kpiPeriodDays.textContent = `${results.length} Days`;
+        if (kpiPeriodDates) kpiPeriodDates.textContent = "—";
+      }
+
+      // Find Peak Day & Aggregates
+      let peakDay = null;
+      let maxCost = 0;
+      let activeDaysCount = 0;
+      const usageTypeAggMap = {};
+
+      results.forEach(day => {
+        const dayCost = Number(day.total_cost_usd) || 0;
+        if (dayCost > 0) activeDaysCount++;
+        if (dayCost > maxCost) {
+          maxCost = dayCost;
+          peakDay = day;
+        }
+
+        const breakdown = Array.isArray(day.breakdown) ? day.breakdown : [];
+        breakdown.forEach(item => {
+          const type = item.usage_type || "Unknown";
+          const cost = Number(item.cost_usd) || 0;
+          const qty = Number(item.usage_quantity) || 0;
+          const unit = item.unit || "USD";
+
+          if (!usageTypeAggMap[type]) {
+            usageTypeAggMap[type] = {
+              usage_type: type,
+              total_cost: 0,
+              total_quantity: 0,
+              unit: unit,
+            };
+          }
+          usageTypeAggMap[type].total_cost += cost;
+          usageTypeAggMap[type].total_quantity += qty;
+        });
+      });
+
+      if (peakDay && maxCost > 0) {
+        const peakDateStr = peakDay.time_period ? peakDay.time_period.start : "";
+        const pctOfTotal = totalCost > 0 ? ((maxCost / totalCost) * 100).toFixed(1) : "0";
+        if (kpiPeakCost) kpiPeakCost.textContent = formatBillingCurrency(maxCost, currency);
+        if (kpiPeakDate) kpiPeakDate.innerHTML = `<span style="color:var(--accent); font-weight:700;">${formatBillingDate(peakDateStr)}</span> &bull; ${pctOfTotal}% of total`;
+      } else {
+        if (kpiPeakCost) kpiPeakCost.textContent = "$0.0000";
+        if (kpiPeakDate) kpiPeakDate.textContent = "No charges in period";
+      }
+
+      // Update Filter counts
+      if (countAllDays) countAllDays.textContent = results.length;
+      if (countActiveDays) countActiveDays.textContent = activeDaysCount;
+
+      // 2. Render Daily Bar Chart
+      renderBillingBarChart(results, maxCost, currency);
+
+      // 3. Render Usage Type Drivers
+      renderUsageTypeDrivers(usageTypeAggMap, totalCost, currency);
+
+      // 4. Render Itemized Table
+      renderBillingTable(results, currency);
+    }
+
+    function renderBillingBarChart(results, maxCost, currency) {
+      if (!billingChartBarsContainer) return;
+      if (!results.length) {
+        billingChartBarsContainer.innerHTML = `<div class="empty-state" style="width:100%;">No daily data available.</div>`;
+        return;
+      }
+
+      const effectiveMax = maxCost > 0 ? maxCost : 1;
+
+      billingChartBarsContainer.innerHTML = results.map(day => {
+        const dateStr = day.time_period ? day.time_period.start : "";
+        const parts = dateStr.split("-");
+        const shortDate = parts.length === 3 ? `${parts[1]}/${parts[2]}` : dateStr;
+        const dayCost = Number(day.total_cost_usd) || 0;
+        const breakdown = Array.isArray(day.breakdown) ? day.breakdown : [];
+        const isPeak = dayCost === maxCost && maxCost > 0;
+        const isZero = dayCost === 0;
+
+        let heightPct = isZero ? 4 : Math.max(12, (dayCost / effectiveMax) * 92);
+        let colClasses = "billing-bar-col";
+        if (isZero) colClasses += " zero-cost";
+        if (isPeak) colClasses += " peak-cost";
+
+        return `
+          <div class="${colClasses}" onclick="focusBillingDate('${escapeHtml(dateStr)}')">
+            <div class="billing-bar-tooltip">
+              <div style="font-weight:700; color:#fff; margin-bottom:2px;">${formatBillingDate(dateStr)}</div>
+              <div style="color:var(--accent); font-size:0.85rem; font-weight:800;">${formatBillingCurrency(dayCost, currency)}</div>
+              <div style="color:var(--muted); font-size:0.7rem; margin-top:2px;">${breakdown.length} usage item${breakdown.length === 1 ? '' : 's'}</div>
+            </div>
+            <div class="billing-bar-fill" style="height: ${heightPct.toFixed(1)}%;"></div>
+            <div class="billing-bar-label">${escapeHtml(shortDate)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderUsageTypeDrivers(usageTypeAggMap, totalCost, currency) {
+      if (!usageTypesListContainer) return;
+      const items = Object.values(usageTypeAggMap).sort((a, b) => b.total_cost - a.total_cost);
+      if (usageTypesCountBadge) {
+        usageTypesCountBadge.textContent = `${items.length} Categor${items.length === 1 ? 'y' : 'ies'}`;
+      }
+
+      if (!items.length) {
+        usageTypesListContainer.innerHTML = `<div class="empty-state">No categorized usage charges recorded during this billing period.</div>`;
+        return;
+      }
+
+      usageTypesListContainer.innerHTML = items.map(item => {
+        const cost = item.total_cost;
+        const pct = totalCost > 0 ? ((cost / totalCost) * 100).toFixed(1) : "0.0";
+        const cleanName = formatUsageTypeClean(item.usage_type);
+        const qtyFormatted = item.total_quantity > 0
+          ? `${item.total_quantity.toFixed(4).replace(/\.?0+$/, '')} units`
+          : "—";
+
+        return `
+          <div class="usage-item-row">
+            <div class="usage-item-left">
+              <div class="usage-item-name">
+                <span>${escapeHtml(cleanName)}</span>
+                <code style="font-size: 0.72rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;">${escapeHtml(item.usage_type)}</code>
+              </div>
+              <div class="usage-item-progress-track">
+                <div class="usage-item-progress-bar" style="width: ${Math.max(cost > 0 ? 3 : 0, Number(pct))}%;"></div>
+              </div>
+            </div>
+            <div class="usage-item-right">
+              <div class="usage-item-cost">${formatBillingCurrency(cost, currency)}</div>
+              <div class="usage-item-pct">${pct}% of total spend (${qtyFormatted})</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderBillingTable(results, currency) {
+      if (!billingTableBody) return;
+      let filtered = results;
+      if (currentBillingFilter === "active") {
+        filtered = filtered.filter(d => (Number(d.total_cost_usd) || 0) > 0);
+      }
+      if (billingSearchQuery) {
+        filtered = filtered.filter(d => {
+          const start = d.time_period ? d.time_period.start : "";
+          const end = d.time_period ? d.time_period.end : "";
+          return start.includes(billingSearchQuery) || end.includes(billingSearchQuery);
+        });
+      }
+
+      if (!filtered.length) {
+        billingTableBody.innerHTML = `<tr><td colspan="6" class="empty-state">No billing records match the selected filter or search.</td></tr>`;
+        return;
+      }
+
+      billingTableBody.innerHTML = filtered.map((day, idx) => {
+        const start = day.time_period ? day.time_period.start : "";
+        const end = day.time_period ? day.time_period.end : "";
+        const cost = Number(day.total_cost_usd) || 0;
+        const breakdown = Array.isArray(day.breakdown) ? day.breakdown : [];
+        const isExpanded = expandedBillingDates.has(start);
+        const hasCharges = cost > 0;
+
+        let statusBadge = hasCharges
+          ? `<span class="pill pill-success">Active Usage</span>`
+          : `<span class="pill pill-muted-success" style="opacity:0.6;">Zero Spend</span>`;
+
+        let driverText = "—";
+        if (breakdown.length > 0) {
+          const topDriver = [...breakdown].sort((a, b) => (Number(b.cost_usd) || 0) - (Number(a.cost_usd) || 0))[0];
+          if (topDriver && Number(topDriver.cost_usd) > 0) {
+            driverText = `${formatUsageTypeClean(topDriver.usage_type)} (${formatBillingCurrency(topDriver.cost_usd, currency)})`;
+          } else {
+            driverText = `${breakdown.length} usage metrics`;
+          }
+        }
+
+        let breakdownHtml = "";
+        if (isExpanded) {
+          if (breakdown.length === 0) {
+            breakdownHtml = `
+              <tr class="nested-breakdown-row">
+                <td colspan="6" style="padding: 0 14px 14px 14px;">
+                  <div class="nested-breakdown-box">
+                    <div style="font-size: 0.8rem; color: var(--muted); text-align: center;">No individual sub-resource breakdown items reported for this day.</div>
+                  </div>
+                </td>
+              </tr>
+            `;
+          } else {
+            const itemsRows = breakdown.map(item => {
+              const itemCost = Number(item.cost_usd) || 0;
+              const itemQty = Number(item.usage_quantity) || 0;
+              const itemPct = cost > 0 ? ((itemCost / cost) * 100).toFixed(1) : "0.0";
+              const cleanType = formatUsageTypeClean(item.usage_type);
+
+              return `
+                <tr>
+                  <td style="font-weight:600; color:#fff;">${escapeHtml(cleanType)} <code style="font-size:0.74rem; color:var(--muted); font-family: 'JetBrains Mono', monospace;">${escapeHtml(item.usage_type)}</code></td>
+                  <td style="font-family:'JetBrains Mono', monospace; font-size:0.82rem; color:#93c5fd;">${itemQty.toFixed(4).replace(/\.?0+$/, '')}</td>
+                  <td style="font-family:'JetBrains Mono', monospace; font-size:0.82rem; color:var(--accent); font-weight:700;">${formatBillingCurrency(itemCost, currency)}</td>
+                  <td style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:var(--muted);">${itemPct}%</td>
+                </tr>
+              `;
+            }).join("");
+
+            breakdownHtml = `
+              <tr class="nested-breakdown-row">
+                <td colspan="6" style="padding: 0 14px 14px 14px;">
+                  <div class="nested-breakdown-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                      <span style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:#38bdf8;">Itemized Cost Line Items &bull; ${formatBillingDate(start)}</span>
+                      <span class="pill pill-accounts">${breakdown.length} Items</span>
+                    </div>
+                    <div class="table-container">
+                      <table style="background: rgba(11, 16, 32, 0.75);">
+                        <thead>
+                          <tr>
+                            <th>Resource / Usage Type</th>
+                            <th>Quantity</th>
+                            <th>Cost (${escapeHtml(currency)})</th>
+                            <th>% of Day</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${itemsRows}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }
+        }
+
+        const expandBtnText = isExpanded ? "Hide Details" : (breakdown.length > 0 ? `Details (${breakdown.length})` : "Details");
+
+        return `
+          <tr id="billing-row-${escapeHtml(start)}" style="${hasCharges ? 'background: rgba(56, 189, 248, 0.03);' : ''}">
+            <td style="color: var(--muted);">${idx + 1}</td>
+            <td>
+              <div style="font-weight: 700; color: #f8fafc; font-family: 'JetBrains Mono', monospace; font-size: 0.86rem;">${escapeHtml(start)}</div>
+              <div style="font-size: 0.72rem; color: var(--muted);">${formatBillingDate(start)}</div>
+            </td>
+            <td>${statusBadge}</td>
+            <td>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 800; color: ${hasCharges ? 'var(--accent)' : 'var(--muted)'};">
+                ${formatBillingCurrency(cost, currency)}
+              </span>
+            </td>
+            <td>
+              <span style="font-size: 0.82rem; color: #e2e8f0;">${escapeHtml(driverText)}</span>
+            </td>
+            <td style="text-align: center;">
+              <button type="button" class="billing-expand-btn" onclick="toggleBillingDayExpand('${escapeHtml(start)}')">
+                <span>${expandBtnText}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: ${isExpanded ? 'rotate(180deg)' : 'none'}; transition: transform 0.2s ease;">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+            </td>
+          </tr>
+          ${breakdownHtml}
+        `;
+      }).join("");
+    }
+
+    window.toggleBillingDayExpand = function (dateStr) {
+      if (expandedBillingDates.has(dateStr)) {
+        expandedBillingDates.delete(dateStr);
+      } else {
+        expandedBillingDates.add(dateStr);
+      }
+      if (billingDataCache) {
+        renderBillingTable(billingDataCache.results || [], billingDataCache.currency || "USD");
+      }
+    };
+
+    window.focusBillingDate = function (dateStr) {
+      expandedBillingDates.add(dateStr);
+      if (billingDataCache) {
+        renderBillingTable(billingDataCache.results || [], billingDataCache.currency || "USD");
+        const row = document.getElementById(`billing-row-${dateStr}`);
+        if (row) {
+          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          row.style.outline = "2px solid #38bdf8";
+          setTimeout(() => { row.style.outline = "none"; }, 2000);
+        }
+      }
+    };
+
+    window.filterBillingDays = function (filterType) {
+      currentBillingFilter = filterType;
+      if (filterAllDaysBtn) filterAllDaysBtn.classList.toggle("active", filterType === "all");
+      if (filterActiveDaysBtn) filterActiveDaysBtn.classList.toggle("active", filterType === "active");
+      if (billingDataCache) {
+        renderBillingTable(billingDataCache.results || [], billingDataCache.currency || "USD");
+      }
+    };
+
+    let billingSearchTimeout = null;
+    if (billingSearchInput) {
+      billingSearchInput.addEventListener("input", () => {
+        clearTimeout(billingSearchTimeout);
+        billingSearchTimeout = setTimeout(() => {
+          billingSearchQuery = billingSearchInput.value.trim();
+          if (billingDataCache) {
+            renderBillingTable(billingDataCache.results || [], billingDataCache.currency || "USD");
+          }
+        }, 250);
+      });
+    }
+
+    if (billingRefreshBtn) {
+      billingRefreshBtn.addEventListener("click", () => {
+        loadBillingData(true);
+      });
+    }
   </script>
 </body>
 
