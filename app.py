@@ -43,7 +43,7 @@ SCRAPER_API_URL = os.getenv(
 ).strip()
 BILLING_API_URL = os.getenv(
     "BILLING_API_URL",
-    "http://localhost:3000/api/billing/ecs-fargate",
+    "http://74.207.229.12:3000/api/billing/ecs-fargate",
 ).strip()
 BILLING_API_KEY = os.getenv(
     "BILLING_API_KEY",
@@ -266,7 +266,7 @@ def get_billing_ecs_fargate():
     """Fetch ECS Fargate billing data from external billing API using configured API key from .env."""
     target_url = ""
     try:
-        base_url = BILLING_API_URL or "http://localhost:3000/api/billing/ecs-fargate"
+        base_url = BILLING_API_URL or "http://74.207.229.12:3000/api/billing/ecs-fargate"
         api_key = BILLING_API_KEY or "ak_live_7e8b4f1c9a3d5206e1"
 
         def _build_url(source_url):
@@ -302,8 +302,8 @@ def get_billing_ecs_fargate():
                 return jsonify(data), resp.status
         except urllib.error.URLError as url_err:
             # If backend is running inside Docker container and localhost was refused, try host.docker.internal
-            if ("localhost" in target_url or "127.0.0.1" in target_url) and "host.docker.internal" not in target_url:
-                docker_host_url = base_url.replace("localhost", "host.docker.internal").replace("127.0.0.1", "host.docker.internal")
+            if ("74.207.229.12" in target_url or "127.0.0.1" in target_url) and "host.docker.internal" not in target_url:
+                docker_host_url = base_url.replace("74.207.229.12", "host.docker.internal").replace("127.0.0.1", "host.docker.internal")
                 docker_target_url = _build_url(docker_host_url)
                 try:
                     req_docker = urllib.request.Request(

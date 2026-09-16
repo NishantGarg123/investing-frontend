@@ -1897,6 +1897,107 @@
       color: #fff;
     }
 
+    /* ── Previous 3 Months Summary Styles ── */
+    .previous-months-card {
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .previous-months-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .previous-month-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 10px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+
+    .previous-month-card:hover {
+      border-color: rgba(56, 189, 248, 0.35);
+      background: rgba(30, 41, 59, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .previous-month-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #a855f7, #38bdf8);
+      opacity: 0.8;
+    }
+
+    .previous-month-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .previous-month-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.01em;
+    }
+
+    .previous-month-dates {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .previous-month-body {
+      margin-bottom: 14px;
+    }
+
+    .previous-month-cost-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .previous-month-cost-val {
+      font-size: 1.6rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #94a3b8;
+      letter-spacing: -0.02em;
+    }
+
+    .previous-month-cost-val.has-cost {
+      color: #38bdf8;
+    }
+
+    .previous-month-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid rgba(148, 163, 184, 0.08);
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     @media (max-width: 900px) {
       .app-layout {
         flex-direction: column;
@@ -2665,6 +2766,33 @@
                 </table>
               </div>
             </div>
+
+            <!-- HISTORICAL MONTHLY SPEND (LAST 3 MONTHS) -->
+            <div class="card previous-months-card" id="previous-months-section" style="margin-top: 24px; padding: 20px;">
+              <div class="comments-toolbar" style="margin-bottom: 16px;">
+                <div class="toolbar-left">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="billing-kpi-icon" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; width: 32px; height: 32px;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 style="font-size: 1.05rem; font-weight: 700; margin:0;">Historical Monthly Spend (Last 3 Months)</h3>
+                      <div style="font-size: 0.78rem; color: var(--muted);">Individual monthly infrastructure billing totals from AWS Cost Explorer</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="toolbar-right">
+                  <span class="pill pill-accounts" id="previous-months-count-badge">Last 3 Months</span>
+                </div>
+              </div>
+
+              <div class="previous-months-grid" id="previous-months-container">
+                <div class="loading-state" style="grid-column: 1 / -1;"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading previous months summary...</div>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -2899,7 +3027,7 @@
     const RUN_API_URL = "http://74.207.229.12:3000/api/run";
     let lambdaApiUrl = "https://al4vj8u8yh.execute-api.us-west-2.amazonaws.com/dev/investing-scrapper";
     let scraperApiUrl = "http://74.207.229.12:3000/api/run";
-    let billingApiUrl = "http://localhost:3000/api/billing/ecs-fargate";
+    let billingApiUrl = "http://74.207.229.12:3000/api/billing/ecs-fargate";
     let billingApiKey = "ak_live_7e8b4f1c9a3d5206e1";
 
 
@@ -4423,6 +4551,8 @@ Live execution batch logs are updating below...`, "success");
     const filterAllDaysBtn = document.getElementById("filter-all-days");
     const filterActiveDaysBtn = document.getElementById("filter-active-days");
     const billingSearchInput = document.getElementById("billing-search-input");
+    const previousMonthsContainer = document.getElementById("previous-months-container");
+    const previousMonthsCountBadge = document.getElementById("previous-months-count-badge");
 
     let billingDataCache = null;
     let currentBillingFilter = "all";
@@ -4484,12 +4614,15 @@ Live execution batch logs are updating below...`, "success");
       if (usageTypesListContainer) {
         usageTypesListContainer.innerHTML = `<div class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Aggregating cost drivers...</div>`;
       }
+      if (previousMonthsContainer) {
+        previousMonthsContainer.innerHTML = `<div class="loading-state" style="grid-column: 1 / -1;"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading previous months summary...</div>`;
+      }
 
       let data = null;
       let lastErrorMessage = "";
 
       // 1. First attempt: Direct fetch from browser (same machine/environment as Postman)
-      let directUrl = billingApiUrl || "http://localhost:3000/api/billing/ecs-fargate";
+      let directUrl = billingApiUrl || "http://74.207.229.12:3000/api/billing/ecs-fargate";
       try {
         const u = new URL(directUrl, window.location.href);
         if (billingApiKey) u.searchParams.set("api_key", billingApiKey);
@@ -4561,6 +4694,9 @@ Live execution batch logs are updating below...`, "success");
         }
         if (usageTypesListContainer) {
           usageTypesListContainer.innerHTML = `<div class="empty-state" style="color: var(--danger); font-size:0.85rem;">Breakdown unavailable</div>`;
+        }
+        if (previousMonthsContainer) {
+          previousMonthsContainer.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1; color: var(--danger); font-size:0.85rem;">Historical monthly summary unavailable</div>`;
         }
       } finally {
         if (billingRefreshBtn) {
@@ -4653,6 +4789,70 @@ Live execution batch logs are updating below...`, "success");
 
       // 4. Render Itemized Table
       renderBillingTable(results, currency);
+
+      // 5. Render Previous 3 Months Summary
+      renderPreviousMonthsSummary(data.previous_3_months_summary, currency);
+    }
+
+    function renderPreviousMonthsSummary(summaryList, currency = "USD") {
+      if (!previousMonthsContainer) return;
+      const list = Array.isArray(summaryList) ? summaryList : [];
+
+      if (previousMonthsCountBadge) {
+        previousMonthsCountBadge.textContent = `${list.length} Month${list.length === 1 ? '' : 's'}`;
+      }
+
+      if (!list.length) {
+        previousMonthsContainer.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1; width: 100%;">No previous monthly spend records reported for this service.</div>`;
+        return;
+      }
+
+      const total3Months = list.reduce((sum, item) => sum + (Number(item.total_cost_usd) || 0), 0);
+
+      previousMonthsContainer.innerHTML = list.map(item => {
+        const cost = Number(item.total_cost_usd) || 0;
+        const monthName = item.month_name || item.month || "Unknown Month";
+        const monthCode = item.month || "";
+        const startDate = item.start_date || "";
+        const endDate = item.end_date || "";
+        const hasSpend = cost > 0;
+        const pctOf3Months = total3Months > 0 ? ((cost / total3Months) * 100).toFixed(1) : "0.0";
+
+        let dateDisplay = "—";
+        if (startDate && endDate) {
+          dateDisplay = `${formatBillingDate(startDate)} &ndash; ${formatBillingDate(endDate)}`;
+        } else if (startDate) {
+          dateDisplay = formatBillingDate(startDate);
+        }
+
+        return `
+          <div class="previous-month-card">
+            <div class="previous-month-header">
+              <div>
+                <div class="previous-month-title">${escapeHtml(monthName)}</div>
+                <div class="previous-month-dates">${dateDisplay}</div>
+              </div>
+              <span class="pill ${hasSpend ? 'pill-success' : 'pill-accounts'}">${escapeHtml(monthCode || monthName)}</span>
+            </div>
+
+            <div class="previous-month-body">
+              <div class="previous-month-cost-label">Total Month Cost</div>
+              <div class="previous-month-cost-val ${hasSpend ? 'has-cost' : ''}">
+                ${formatBillingCurrency(cost, currency)}
+              </div>
+            </div>
+
+            <div class="previous-month-footer">
+              <span class="pill ${hasSpend ? 'pill-success' : 'pill-muted-success'}" style="font-size:0.72rem;">
+                ${hasSpend ? 'Active Billing' : 'Zero Spend ($0.00)'}
+              </span>
+              <span style="font-size:0.75rem; color:var(--muted); font-family:'JetBrains Mono', monospace;">
+                ${hasSpend ? `${pctOf3Months}% of 3-mo total` : 'No charges'}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join("");
     }
 
     function renderBillingBarChart(results, maxCost, currency) {
