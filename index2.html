@@ -2536,7 +2536,7 @@
                             <div>
                                 <h1>Manage Users</h1>
                                 <p class="intro" style="margin-bottom:0;">Add and view user records in
-                                    <code>users</code> database table. Users are inserted only if not already present.
+                                    <code>InvestingDB.dbo.users</code>. Users are inserted only if not already present.
                                 </p>
                             </div>
                             <div class="comments-actions-group">
@@ -2555,7 +2555,7 @@
                         <form class="card" id="add-user-form" style="margin-bottom: 24px;" novalidate>
                             <h2 class="section-title">Add New User</h2>
                             <p class="hint">Enter the User ID and User Name to insert into
-                                <code>users</code> database table.</p>
+                                <code>InvestingDB.dbo.users</code>.</p>
 
                             <div class="pairs" style="grid-template-columns: 1fr 1fr;">
                                 <div>
@@ -3094,101 +3094,21 @@
         checkExistingAuth();
 
         // ─────────────────────────────────────────────────────────────────
-        // CONFIG & APIS (SQLite Universal Raw SQL Execution API Backend)
+        // CONFIG & APIS
         // ─────────────────────────────────────────────────────────────────
-        let API_BASE = "http://localhost:3000"; // Or VM IP in production
-        let API_KEY = "ak_live_7e8b4f1c9a3d5206e12f84b9c7a0d143";
-
         const STORAGE_API_URL = "/api/store";
         const LOGS_API_URL = "/api/logs";
         const COMMENTS_API_URL = "/api/comments";
         const COMMENTS_STATUS_API_URL = "/api/comments/status";
         const USERS_API_URL = "/api/users";
         const BILLING_API_URL = "/api/billing/ecs-fargate";
-        const RUN_API_URL = "http://localhost:3000/api/run";
+        const RUN_API_URL = "http://74.207.229.12:3000/api/run";
         let lambdaApiUrl = "https://al4vj8u8yh.execute-api.us-west-2.amazonaws.com/dev/investing-scrapper";
-        let scraperApiUrl = "http://localhost:3000/api/run";
-        let billingApiUrl = "http://localhost:3000/api/billing/ecs-fargate";
-        let billingApiKey = "ak_live_7e8b4f1c9a3d5206e12f84b9c7a0d143";
+        let scraperApiUrl = "http://74.207.229.12:3000/api/run";
+        let billingApiUrl = "http://74.207.229.12:3000/api/billing/ecs-fargate";
+        let billingApiKey = "ak_live_7e8b4f1c9a3d5206e1";
 
-        // Universal Raw SQL Execution API Helper (/api/query and /api/sql)
-        async function runQuery(sql, params = []) {
-            try {
-                const response = await fetch(`${API_BASE}/api/query`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-API-Key": API_KEY
-                    },
-                    body: JSON.stringify({
-                        query: sql,
-                        params: params
-                    })
-                });
-                return await response.json();
-            } catch (err) {
-                console.error("[runQuery Error]", err);
-                try {
-                    const fallbackRes = await authFetch("/api/query", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ query: sql, params: params })
-                    });
-                    return await fallbackRes.json();
-                } catch (fallbackErr) {
-                    return { success: false, error: err.message || "Failed to execute SQL query" };
-                }
-            }
-        }
-        window.runQuery = runQuery;
 
-        // 1. Insert / Upsert Data (Using Universal Raw SQL API):
-        async function saveFrontendData(payload) {
-            const table = payload.table || "users";
-            const action = (payload.action || "upsert").toLowerCase();
-            const record = payload.data || payload.user || payload.record || payload;
-
-            const dataObj = {};
-            for (const [k, v] of Object.entries(record)) {
-                if (k !== "table" && k !== "action") dataObj[k] = v;
-            }
-
-            const cols = Object.keys(dataObj);
-            const vals = Object.values(dataObj);
-            if (!cols.length) return { success: false, error: "No data fields provided" };
-
-            const placeholders = cols.map(() => "?").join(", ");
-            const colNames = cols.join(", ");
-            const verb = (action === "upsert" || action === "replace") ? "INSERT OR REPLACE" : "INSERT OR IGNORE";
-            const sql = `${verb} INTO ${table} (${colNames}) VALUES (${placeholders})`;
-
-            return await runQuery(sql, vals);
-        }
-        window.saveFrontendData = saveFrontendData;
-
-        // 2. Read Data (Using Universal Raw SQL API):
-        async function getFrontendData(limit = 50, params = {}) {
-            const table = params.table || "users";
-            const offset = params.offset || 0;
-            const search = params.search || "";
-
-            let sql = `SELECT * FROM ${table}`;
-            const queryParams = [];
-            if (search) {
-                if (table === "users") {
-                    sql += ` WHERE (id LIKE ? OR user_name LIKE ?)`;
-                    queryParams.push(`%${search}%`, `%${search}%`);
-                } else if (table === "comment_urls") {
-                    sql += ` WHERE (Comments LIKE ? OR user_name LIKE ? OR url LIKE ?)`;
-                    queryParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
-                }
-            }
-            sql += ` ORDER BY 1 DESC LIMIT ? OFFSET ?`;
-            queryParams.push(limit, offset);
-
-            return await runQuery(sql, queryParams);
-        }
-        window.getFrontendData = getFrontendData;
 
         async function triggerRunApi(rawUsers = [], rawUserNames = [], rawUserIds = []) {
             const url = "/api/run";
@@ -3274,18 +3194,15 @@
                         body: JSON.stringify(payload)
                     });
 
-                    // Also trigger directly from browser to scraper container API
+                    // Also trigger directly from browser to 74.207.229.12:3000 (just like Postman)
                     try {
-                        const clientTargetUrl = (typeof scraperApiUrl === "string" && scraperApiUrl.startsWith("http"))
+                        const clientTargetUrl = (typeof scraperApiUrl === "string" && scraperApiUrl.startsWith("http") && !scraperApiUrl.includes("74.207.229.12"))
                             ? scraperApiUrl
-                            : `${API_BASE}/api/run`;
+                            : "http://74.207.229.12:3000/api/run";
 
                         fetch(clientTargetUrl, {
                             method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "X-API-Key": API_KEY
-                            },
+                            headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(payload)
                         }).then(async r => {
                             console.log("%c[DIRECT BROWSER SCRAPER SUCCESS]", "background: #10b981; color: white; font-weight: bold; padding: 2px 6px; border-radius: 3px;", `Triggered ${clientTargetUrl}`);
@@ -3299,14 +3216,11 @@
                     res = await authFetch(url, { method: "GET" });
 
                     try {
-                        const clientTargetUrl = (typeof scraperApiUrl === "string" && scraperApiUrl.startsWith("http"))
+                        const clientTargetUrl = (typeof scraperApiUrl === "string" && scraperApiUrl.startsWith("http") && !scraperApiUrl.includes("74.207.229.12"))
                             ? scraperApiUrl
-                            : `${API_BASE}/api/run`;
+                            : "http://74.207.229.12:3000/api/run";
 
-                        fetch(clientTargetUrl, {
-                            method: "GET",
-                            headers: { "X-API-Key": API_KEY }
-                        })
+                        fetch(clientTargetUrl, { method: "GET" })
                             .then(() => console.log("%c[DIRECT BROWSER SCRAPER SUCCESS]", "background: #10b981; color: white; padding: 2px 6px;", `Triggered ${clientTargetUrl} GET`))
                             .catch(() => { });
                     } catch (_) { }
@@ -3330,12 +3244,6 @@
                 const response = await authFetch("/api/config");
                 if (response.ok) {
                     const config = await response.json();
-                    if (config.backend_api_url) {
-                        API_BASE = config.backend_api_url;
-                    }
-                    if (config.api_key) {
-                        API_KEY = config.api_key;
-                    }
                     if (config.lambda_api_url) {
                         lambdaApiUrl = config.lambda_api_url;
                     }
