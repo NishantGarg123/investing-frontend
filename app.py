@@ -53,7 +53,28 @@ BILLING_API_KEY = os.getenv(
 
 
 # ---------------------------------------------------------------------------
-# Authentication Configuration (configured via .env or hardcoded fallback)
+# Super Admin Authentication (Exclusive access to Billing section)
+# ---------------------------------------------------------------------------
+SUPER_ADMIN_EMAIL = (
+    os.getenv("SUPER_ADMIN_EMAIL")
+    or os.getenv("SUPERADMIN_EMAIL")
+    or "superadmin@investing.com"
+).strip()
+
+SUPER_ADMIN_ID = (
+    os.getenv("SUPER_ADMIN_ID")
+    or os.getenv("SUPERADMIN_ID")
+    or "superadmin"
+).strip()
+
+SUPER_ADMIN_PASSWORD = (
+    os.getenv("SUPER_ADMIN_PASSWORD")
+    or os.getenv("SUPERADMIN_PASSWORD")
+    or "SuperAdmin@Investing2026"
+).strip()
+
+# ---------------------------------------------------------------------------
+# Standard User Authentication Configuration (Configured via .env or fallback)
 # ---------------------------------------------------------------------------
 AUTH_EMAIL = (
     os.getenv("AUTH_EMAIL")
@@ -66,7 +87,7 @@ AUTH_ID = (
     os.getenv("AUTH_ID")
     or os.getenv("ADMIN_ID")
     or os.getenv("LOGIN_ID")
-    or ""
+    or "admin"
 ).strip()
 
 AUTH_PASSWORD = (
@@ -75,7 +96,7 @@ AUTH_PASSWORD = (
     or os.getenv("LOGIN_PASSWORD")
     or os.getenv("AUTH_PASS")
     or os.getenv("LOGIN_PASS")
-    or "Admin@Investing2026"
+    or "InvestAdmin21"
 ).strip()
 
 # Session Expiration Configuration (24 Hours / 86400 Seconds)
@@ -108,7 +129,7 @@ def _save_persisted_tokens():
         pass
 
 
-# Active session tokens: token -> {"email": email, "expires_at": epoch_seconds}
+# Active session tokens: token -> {"email": email, "role": role, "is_super_admin": bool, "expires_at": epoch_seconds}
 _ACTIVE_TOKENS: dict[str, dict] = _load_persisted_tokens()
 
 
@@ -143,6 +164,78 @@ def _is_valid_token(token: str) -> tuple[bool, dict | None]:
     return True, session
 
 
+def _authenticate_user(identifier: str, password: str) -> tuple[bool, dict | None]:
+    """Validate credentials against Super Admin, Standard Admin/User, and any ADDITIONAL_USERS."""
+    if not identifier or not password:
+        return False, None
+
+    norm_id = identifier.lower().strip()
+
+    # 1. Super Admin authentication
+    super_admin_identifiers = set()
+    if SUPER_ADMIN_EMAIL:
+        super_admin_identifiers.add(SUPER_ADMIN_EMAIL.lower())
+    if SUPER_ADMIN_ID:
+        super_admin_identifiers.add(SUPER_ADMIN_ID.lower())
+
+    if norm_id in super_admin_identifiers and password == SUPER_ADMIN_PASSWORD:
+        return True, {
+            "email": SUPER_ADMIN_EMAIL if norm_id == SUPER_ADMIN_EMAIL.lower() else (SUPER_ADMIN_EMAIL or identifier),
+            "role": "super_admin",
+            "is_super_admin": True,
+        }
+
+    # 2. Standard Admin/User authentication
+    standard_identifiers = set()
+    if AUTH_EMAIL:
+        standard_identifiers.add(AUTH_EMAIL.lower())
+    if AUTH_ID:
+        standard_identifiers.add(AUTH_ID.lower())
+    if not standard_identifiers:
+        standard_identifiers.add("admin@investing.com")
+
+    if norm_id in standard_identifiers and password == AUTH_PASSWORD:
+        return True, {
+            "email": AUTH_EMAIL if norm_id == AUTH_EMAIL.lower() else (AUTH_EMAIL or identifier),
+            "role": "admin",
+            "is_super_admin": False,
+        }
+
+    # 3. Optional ADDITIONAL_USERS from environment variable (JSON or comma separated)
+    extra_users_str = os.getenv("ADDITIONAL_USERS", "").strip()
+    if extra_users_str:
+        try:
+            if extra_users_str.startswith("["):
+                extra_users = json.loads(extra_users_str)
+                for u in extra_users:
+                    u_email = str(u.get("email") or u.get("id") or "").strip()
+                    u_pass = str(u.get("password") or "").strip()
+                    u_role = str(u.get("role") or "user").strip()
+                    if norm_id == u_email.lower() and password == u_pass:
+                        return True, {
+                            "email": u_email,
+                            "role": u_role,
+                            "is_super_admin": (u_role == "super_admin"),
+                        }
+            else:
+                for entry in extra_users_str.split(","):
+                    parts = [p.strip() for p in entry.split(":") if p.strip()]
+                    if len(parts) >= 2:
+                        u_email = parts[0]
+                        u_pass = parts[1]
+                        u_role = parts[2] if len(parts) >= 3 else "user"
+                        if norm_id == u_email.lower() and password == u_pass:
+                            return True, {
+                                "email": u_email,
+                                "role": u_role,
+                                "is_super_admin": (u_role == "super_admin"),
+                            }
+        except Exception as e:
+            app.logger.warning(f"Failed to parse ADDITIONAL_USERS: {e}")
+
+    return False, None
+
+
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -154,6 +247,27 @@ def require_auth(f):
                 "error": "Unauthorized. Please log in.",
                 "code": "UNAUTHORIZED"
             }), 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+def require_super_admin(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = _get_bearer_token()
+        valid, session = _is_valid_token(token)
+        if not valid or not session:
+            return jsonify({
+                "success": False,
+                "error": "Unauthorized. Please log in.",
+                "code": "UNAUTHORIZED"
+            }), 401
+        if not session.get("is_super_admin"):
+            return jsonify({
+                "success": False,
+                "error": "Forbidden. Super admin access required to view billing.",
+                "code": "FORBIDDEN"
+            }), 403
         return f(*args, **kwargs)
     return decorated
 
@@ -177,18 +291,8 @@ def login():
             "error": "Email/User ID and password are required."
         }), 400
 
-    # Match against configured AUTH_EMAIL or AUTH_ID
-    allowed_identifiers = set()
-    if AUTH_EMAIL:
-        allowed_identifiers.add(AUTH_EMAIL.lower())
-    if AUTH_ID:
-        allowed_identifiers.add(AUTH_ID.lower())
-
-    # Fallback to AUTH_EMAIL if no identifier configured
-    if not allowed_identifiers:
-        allowed_identifiers.add("admin@investing.com")
-
-    if identifier.lower() not in allowed_identifiers or password != AUTH_PASSWORD:
+    is_valid, user_profile = _authenticate_user(identifier, password)
+    if not is_valid or not user_profile:
         return jsonify({
             "success": False,
             "error": "Invalid email/ID or password. Login failed."
@@ -196,10 +300,14 @@ def login():
 
     token = secrets.token_hex(32)
     expires_at = time.time() + TOKEN_TTL_SECONDS
-    display_name = AUTH_EMAIL if identifier.lower() == AUTH_EMAIL.lower() else identifier
+    display_name = user_profile["email"]
+    role = user_profile["role"]
+    is_super_admin = user_profile["is_super_admin"]
 
     _ACTIVE_TOKENS[token] = {
         "email": display_name,
+        "role": role,
+        "is_super_admin": is_super_admin,
         "expires_at": expires_at,
     }
     _save_persisted_tokens()
@@ -209,6 +317,8 @@ def login():
         "message": "Login successful",
         "token": token,
         "email": display_name,
+        "role": role,
+        "is_super_admin": is_super_admin,
         "expires_in": TOKEN_TTL_SECONDS,
     })
 
@@ -228,7 +338,9 @@ def verify_auth():
     return jsonify({
         "success": True,
         "authenticated": True,
-        "email": session["email"],
+        "email": session.get("email", ""),
+        "role": session.get("role", "admin"),
+        "is_super_admin": bool(session.get("is_super_admin", False)),
     })
 
 
@@ -251,17 +363,26 @@ def logout():
 @app.get("/api/config")
 @require_auth
 def get_config():
-    return jsonify({
+    token = _get_bearer_token()
+    _, session = _is_valid_token(token)
+    is_super = bool(session and session.get("is_super_admin"))
+
+    cfg = {
         "lambda_api_url": LAMBDA_API_URL,
         "scraper_api_url": SCRAPER_API_URL,
-        "billing_api_url": BILLING_API_URL,
-        "billing_api_key": BILLING_API_KEY,
-    })
+    }
+    if is_super:
+        cfg["billing_api_url"] = BILLING_API_URL
+        cfg["billing_api_key"] = BILLING_API_KEY
+    else:
+        cfg["billing_api_url"] = ""
+        cfg["billing_api_key"] = ""
+    return jsonify(cfg)
 
 
 @app.get("/api/billing/ecs-fargate")
 @app.get("/api/billing")
-@require_auth
+@require_super_admin
 def get_billing_ecs_fargate():
     """Fetch ECS Fargate billing data from external billing API using configured API key from .env."""
     target_url = ""
