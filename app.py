@@ -756,7 +756,7 @@ def _fetch_24h_comments(
     user_filter = None,
     search_query: str = ""
 ) -> dict:
-    """Fetch comments fetched within the last 6 hours from InvestingDB.dbo.comment_urls with optional multiple users and comment search."""
+    """Fetch recent comments with optional processing group, user, and text filters."""
     if pyodbc is None:
         raise RuntimeError("pyodbc is not installed")
     if not DB_CONNECTION_STRING:
@@ -766,7 +766,11 @@ def _fetch_24h_comments(
     where_clauses = ["fetched_at >= DATEADD(hour, -?, sysdatetime())"]
     params = [hours]
 
-    if status_filter:
+    if status_filter == "processed":
+        where_clauses.append("LOWER(COALESCE(NULLIF(LTRIM(RTRIM(status)), ''), 'not processed')) <> 'not processed'")
+    elif status_filter == "not processed":
+        where_clauses.append("LOWER(COALESCE(NULLIF(LTRIM(RTRIM(status)), ''), 'not processed')) = 'not processed'")
+    elif status_filter:
         where_clauses.append("status = ?")
         params.append(status_filter)
 
@@ -886,7 +890,7 @@ def get_comments():
     try:
         page = max(1, int(request.args.get("page", 1)))
         page_size = max(1, min(100, int(request.args.get("page_size", 10))))
-        hours = max(1, int(request.args.get("hours", 6)))
+        hours = max(1, int(request.args.get("hours", 168)))
         status_filter = request.args.get("status", "").strip()
         
         # Support multiple ?user=... params, or comma-separated ?user=A,B, or ?users=...
@@ -919,7 +923,7 @@ def get_comments():
 @require_auth
 def get_comments_users():
     try:
-        hours = max(1, int(request.args.get("hours", 6)))
+        hours = max(1, int(request.args.get("hours", 168)))
         users = _fetch_distinct_comment_users(hours=hours)
         return jsonify({"success": True, "users": users})
     except Exception as error:

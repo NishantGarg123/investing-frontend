@@ -1201,6 +1201,9 @@
       border-radius: var(--radius);
       margin-bottom: 16px;
     }
+    .comments-status-tabs { display: flex; gap: 6px; }
+    .comments-status-tab { padding: 7px 12px; font-size: 0.82rem; }
+    .comments-status-tab.active { background: var(--accent); border-color: var(--accent); color: #06251a; }
 
     .toolbar-left,
     .toolbar-right {
@@ -2213,7 +2216,7 @@
               </svg>
             </span>
             <span class="nav-label">Comments</span>
-            <span class="nav-badge" id="sidebar-comments-badge">6h</span>
+            <span class="nav-badge" id="sidebar-comments-badge">1w</span>
           </button>
 
           <button type="button" class="nav-item" id="nav-btn-users" data-tab="users">
@@ -2344,14 +2347,14 @@
             </section>
           </div>
 
-          <!-- TAB 2: COMMENTS VIEW (6H SCRAPED COMMENTS) -->
+          <!-- TAB 2: COMMENTS VIEW (LAST WEEK'S SCRAPED COMMENTS) -->
           <div class="tab-content" id="tab-comments">
-            <div class="eyebrow">Scraped Feed &bull; Last 6 Hours</div>
+            <div class="eyebrow">Scraped Feed &bull; Last Week</div>
             <div class="comments-header-bar">
               <div>
-                <h1>6-Hour Scraped Comments</h1>
+                <h1>Weekly Scraped Comments</h1>
                 <p class="intro" style="margin-bottom:0;">Live commentary feed fetched from the database within the last
-                  6 hours. Ordered descending by latest fetch time.</p>
+                  week. Ordered descending by latest fetch time.</p>
               </div>
               <div class="comments-actions-group">
                 <div class="account-stepper-box">
@@ -2481,13 +2484,11 @@
                     </button>
                   </div>
 
-                  <!-- Status Filter -->
-                  <select id="comments-status-filter"
-                    style="width: auto; min-width: 130px; padding: 6px 10px; font-size: 0.82rem;">
-                    <option value="">All Statuses</option>
-                    <option value="not processed">Not Processed</option>
-                    <option value="reported">Reported / Runned</option>
-                  </select>
+                  <!-- Processing status tabs -->
+                  <div class="comments-status-tabs" role="group" aria-label="Comment processing status">
+                    <button type="button" class="btn-secondary comments-status-tab active" id="comments-not-processed-btn" aria-pressed="true">Not Processed</button>
+                    <button type="button" class="btn-secondary comments-status-tab" id="comments-processed-btn" aria-pressed="false">Processed</button>
+                  </div>
 
                   <!-- Reset Filters Button -->
                   <button type="button" id="comments-reset-filters-btn" class="btn-text"
@@ -3306,7 +3307,9 @@
     const commentsRefreshBtn = document.getElementById("comments-refresh-btn");
     const commentsSearchInput = document.getElementById("comments-search-input");
     const commentsClearSearchBtn = document.getElementById("comments-clear-search-btn");
-    const commentsStatusFilter = document.getElementById("comments-status-filter");
+    const commentsNotProcessedBtn = document.getElementById("comments-not-processed-btn");
+    const commentsProcessedBtn = document.getElementById("comments-processed-btn");
+    let activeCommentsStatus = "not processed";
     const commentsResetFiltersBtn = document.getElementById("comments-reset-filters-btn");
     const paginationInfo = document.getElementById("pagination-info");
     const paginationControls = document.getElementById("pagination-controls");
@@ -3336,7 +3339,7 @@
     function updateResetFiltersBtnVisibility() {
       const hasUser = selectedUserFilters.size > 0;
       const hasSearch = Boolean(commentsSearchInput && commentsSearchInput.value.trim());
-      const hasStatus = Boolean(commentsStatusFilter && commentsStatusFilter.value);
+      const hasStatus = activeCommentsStatus !== "not processed";
       if (commentsResetFiltersBtn) {
         commentsResetFiltersBtn.style.display = (hasUser || hasSearch || hasStatus) ? "inline-block" : "none";
       }
@@ -3420,7 +3423,7 @@
 
     async function loadCommentUsers() {
       try {
-        const res = await authFetch(`${COMMENTS_USERS_API_URL}?hours=6`);
+        const res = await authFetch(`${COMMENTS_USERS_API_URL}?hours=168`);
         if (!res.ok) return;
         const data = await res.json();
         if (data.success && Array.isArray(data.users)) {
@@ -3696,11 +3699,17 @@
       });
     }
 
-    commentsStatusFilter.addEventListener("change", () => {
-      updateResetFiltersBtnVisibility();
+    function setCommentsStatus(status) {
+      activeCommentsStatus = status;
+      commentsNotProcessedBtn.classList.toggle("active", status === "not processed");
+      commentsProcessedBtn.classList.toggle("active", status === "processed");
+      commentsNotProcessedBtn.setAttribute("aria-pressed", String(status === "not processed"));
+      commentsProcessedBtn.setAttribute("aria-pressed", String(status === "processed"));
       currentCommentsPage = 1;
       loadComments(1);
-    });
+    }
+    commentsNotProcessedBtn.addEventListener("click", () => setCommentsStatus("not processed"));
+    commentsProcessedBtn.addEventListener("click", () => setCommentsStatus("processed"));
 
     if (commentsResetFiltersBtn) {
       commentsResetFiltersBtn.addEventListener("click", () => {
@@ -3710,7 +3719,7 @@
         updateMultiSelectUI();
         if (commentsSearchInput) commentsSearchInput.value = "";
         if (commentsClearSearchBtn) commentsClearSearchBtn.style.display = "none";
-        if (commentsStatusFilter) commentsStatusFilter.value = "";
+        setCommentsStatus("not processed");
         updateResetFiltersBtnVisibility();
         currentCommentsPage = 1;
         loadComments(1);
@@ -3830,14 +3839,14 @@
       currentCommentsPage = page;
       if (!isSilent) {
         commentsRefreshBtn.disabled = true;
-        commentsTableBody.innerHTML = `<tr><td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading 6h comments from database...</td></tr>`;
+        commentsTableBody.innerHTML = `<tr><td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading weekly comments from database...</td></tr>`;
       }
 
       try {
-        const filterVal = commentsStatusFilter ? commentsStatusFilter.value : "";
+        const filterVal = activeCommentsStatus;
         const searchVal = commentsSearchInput ? commentsSearchInput.value.trim() : "";
 
-        let url = `${COMMENTS_API_URL}?page=${page}&page_size=${commentsPageSize}&hours=6`;
+        let url = `${COMMENTS_API_URL}?page=${page}&page_size=${commentsPageSize}&hours=168`;
         if (filterVal) {
           url += `&status=${encodeURIComponent(filterVal)}`;
         }
@@ -3867,7 +3876,7 @@
         pageCommentsCountSpan.textContent = currentCommentsList.length;
 
         if (sidebarCommentsBadge) {
-          sidebarCommentsBadge.textContent = totalCommentsCount > 0 ? `${totalCommentsCount}` : "6h";
+          sidebarCommentsBadge.textContent = totalCommentsCount > 0 ? `${totalCommentsCount}` : "1w";
         }
 
         renderCommentsTable(currentCommentsList, searchVal);
@@ -3888,10 +3897,10 @@
 
     function renderCommentsTable(comments, searchQuery = "") {
       if (!comments.length) {
-        const hasFilters = Boolean((commentsStatusFilter && commentsStatusFilter.value) || searchQuery || selectedUserFilters.size > 0);
+        const hasFilters = Boolean(activeCommentsStatus === "processed" || searchQuery || selectedUserFilters.size > 0);
         const emptyMsg = hasFilters
           ? "No comments found matching your search and filter criteria."
-          : "No comments found within the last 6 hours.";
+          : "No comments found within the last week.";
         commentsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state">${escapeHtml(emptyMsg)}</td></tr>`;
         return;
       }
