@@ -1177,6 +1177,54 @@ def store_processing_request():
     }), 201
 
 
+@app.post("/api/report")
+@require_auth
+def report_comments():
+    """Forward a validated reporting payload server-side to avoid browser CORS failures."""
+    try:
+        payload = _validate_payload(request.get_json(silent=True))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    if not LAMBDA_API_URL:
+        return jsonify({"error": "Reporting API URL is not configured."}), 503
+
+    try:
+        body = json.dumps(payload).encode("utf-8")
+        outbound = urllib.request.Request(
+            LAMBDA_API_URL,
+            data=body,
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(outbound, timeout=30) as response:
+            response_body = response.read().decode("utf-8", errors="replace")
+            try:
+                response_data = json.loads(response_body) if response_body else {}
+            except json.JSONDecodeError:
+                response_data = {"message": response_body}
+            return jsonify(response_data), response.status
+    except urllib.error.HTTPError as error:
+        response_body = error.read().decode("utf-8", errors="replace")
+        try:
+            response_data = json.loads(response_body) if response_body else {}
+        except json.JSONDecodeError:
+            response_data = {"error": response_body or str(error)}
+        if error.code == 504:
+            return jsonify({
+                "error": (
+                    "The reporting service timed out while processing this request. "
+                    "The AWS job may still be running; check its processing status before retrying."
+                ),
+                "upstream_status": 504,
+            }), 504
+        return jsonify(response_data), error.code
+    except (urllib.error.URLError, TimeoutError) as error:
+        app.logger.exception("Could not reach reporting API")
+        reason = getattr(error, "reason", error)
+        return jsonify({"error": f"Could not reach reporting API: {reason}"}), 502
+
+
 @app.route("/api/run", methods=["GET", "POST"])
 def run_scraper_endpoint():
     """Trigger the comment scraper/runner task. Sends ONLY selected users in a clean payload."""

@@ -4051,6 +4051,7 @@
       commentsReportBtn.disabled = true;
       commentsReportBtn.innerHTML = `<span class="spinner"></span><span>Reporting ${comment_ids.length} item(s)...</span>`;
 
+      let processingId = null;
       try {
         const storageResponse = await authFetch(STORAGE_API_URL, {
           method: "POST",
@@ -4067,10 +4068,8 @@
           throw new Error(`Could not save request: ${errMsg}`);
         }
 
-        const processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : "—";
-        const targetLambdaUrl = (storageJson && storageJson.lambda_api_url) || lambdaApiUrl;
-
-        const lambdaResponse = await fetch(targetLambdaUrl, {
+        processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : null;
+        const lambdaResponse = await authFetch("/api/report", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -4118,7 +4117,8 @@ Live execution batch logs are updating below...`, "success");
         setTimeout(() => loadLogs(true), 12000);
         setTimeout(() => loadLogs(true), 20000);
       } catch (err) {
-        alert(`Error reporting comments: ${err.message}`);
+        const requestRef = processingId !== null ? ` Processing ID: ${processingId}.` : "";
+        alert(`Error reporting comments: ${err.message}${requestRef}`);
       } finally {
         commentsReportBtn.disabled = selectedComments.size === 0;
         commentsReportBtn.innerHTML = `<span>Report Selected (<span id="selected-count-btn">${selectedComments.size}</span>)</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`;
@@ -4562,6 +4562,7 @@ Live execution batch logs are updating below...`, "success");
       runButton.innerHTML = `<span class="spinner"></span><span>Starting job...</span>`;
       showStatus("Saving the request...", "success");
 
+      let processingId = null;
       try {
         const storageResponse = await authFetch(STORAGE_API_URL, {
           method: "POST",
@@ -4579,14 +4580,9 @@ Live execution batch logs are updating below...`, "success");
           throw new Error(`Could not save the request: ${errMsg}`);
         }
 
-        const processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : "—";
-        const targetLambdaUrl = (storageJson && storageJson.lambda_api_url) || lambdaApiUrl;
-        if (!targetLambdaUrl) {
-          throw new Error("Lambda API URL is not configured in .env");
-        }
-
+        processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : null;
         showStatus(`Request saved successfully (Processing ID: ${processingId})\nStarting the Lambda job...`, "success");
-        const lambdaResponse = await fetch(targetLambdaUrl, {
+        const lambdaResponse = await authFetch("/api/report", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -4611,7 +4607,8 @@ Live execution batch logs are updating below...`, "success");
         setTimeout(() => loadLogs(true), 12000);
         setTimeout(() => loadLogs(true), 20000);
       } catch (error) {
-        showStatus(`Could not start the reporting job: ${error.message}`, "error");
+        const requestRef = processingId !== null ? ` Processing ID: ${processingId}.` : "";
+        showStatus(`Could not start the reporting job: ${error.message}${requestRef}`, "error");
       } finally {
         runButton.disabled = false;
         runButton.innerHTML = `<span>Run reporting job</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`;
