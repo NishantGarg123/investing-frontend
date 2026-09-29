@@ -9,7 +9,11 @@ import os
 from pathlib import Path
 import re
 import secrets
+import socket
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from functools import wraps
 try:
     import pyodbc
@@ -22,18 +26,56 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 DB_CONNECTION_STRING = os.getenv("DB_CONNECTION_STRING", "").strip()
+if not DB_CONNECTION_STRING and os.getenv("DB_SERVER"):
+    db_srv = os.getenv("DB_SERVER", "localhost").strip()
+    db_prt = os.getenv("DB_PORT", "1433").strip()
+    db_name = os.getenv("DB_DATABASE", "InvestingDB").strip()
+    db_user = os.getenv("DB_USERNAME", "SA").strip()
+    db_pwd = os.getenv("DB_PASSWORD", "ScrapInvest321").strip()
+    DB_CONNECTION_STRING = f"Driver={{ODBC Driver 18 for SQL Server}};Server=tcp:{db_srv},{db_prt};Database={db_name};Uid={db_user};Pwd={db_pwd};Encrypt=yes;TrustServerCertificate=yes;Connection Timeout=30;"
+
 LAMBDA_API_URL = os.getenv(
     "LAMBDA_API_URL",
-    "https://nr9andj3qe.execute-api.us-east-2.amazonaws.com/dev/investing-dev",
+    "https://al4vj8u8yh.execute-api.us-west-2.amazonaws.com/dev/investing-scrapper",
 ).strip()
 SCRAPER_API_URL = os.getenv(
     "SCRAPER_API_URL",
     "http://74.207.229.12:3000/api/run",
 ).strip()
+BILLING_API_URL = os.getenv(
+    "BILLING_API_URL",
+    "http://74.207.229.12:3000/api/billing/ecs-fargate",
+).strip()
+BILLING_API_KEY = os.getenv(
+    "BILLING_API_KEY",
+    "ak_live_7e8b4f1c9a3d5206e1",
+).strip()
+
 
 
 # ---------------------------------------------------------------------------
-# Authentication Configuration (configured via .env or hardcoded fallback)
+# Super Admin Authentication (Exclusive access to Billing section)
+# ---------------------------------------------------------------------------
+SUPER_ADMIN_EMAIL = (
+    os.getenv("SUPER_ADMIN_EMAIL")
+    or os.getenv("SUPERADMIN_EMAIL")
+    or "superadmin@investing.com"
+).strip()
+
+SUPER_ADMIN_ID = (
+    os.getenv("SUPER_ADMIN_ID")
+    or os.getenv("SUPERADMIN_ID")
+    or "superadmin"
+).strip()
+
+SUPER_ADMIN_PASSWORD = (
+    os.getenv("SUPER_ADMIN_PASSWORD")
+    or os.getenv("SUPERADMIN_PASSWORD")
+    or "SuperAdmin@Investing2026"
+).strip()
+
+# ---------------------------------------------------------------------------
+# Standard User Authentication Configuration (Configured via .env or fallback)
 # ---------------------------------------------------------------------------
 AUTH_EMAIL = (
     os.getenv("AUTH_EMAIL")
@@ -46,7 +88,7 @@ AUTH_ID = (
     os.getenv("AUTH_ID")
     or os.getenv("ADMIN_ID")
     or os.getenv("LOGIN_ID")
-    or ""
+    or "admin"
 ).strip()
 
 AUTH_PASSWORD = (
@@ -55,20 +97,51 @@ AUTH_PASSWORD = (
     or os.getenv("LOGIN_PASSWORD")
     or os.getenv("AUTH_PASS")
     or os.getenv("LOGIN_PASS")
-    or "Admin@Investing2026"
+    or "InvestAdmin21"
 ).strip()
 
-# In-memory active session tokens: token -> {"email": email, "expires_at": epoch_seconds}
-_ACTIVE_TOKENS: dict[str, dict] = {}
-TOKEN_TTL_SECONDS = 24 * 3600  # 24 hours validity
+# Session Expiration Configuration (24 Hours / 86400 Seconds)
+SESSION_EXPIRY_HOURS = int(os.getenv("SESSION_EXPIRY_HOURS", "24"))
+TOKEN_TTL_SECONDS = int(os.getenv("TOKEN_TTL_SECONDS", str(SESSION_EXPIRY_HOURS * 3600)))  # 24 hours validity
+
+_SESSIONS_FILE = BASE_DIR / ".active_sessions.json"
+
+
+def _load_persisted_tokens() -> dict[str, dict]:
+    """Load active session tokens from disk cache."""
+    if not _SESSIONS_FILE.exists():
+        return {}
+    try:
+        with open(_SESSIONS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, dict):
+                return data
+    except Exception:
+        pass
+    return {}
+
+
+def _save_persisted_tokens():
+    """Save active session tokens to disk cache."""
+    try:
+        with open(_SESSIONS_FILE, "w", encoding="utf-8") as f:
+            json.dump(_ACTIVE_TOKENS, f)
+    except Exception:
+        pass
+
+
+# Active session tokens: token -> {"email": email, "role": role, "is_super_admin": bool, "expires_at": epoch_seconds}
+_ACTIVE_TOKENS: dict[str, dict] = _load_persisted_tokens()
 
 
 def _clean_expired_tokens():
-    """Purge expired sessions from memory."""
+    """Purge expired sessions from memory and disk."""
     now = time.time()
-    expired = [tok for tok, data in _ACTIVE_TOKENS.items() if data["expires_at"] < now]
-    for tok in expired:
-        _ACTIVE_TOKENS.pop(tok, None)
+    expired = [tok for tok, data in _ACTIVE_TOKENS.items() if data.get("expires_at", 0) < now]
+    if expired:
+        for tok in expired:
+            _ACTIVE_TOKENS.pop(tok, None)
+        _save_persisted_tokens()
 
 
 def _get_bearer_token() -> str:
@@ -85,10 +158,83 @@ def _is_valid_token(token: str) -> tuple[bool, dict | None]:
     session = _ACTIVE_TOKENS.get(token)
     if not session:
         return False, None
-    if time.time() > session["expires_at"]:
+    if time.time() > session.get("expires_at", 0):
         _ACTIVE_TOKENS.pop(token, None)
+        _save_persisted_tokens()
         return False, None
     return True, session
+
+
+def _authenticate_user(identifier: str, password: str) -> tuple[bool, dict | None]:
+    """Validate credentials against Super Admin, Standard Admin/User, and any ADDITIONAL_USERS."""
+    if not identifier or not password:
+        return False, None
+
+    norm_id = identifier.lower().strip()
+
+    # 1. Super Admin authentication
+    super_admin_identifiers = set()
+    if SUPER_ADMIN_EMAIL:
+        super_admin_identifiers.add(SUPER_ADMIN_EMAIL.lower())
+    if SUPER_ADMIN_ID:
+        super_admin_identifiers.add(SUPER_ADMIN_ID.lower())
+
+    if norm_id in super_admin_identifiers and password == SUPER_ADMIN_PASSWORD:
+        return True, {
+            "email": SUPER_ADMIN_EMAIL if norm_id == SUPER_ADMIN_EMAIL.lower() else (SUPER_ADMIN_EMAIL or identifier),
+            "role": "super_admin",
+            "is_super_admin": True,
+        }
+
+    # 2. Standard Admin/User authentication
+    standard_identifiers = set()
+    if AUTH_EMAIL:
+        standard_identifiers.add(AUTH_EMAIL.lower())
+    if AUTH_ID:
+        standard_identifiers.add(AUTH_ID.lower())
+    if not standard_identifiers:
+        standard_identifiers.add("admin@investing.com")
+
+    if norm_id in standard_identifiers and password == AUTH_PASSWORD:
+        return True, {
+            "email": AUTH_EMAIL if norm_id == AUTH_EMAIL.lower() else (AUTH_EMAIL or identifier),
+            "role": "admin",
+            "is_super_admin": False,
+        }
+
+    # 3. Optional ADDITIONAL_USERS from environment variable (JSON or comma separated)
+    extra_users_str = os.getenv("ADDITIONAL_USERS", "").strip()
+    if extra_users_str:
+        try:
+            if extra_users_str.startswith("["):
+                extra_users = json.loads(extra_users_str)
+                for u in extra_users:
+                    u_email = str(u.get("email") or u.get("id") or "").strip()
+                    u_pass = str(u.get("password") or "").strip()
+                    u_role = str(u.get("role") or "user").strip()
+                    if norm_id == u_email.lower() and password == u_pass:
+                        return True, {
+                            "email": u_email,
+                            "role": u_role,
+                            "is_super_admin": (u_role == "super_admin"),
+                        }
+            else:
+                for entry in extra_users_str.split(","):
+                    parts = [p.strip() for p in entry.split(":") if p.strip()]
+                    if len(parts) >= 2:
+                        u_email = parts[0]
+                        u_pass = parts[1]
+                        u_role = parts[2] if len(parts) >= 3 else "user"
+                        if norm_id == u_email.lower() and password == u_pass:
+                            return True, {
+                                "email": u_email,
+                                "role": u_role,
+                                "is_super_admin": (u_role == "super_admin"),
+                            }
+        except Exception as e:
+            app.logger.warning(f"Failed to parse ADDITIONAL_USERS: {e}")
+
+    return False, None
 
 
 def require_auth(f):
@@ -102,6 +248,27 @@ def require_auth(f):
                 "error": "Unauthorized. Please log in.",
                 "code": "UNAUTHORIZED"
             }), 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+def require_super_admin(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = _get_bearer_token()
+        valid, session = _is_valid_token(token)
+        if not valid or not session:
+            return jsonify({
+                "success": False,
+                "error": "Unauthorized. Please log in.",
+                "code": "UNAUTHORIZED"
+            }), 401
+        if not session.get("is_super_admin"):
+            return jsonify({
+                "success": False,
+                "error": "Forbidden. Super admin access required to view billing.",
+                "code": "FORBIDDEN"
+            }), 403
         return f(*args, **kwargs)
     return decorated
 
@@ -125,18 +292,8 @@ def login():
             "error": "Email/User ID and password are required."
         }), 400
 
-    # Match against configured AUTH_EMAIL or AUTH_ID
-    allowed_identifiers = set()
-    if AUTH_EMAIL:
-        allowed_identifiers.add(AUTH_EMAIL.lower())
-    if AUTH_ID:
-        allowed_identifiers.add(AUTH_ID.lower())
-
-    # Fallback to AUTH_EMAIL if no identifier configured
-    if not allowed_identifiers:
-        allowed_identifiers.add("admin@investing.com")
-
-    if identifier.lower() not in allowed_identifiers or password != AUTH_PASSWORD:
+    is_valid, user_profile = _authenticate_user(identifier, password)
+    if not is_valid or not user_profile:
         return jsonify({
             "success": False,
             "error": "Invalid email/ID or password. Login failed."
@@ -144,18 +301,25 @@ def login():
 
     token = secrets.token_hex(32)
     expires_at = time.time() + TOKEN_TTL_SECONDS
-    display_name = AUTH_EMAIL if identifier.lower() == AUTH_EMAIL.lower() else identifier
+    display_name = user_profile["email"]
+    role = user_profile["role"]
+    is_super_admin = user_profile["is_super_admin"]
 
     _ACTIVE_TOKENS[token] = {
         "email": display_name,
+        "role": role,
+        "is_super_admin": is_super_admin,
         "expires_at": expires_at,
     }
+    _save_persisted_tokens()
 
     return jsonify({
         "success": True,
         "message": "Login successful",
         "token": token,
         "email": display_name,
+        "role": role,
+        "is_super_admin": is_super_admin,
         "expires_in": TOKEN_TTL_SECONDS,
     })
 
@@ -175,7 +339,9 @@ def verify_auth():
     return jsonify({
         "success": True,
         "authenticated": True,
-        "email": session["email"],
+        "email": session.get("email", ""),
+        "role": session.get("role", "admin"),
+        "is_super_admin": bool(session.get("is_super_admin", False)),
     })
 
 
@@ -184,6 +350,7 @@ def logout():
     token = _get_bearer_token()
     if token:
         _ACTIVE_TOKENS.pop(token, None)
+        _save_persisted_tokens()
     return jsonify({
         "success": True,
         "message": "Logged out successfully"
@@ -197,10 +364,106 @@ def logout():
 @app.get("/api/config")
 @require_auth
 def get_config():
-    return jsonify({
+    token = _get_bearer_token()
+    _, session = _is_valid_token(token)
+    is_super = bool(session and session.get("is_super_admin"))
+
+    cfg = {
         "lambda_api_url": LAMBDA_API_URL,
         "scraper_api_url": SCRAPER_API_URL,
-    })
+    }
+    if is_super:
+        cfg["billing_api_url"] = BILLING_API_URL
+        cfg["billing_api_key"] = BILLING_API_KEY
+    else:
+        cfg["billing_api_url"] = ""
+        cfg["billing_api_key"] = ""
+    return jsonify(cfg)
+
+
+@app.get("/api/billing/ecs-fargate")
+@app.get("/api/billing")
+@require_super_admin
+def get_billing_ecs_fargate():
+    """Fetch ECS Fargate billing data from external billing API using configured API key from .env."""
+    target_url = ""
+    try:
+        base_url = BILLING_API_URL or "http://74.207.229.12:3000/api/billing/ecs-fargate"
+        api_key = BILLING_API_KEY or "ak_live_7e8b4f1c9a3d5206e1"
+
+        def _build_url(source_url):
+            url_parts = urllib.parse.urlparse(source_url)
+            query_params = urllib.parse.parse_qs(url_parts.query)
+            if api_key:
+                query_params["api_key"] = [api_key]
+            new_query = urllib.parse.urlencode(query_params, doseq=True)
+            return urllib.parse.urlunparse((
+                url_parts.scheme,
+                url_parts.netloc,
+                url_parts.path,
+                url_parts.params,
+                new_query,
+                url_parts.fragment,
+            ))
+
+        target_url = _build_url(base_url)
+
+        req = urllib.request.Request(
+            target_url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "InvestingReporter/1.0",
+            },
+            method="GET",
+        )
+
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                resp_body = resp.read().decode("utf-8")
+                data = json.loads(resp_body)
+                return jsonify(data), resp.status
+        except urllib.error.URLError as url_err:
+            # If backend is running inside Docker container and localhost was refused, try host.docker.internal
+            if ("74.207.229.12" in target_url or "127.0.0.1" in target_url) and "host.docker.internal" not in target_url:
+                docker_host_url = base_url.replace("74.207.229.12", "host.docker.internal").replace("127.0.0.1", "host.docker.internal")
+                docker_target_url = _build_url(docker_host_url)
+                try:
+                    req_docker = urllib.request.Request(
+                        docker_target_url,
+                        headers={
+                            "Accept": "application/json",
+                            "User-Agent": "InvestingReporter/1.0",
+                        },
+                        method="GET",
+                    )
+                    with urllib.request.urlopen(req_docker, timeout=10) as resp2:
+                        resp_body2 = resp2.read().decode("utf-8")
+                        data2 = json.loads(resp_body2)
+                        return jsonify(data2), resp2.status
+                except Exception:
+                    pass
+            raise url_err
+    except urllib.error.HTTPError as http_err:
+        error_text = ""
+        try:
+            error_text = http_err.read().decode("utf-8")
+        except Exception:
+            pass
+        app.logger.warning(f"Billing API returned HTTP {http_err.code}: {error_text}")
+        return jsonify({
+            "status": "error",
+            "error": f"Billing API returned error ({http_err.code}): {error_text or http_err.reason}",
+            "target_url": target_url,
+        }), http_err.code
+    except Exception as error:
+        app.logger.exception("Could not fetch billing data")
+        return jsonify({
+            "status": "error",
+            "error": f"Could not connect to Billing API ({target_url or BILLING_API_URL}): {str(error)}",
+            "target_url": target_url,
+        }), 502
+
+
 
 
 def _normalise_ids(value: object, field_name: str) -> list[str]:
@@ -262,8 +525,8 @@ def _save_processing_request(payload: dict[str, object]) -> int:
     return int(row[0])
 
 
-def _fetch_batches_from_tracker():
-    """Fetch all rows from BackendProcessingTracker and group into batches."""
+def _fetch_batches_from_tracker(days: int = 3):
+    """Fetch rows from BackendProcessingTracker from the last N days (default 3) and group into batches."""
     if pyodbc is None:
         raise RuntimeError("pyodbc is not installed")
     if not DB_CONNECTION_STRING:
@@ -272,11 +535,12 @@ def _fetch_batches_from_tracker():
     query = """
         SELECT task_id, account_email, comment_ids, user_ids, status, is_success, starting_date
         FROM dbo.BackendProcessingTracker
+        WHERE starting_date >= DATEADD(day, -?, sysdatetime())
         ORDER BY starting_date DESC, task_id DESC
     """
     with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
         cursor = connection.cursor()
-        cursor.execute(query)
+        cursor.execute(query, days)
         rows = cursor.fetchall()
 
     batches = []
@@ -378,11 +642,15 @@ def index():
 @require_auth
 def get_logs():
     try:
-        batches = _fetch_batches_from_tracker()
+        days = request.args.get("days", default=3, type=int)
+        if not days or days < 1:
+            days = 3
+        batches = _fetch_batches_from_tracker(days=days)
         return jsonify({
             "success": True,
             "total_batches": len(batches),
             "batches": batches,
+            "days": days,
         })
     except Exception as error:
         app.logger.exception("Could not fetch logs from SQL Server")
@@ -408,8 +676,93 @@ def _extract_comment_id(url: str) -> str:
     return ""
 
 
-def _fetch_24h_comments(page: int = 1, page_size: int = 10, hours: int = 24, status_filter: str = "") -> dict:
-    """Fetch comments fetched within the last 24 hours from InvestingDB.dbo.comment_urls."""
+def _fetch_distinct_comment_users(hours: int = 6) -> list[dict]:
+    """Fetch all users from dbo.users merged with distinct users found in dbo.comment_urls."""
+    if pyodbc is None:
+        raise RuntimeError("pyodbc is not installed")
+    if not DB_CONNECTION_STRING:
+        raise RuntimeError("DB_CONNECTION_STRING is not configured")
+
+    users_by_id = {}
+    users_by_name = {}
+
+    with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
+        cursor = connection.cursor()
+
+        # 1. Fetch from dbo.users (configured users table)
+        try:
+            cursor.execute("SELECT id, user_name FROM dbo.users ORDER BY user_name ASC")
+            for row in cursor.fetchall():
+                uid = str(row[0] or "").strip()
+                uname = (row[1] or "").strip()
+                if uid or uname:
+                    user_entry = {"user_name": uname, "user_id": uid}
+                    if uid:
+                        users_by_id[uid] = user_entry
+                    if uname:
+                        users_by_name[uname.lower()] = user_entry
+        except Exception:
+            app.logger.warning("Could not read dbo.users table for comment users dropdown")
+
+        # 2. Also fetch any distinct users from dbo.comment_urls
+        try:
+            cursor.execute("""
+                SELECT DISTINCT user_name, user_id
+                FROM dbo.comment_urls
+                WHERE ((user_name IS NOT NULL AND user_name != '') OR (user_id IS NOT NULL AND user_id != ''))
+            """)
+            for row in cursor.fetchall():
+                uname = (row[0] or "").strip()
+                uid = str(row[1] or "").strip()
+                if not uid and not uname:
+                    continue
+
+                # Match by ID first
+                if uid and uid in users_by_id:
+                    existing = users_by_id[uid]
+                    if not existing.get("user_name") and uname:
+                        existing["user_name"] = uname
+                        users_by_name[uname.lower()] = existing
+                # Match by Name
+                elif uname and uname.lower() in users_by_name:
+                    existing = users_by_name[uname.lower()]
+                    if not existing.get("user_id") and uid:
+                        existing["user_id"] = uid
+                        users_by_id[uid] = existing
+                else:
+                    user_entry = {"user_name": uname, "user_id": uid}
+                    if uid:
+                        users_by_id[uid] = user_entry
+                    if uname:
+                        users_by_name[uname.lower()] = user_entry
+        except Exception:
+            app.logger.warning("Could not read dbo.comment_urls for comment users dropdown")
+
+    # Gather unique user dictionaries
+    seen_ids = set()
+    unique_users = []
+    for u in list(users_by_id.values()) + list(users_by_name.values()):
+        ptr = id(u)
+        if ptr not in seen_ids:
+            seen_ids.add(ptr)
+            unique_users.append(u)
+
+    sorted_users = sorted(
+        unique_users,
+        key=lambda u: (u["user_name"].lower() if u["user_name"] else u["user_id"])
+    )
+    return sorted_users
+
+
+def _fetch_24h_comments(
+    page: int = 1,
+    page_size: int = 10,
+    hours: int = 6,
+    status_filter: str = "",
+    user_filter = None,
+    search_query: str = ""
+) -> dict:
+    """Fetch recent comments with optional processing group, user, and text filters."""
     if pyodbc is None:
         raise RuntimeError("pyodbc is not installed")
     if not DB_CONNECTION_STRING:
@@ -419,9 +772,36 @@ def _fetch_24h_comments(page: int = 1, page_size: int = 10, hours: int = 24, sta
     where_clauses = ["fetched_at >= DATEADD(hour, -?, sysdatetime())"]
     params = [hours]
 
-    if status_filter:
+    if status_filter == "processed":
+        where_clauses.append("LOWER(COALESCE(NULLIF(LTRIM(RTRIM(status)), ''), 'not processed')) <> 'not processed'")
+    elif status_filter == "not processed":
+        where_clauses.append("LOWER(COALESCE(NULLIF(LTRIM(RTRIM(status)), ''), 'not processed')) = 'not processed'")
+    elif status_filter:
         where_clauses.append("status = ?")
         params.append(status_filter)
+
+    # Normalize user_filter to list of strings
+    user_list = []
+    if isinstance(user_filter, (list, tuple, set)):
+        user_list = [str(u).strip() for u in user_filter if str(u).strip()]
+    elif isinstance(user_filter, str) and user_filter.strip():
+        user_list = [u.strip() for u in user_filter.split(",") if u.strip()]
+
+    if user_list:
+        user_clauses = []
+        for u in user_list:
+            user_clauses.append("(user_name = ? OR user_name LIKE ? OR CAST(user_id AS NVARCHAR) = ?)")
+            params.extend([u, f"%{u}%", u])
+        if user_clauses:
+            where_clauses.append(f"({' OR '.join(user_clauses)})")
+
+    if search_query:
+        if user_list:
+            where_clauses.append("(Comments LIKE ? OR url LIKE ?)")
+            params.extend([f"%{search_query}%", f"%{search_query}%"])
+        else:
+            where_clauses.append("(Comments LIKE ? OR user_name LIKE ? OR CAST(user_id AS NVARCHAR) LIKE ? OR url LIKE ?)")
+            params.extend([f"%{search_query}%", f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"])
 
     where_sql = " AND ".join(where_clauses)
 
@@ -516,13 +896,44 @@ def get_comments():
     try:
         page = max(1, int(request.args.get("page", 1)))
         page_size = max(1, min(100, int(request.args.get("page_size", 10))))
-        hours = max(1, int(request.args.get("hours", 24)))
+        hours = max(1, int(request.args.get("hours", 168)))
         status_filter = request.args.get("status", "").strip()
+        
+        # Support multiple ?user=... params, or comma-separated ?user=A,B, or ?users=...
+        user_filters = request.args.getlist("user") or request.args.getlist("users")
+        if not user_filters:
+            single_user = (request.args.get("user") or request.args.get("users") or "").strip()
+            if single_user:
+                user_filters = [u.strip() for u in single_user.split(",") if u.strip()]
 
-        data = _fetch_24h_comments(page=page, page_size=page_size, hours=hours, status_filter=status_filter)
+        search_query = (request.args.get("search") or request.args.get("q") or "").strip()
+
+        data = _fetch_24h_comments(
+            page=page,
+            page_size=page_size,
+            hours=hours,
+            status_filter=status_filter,
+            user_filter=user_filters,
+            search_query=search_query
+        )
         return jsonify({"success": True, **data})
     except Exception as error:
         app.logger.exception("Could not fetch comments from SQL Server")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
+@app.get("/api/comments/users")
+@require_auth
+def get_comments_users():
+    try:
+        hours = max(1, int(request.args.get("hours", 168)))
+        users = _fetch_distinct_comment_users(hours=hours)
+        return jsonify({"success": True, "users": users})
+    except Exception as error:
+        app.logger.exception("Could not fetch comment users from SQL Server")
         return jsonify({
             "success": False,
             "error": f"Database error: {str(error)}"
@@ -772,17 +1183,243 @@ def store_processing_request():
     }), 201
 
 
+@app.post("/api/report")
+@require_auth
+def report_comments():
+    """Forward a validated reporting payload server-side to avoid browser CORS failures."""
+    try:
+        payload = _validate_payload(request.get_json(silent=True))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    if not LAMBDA_API_URL:
+        return jsonify({"error": "Reporting API URL is not configured."}), 503
+
+    try:
+        body = json.dumps(payload).encode("utf-8")
+        outbound = urllib.request.Request(
+            LAMBDA_API_URL,
+            data=body,
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(outbound, timeout=30) as response:
+            response_body = response.read().decode("utf-8", errors="replace")
+            try:
+                response_data = json.loads(response_body) if response_body else {}
+            except json.JSONDecodeError:
+                response_data = {"message": response_body}
+            return jsonify(response_data), response.status
+    except urllib.error.HTTPError as error:
+        response_body = error.read().decode("utf-8", errors="replace")
+        try:
+            response_data = json.loads(response_body) if response_body else {}
+        except json.JSONDecodeError:
+            response_data = {"error": response_body or str(error)}
+        if error.code == 504:
+            return jsonify({
+                "message": (
+                    "The reporting job was submitted to AWS and is executing in the background for all configured accounts."
+                ),
+                "status": "running",
+                "statusCode": 200,
+                "upstream_status": 504,
+            }), 200
+        return jsonify(response_data), error.code
+    except (urllib.error.URLError, TimeoutError, socket.timeout) as error:
+        reason = getattr(error, "reason", error)
+        reason_str = str(reason).lower()
+        if "timed out" in reason_str or "timeout" in reason_str or "504" in reason_str:
+            app.logger.info("Reporting API request dispatched; AWS execution continuing in background: %s", error)
+            return jsonify({
+                "message": (
+                    "The reporting job was submitted to AWS and is executing in the background for all configured accounts."
+                ),
+                "status": "running",
+                "statusCode": 200,
+                "timeout": True,
+            }), 200
+        app.logger.exception("Could not reach reporting API")
+        return jsonify({"error": f"Could not reach reporting API: {reason}"}), 502
+
+
 @app.route("/api/run", methods=["GET", "POST"])
 def run_scraper_endpoint():
-    """Trigger the comment scraper/runner task."""
-    return jsonify({
-        "success": True,
-        "message": "Run triggered successfully."
-    }), 200
+    """Trigger the comment scraper/runner task. Sends ONLY selected users in a clean payload."""
+    try:
+        if request.method == "POST":
+            data = request.get_json(silent=True) or {}
+
+            # Extract users ONLY from the 'users' array — this is the single source of truth
+            raw_users = data.get("users") or []
+            users = []
+
+            if isinstance(raw_users, list):
+                for item in raw_users:
+                    if isinstance(item, dict):
+                        uname = str(item.get("user_name") or item.get("userName") or item.get("username") or item.get("name") or "").strip()
+                        uid = str(item.get("user_id") or item.get("userId") or "").strip()
+                        # If uid equals uname and is not numeric, it's not a real ID
+                        if uid == uname and not uid.isdigit():
+                            uid = ""
+                        if uname or uid:
+                            users.append({"user_name": uname, "user_id": uid})
+                    elif isinstance(item, (str, int)):
+                        val = str(item).strip()
+                        if val.isdigit():
+                            users.append({"user_name": "", "user_id": val})
+                        elif val:
+                            users.append({"user_name": val, "user_id": ""})
+
+            # Fallback: if no 'users' array, try single user fields
+            if not users:
+                user_name = str(data.get("user_name") or data.get("user") or "").strip()
+                user_id = str(data.get("user_id") or "").strip()
+                if user_name or user_id:
+                    users.append({"user_name": user_name, "user_id": user_id})
+
+            # DB lookup to resolve missing user_id or user_name
+            if users and DB_CONNECTION_STRING and pyodbc:
+                try:
+                    with pyodbc.connect(DB_CONNECTION_STRING, timeout=10) as connection:
+                        cursor = connection.cursor()
+                        for u in users:
+                            uid = u.get("user_id", "").strip()
+                            uname = u.get("user_name", "").strip()
+
+                            # Resolve user_id from user_name
+                            if (not uid or not uid.isdigit()) and uname:
+                                try:
+                                    cursor.execute("SELECT TOP 1 id FROM dbo.users WHERE LOWER(user_name) = LOWER(?)", uname)
+                                    row = cursor.fetchone()
+                                    if row and row[0]:
+                                        u["user_id"] = str(row[0]).strip()
+                                    else:
+                                        cursor.execute("SELECT TOP 1 user_id FROM dbo.comment_urls WHERE LOWER(user_name) = LOWER(?) AND user_id IS NOT NULL AND user_id != ''", uname)
+                                        row2 = cursor.fetchone()
+                                        if row2 and row2[0]:
+                                            u["user_id"] = str(row2[0]).strip()
+                                except Exception:
+                                    pass
+
+                            # Resolve user_name from user_id
+                            if not uname and uid and uid.isdigit():
+                                try:
+                                    cursor.execute("SELECT TOP 1 user_name FROM dbo.users WHERE id = ?", int(uid))
+                                    row = cursor.fetchone()
+                                    if row and row[0]:
+                                        u["user_name"] = str(row[0]).strip()
+                                    else:
+                                        cursor.execute("SELECT TOP 1 user_name FROM dbo.comment_urls WHERE user_id = ? AND user_name IS NOT NULL AND user_name != ''", uid)
+                                        row2 = cursor.fetchone()
+                                        if row2 and row2[0]:
+                                            u["user_name"] = str(row2[0]).strip()
+                                except Exception:
+                                    pass
+                except Exception as db_err:
+                    app.logger.warning(f"Could not resolve user names/ids from DB: {db_err}")
+
+            # Build clean lists
+            resolved_names = [u["user_name"] for u in users if u.get("user_name")]
+            resolved_ids = [u["user_id"] for u in users if u.get("user_id")]
+            primary_name = resolved_names[0] if resolved_names else ""
+            primary_id = resolved_ids[0] if resolved_ids else ""
+
+            # Log to terminal
+            print("\n" + "=" * 70, flush=True)
+            print(">>> [SCRAPER API TRIGGERED] <<<", flush=True)
+            print("Method: POST", flush=True)
+            if users:
+                print(f"Users ({len(users)}):", flush=True)
+                for idx, u in enumerate(users, 1):
+                    print(f"  #{idx}  Name='{u['user_name']}'  ID='{u['user_id']}'", flush=True)
+            else:
+                print("No specific user → ALL users in DB", flush=True)
+            print("=" * 70 + "\n", flush=True)
+            app.logger.info(f"[SCRAPER] POST users={users}")
+
+            # Build the EXACT clean payload matching Postman format
+            clean_payload = {
+                "users": users,
+                "user_names": resolved_names,
+                "user_ids": resolved_ids,
+                "user_name": primary_name,
+                "user": primary_name or primary_id
+            }
+
+            # Forward to external scraper service asynchronously if configured
+            if SCRAPER_API_URL and SCRAPER_API_URL != request.url and not SCRAPER_API_URL.startswith("/api/run"):
+                def _do_forward(url, body):
+                    try:
+                        import urllib.request
+                        req = urllib.request.Request(
+                            url,
+                            data=json.dumps(body).encode("utf-8"),
+                            headers={"Content-Type": "application/json", "Accept": "application/json"},
+                            method="POST"
+                        )
+                        print(f"Forwarding to: {url}", flush=True)
+                        print(f"Payload: {json.dumps(body)}", flush=True)
+                        
+                        with urllib.request.urlopen(req, timeout=50) as resp:
+                            print("\n" + "=" * 70, flush=True)
+                            print(">>> [SCRAPER RESPONSE] <<<", flush=True)
+                            print("=" * 70 + "\n", flush=True)
+                            resp_text = resp.read().decode("utf-8")
+                            print(f"Scraper response [{resp.status}]: {resp_text[:250]}", flush=True)
+                            app.logger.info(f"Forwarded to {url}, status={resp.status}")
+                    except Exception as fwd_err:
+                        print(f"Forward notice ({url}): {fwd_err}", flush=True)
+                        app.logger.warning(f"Could not forward to {url}: {fwd_err}")
+
+                import threading
+                threading.Thread(target=_do_forward, args=(SCRAPER_API_URL, clean_payload), daemon=True).start()
+
+            return jsonify({
+                "success": True,
+                "message": f"Scraper triggered for {len(users)} user(s)." if users else "Scraper triggered for all users.",
+                "users": users,
+                "user_names": resolved_names,
+                "user_ids": resolved_ids,
+                "user_name": primary_name,
+                "user": primary_name or primary_id
+            }), 200
+
+        # GET request — run for all users
+        print("\n" + "=" * 70, flush=True)
+        print(">>> [SCRAPER API TRIGGERED] <<<", flush=True)
+        print("Method: GET → ALL users", flush=True)
+        print("=" * 70 + "\n", flush=True)
+        app.logger.info("[SCRAPER] GET → all users")
+
+        if SCRAPER_API_URL and SCRAPER_API_URL != request.url and not SCRAPER_API_URL.startswith("/api/run"):
+            def _do_get_forward(url):
+                try:
+                    import urllib.request
+                    req = urllib.request.Request(url, method="GET")
+                    with urllib.request.urlopen(req, timeout=5) as resp:
+                        print(f"Scraper GET response [{resp.status}]", flush=True)
+                        app.logger.info(f"Forwarded GET to {url}, status={resp.status}")
+                except Exception as fwd_err:
+                    print(f"Forward notice ({url}): {fwd_err}", flush=True)
+                    app.logger.warning(f"Could not forward GET to {url}: {fwd_err}")
+
+            import threading
+            threading.Thread(target=_do_get_forward, args=(SCRAPER_API_URL,), daemon=True).start()
+
+        return jsonify({
+            "success": True,
+            "message": "Scraper triggered for all users."
+        }), 200
+    except Exception as error:
+        app.logger.exception("Error in /api/run endpoint")
+        return jsonify({
+            "success": False,
+            "error": str(error)
+        }), 500
 
 
 if __name__ == "__main__":
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "5000"))
     app.run(host=host, port=port, debug=os.getenv("FLASK_DEBUG") == "1")
-

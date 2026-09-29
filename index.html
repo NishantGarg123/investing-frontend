@@ -555,6 +555,31 @@
       display: flex;
       align-items: center;
       gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .role-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 1px 6px;
+      border-radius: 4px;
+      line-height: 1.3;
+      margin-left: 2px;
+    }
+
+    .role-badge-super {
+      background: rgba(168, 85, 247, 0.18);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.25);
+    }
+
+    .role-badge-standard {
+      background: rgba(100, 116, 139, 0.18);
+      color: #94a3b8;
+      border: 1px solid rgba(100, 116, 139, 0.25);
     }
 
     .btn-logout {
@@ -1176,13 +1201,286 @@
       border-radius: var(--radius);
       margin-bottom: 16px;
     }
+    .comments-status-tabs { display: flex; gap: 6px; }
+    .comments-status-tab { padding: 7px 12px; font-size: 0.82rem; }
+    .comments-status-tab.active { background: var(--accent); border-color: var(--accent); color: #06251a; }
 
     .toolbar-left,
     .toolbar-right {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       flex-wrap: wrap;
+    }
+
+    .comments-search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      min-width: 220px;
+      flex: 1;
+      max-width: 320px;
+    }
+
+    .comments-search-wrapper input {
+      width: 100%;
+      padding: 7px 30px 7px 32px;
+      font-size: 0.82rem;
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .comments-search-wrapper input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .comments-search-wrapper .search-icon {
+      position: absolute;
+      left: 10px;
+      color: var(--muted);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .comments-search-wrapper .clear-btn {
+      position: absolute;
+      right: 8px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      display: none;
+      padding: 2px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+
+    .comments-search-wrapper .clear-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .search-highlight {
+      background: rgba(49, 196, 141, 0.28);
+      color: #a7f3d0;
+      border-radius: 3px;
+      padding: 0 2px;
+      font-weight: 700;
+    }
+
+    /* ── Multi-Select User Filter Dropdown ── */
+    .multiselect-dropdown-wrapper {
+      position: relative;
+      display: inline-block;
+      user-select: none;
+    }
+
+    .multiselect-trigger-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      cursor: pointer;
+      min-height: 33px;
+      transition: all 0.15s ease;
+      max-width: 240px;
+      box-shadow: none;
+    }
+
+    .multiselect-trigger-btn:hover {
+      border-color: rgba(49, 196, 141, 0.5);
+      background: rgba(30, 41, 59, 0.8);
+    }
+
+    .multiselect-trigger-btn.has-selection {
+      border-color: var(--accent);
+      background: rgba(49, 196, 141, 0.12);
+      color: #ecfdf5;
+    }
+
+    .multiselect-trigger-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 145px;
+    }
+
+    .multiselect-count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1px 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #042f2e;
+    }
+
+    .multiselect-clear-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0;
+      margin-left: 2px;
+      border-radius: 50%;
+      transition: color 0.15s ease;
+      box-shadow: none;
+      min-height: auto;
+    }
+
+    .multiselect-clear-btn:hover {
+      color: var(--danger);
+      background: none;
+      transform: none;
+    }
+
+    .multiselect-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 260px;
+      max-width: 320px;
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+      padding: 8px;
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .multiselect-menu.open {
+      display: flex;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    .multiselect-menu-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 6px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.75rem;
+    }
+
+    .multiselect-menu-header .quick-toggle-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: background 0.15s ease;
+      box-shadow: none;
+      min-height: auto;
+    }
+
+    .multiselect-menu-header .quick-toggle-btn:hover {
+      background: rgba(49, 196, 141, 0.15);
+      text-decoration: underline;
+      transform: none;
+    }
+
+    .multiselect-search-box {
+      padding: 4px 4px;
+    }
+
+    .multiselect-search-box input {
+      width: 100%;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+    }
+
+    .multiselect-search-box input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .multiselect-list {
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 2px;
+    }
+
+    .multiselect-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.15s ease;
+      font-size: 0.8rem;
+      color: var(--text);
+    }
+
+    .multiselect-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .multiselect-item.selected {
+      background: rgba(49, 196, 141, 0.14);
+      color: #ecfdf5;
+    }
+
+    .multiselect-item input[type="checkbox"] {
+      cursor: pointer;
+      accent-color: var(--accent);
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .multiselect-item-label {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      overflow: hidden;
+    }
+
+    .multiselect-item-name {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .multiselect-item-id {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
     }
 
     .comment-bubble {
@@ -1308,6 +1606,424 @@
     .page-btn:disabled {
       opacity: 0.35;
       cursor: not-allowed;
+    }
+
+    /* ── Billing Section Styles ── */
+    .billing-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .billing-kpi-card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .billing-kpi-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .billing-kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #38bdf8, #31c48d);
+      opacity: 0.8;
+    }
+
+    .billing-kpi-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .billing-kpi-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .billing-kpi-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .billing-kpi-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .billing-kpi-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ── Daily Chart Section ── */
+    .billing-chart-card {
+      margin-bottom: 24px;
+      padding: 20px;
+    }
+
+    .billing-chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .billing-chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 180px;
+      padding: 24px 12px 10px;
+      background: rgba(11, 16, 32, 0.6);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      overflow-x: auto;
+    }
+
+    .billing-bar-col {
+      flex: 1;
+      min-width: 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .billing-bar-fill {
+      width: 100%;
+      max-width: 26px;
+      border-radius: 4px 4px 0 0;
+      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+      transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease;
+      min-height: 4px;
+      position: relative;
+    }
+
+    .billing-bar-col:hover .billing-bar-fill {
+      background: linear-gradient(180deg, #4ade80 0%, #059669 100%);
+      box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+    }
+
+    .billing-bar-col.zero-cost .billing-bar-fill {
+      background: rgba(148, 163, 184, 0.15);
+      min-height: 3px;
+    }
+
+    .billing-bar-col.peak-cost .billing-bar-fill {
+      background: linear-gradient(180deg, #31c48d 0%, #0d9488 100%);
+      box-shadow: 0 0 10px rgba(49, 196, 141, 0.35);
+    }
+
+    .billing-bar-label {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+    }
+
+    .billing-bar-col:hover .billing-bar-label {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .billing-bar-tooltip {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      background: #0f172a;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.72rem;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: all 0.2s ease;
+      z-index: 20;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+      color: #f8fafc;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .billing-bar-col:hover .billing-bar-tooltip {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Usage Type Drivers ── */
+    .billing-breakdown-card {
+      margin-bottom: 24px;
+      padding: 20px;
+    }
+
+    .usage-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.08);
+      margin-bottom: 10px;
+      transition: background 0.15s ease;
+    }
+
+    .usage-item-row:hover {
+      background: rgba(30, 41, 59, 0.6);
+    }
+
+    .usage-item-left {
+      flex: 1;
+      min-width: 0;
+      margin-right: 16px;
+    }
+
+    .usage-item-name {
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .usage-item-progress-track {
+      height: 6px;
+      background: rgba(148, 163, 184, 0.15);
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .usage-item-progress-bar {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #38bdf8, #31c48d);
+      transition: width 0.6s ease;
+    }
+
+    .usage-item-right {
+      text-align: right;
+    }
+
+    .usage-item-cost {
+      font-size: 0.95rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #ffffff;
+    }
+
+    .usage-item-pct {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Filter Chips ── */
+    .billing-filter-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .billing-chip {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--panel-border);
+      color: var(--muted);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-height: auto;
+      box-shadow: none;
+    }
+
+    .billing-chip:hover {
+      color: #fff;
+      border-color: rgba(148, 163, 184, 0.3);
+    }
+
+    .billing-chip.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    /* ── Nested Accordion Rows ── */
+    .nested-breakdown-box {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 8px;
+      padding: 14px;
+      margin: 8px 0;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    .billing-expand-btn {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: #38bdf8;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: auto;
+      box-shadow: none;
+      transition: all 0.15s ease;
+    }
+
+    .billing-expand-btn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
+    /* ── Previous 3 Months Summary Styles ── */
+    .previous-months-card {
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .previous-months-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .previous-month-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 10px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+
+    .previous-month-card:hover {
+      border-color: rgba(56, 189, 248, 0.35);
+      background: rgba(30, 41, 59, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .previous-month-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #a855f7, #38bdf8);
+      opacity: 0.8;
+    }
+
+    .previous-month-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .previous-month-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.01em;
+    }
+
+    .previous-month-dates {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .previous-month-body {
+      margin-bottom: 14px;
+    }
+
+    .previous-month-cost-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .previous-month-cost-val {
+      font-size: 1.6rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #94a3b8;
+      letter-spacing: -0.02em;
+    }
+
+    .previous-month-cost-val.has-cost {
+      color: #38bdf8;
+    }
+
+    .previous-month-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid rgba(148, 163, 184, 0.08);
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     @media (max-width: 900px) {
@@ -1500,7 +2216,7 @@
               </svg>
             </span>
             <span class="nav-label">Comments</span>
-            <span class="nav-badge" id="sidebar-comments-badge">24h</span>
+            <span class="nav-badge" id="sidebar-comments-badge">1w</span>
           </button>
 
           <button type="button" class="nav-item" id="nav-btn-users" data-tab="users">
@@ -1516,6 +2232,18 @@
             <span class="nav-label">Users</span>
             <span class="nav-badge" id="sidebar-users-badge">DB</span>
           </button>
+
+          <button type="button" class="nav-item" id="nav-btn-billing" data-tab="billing" style="display: none;">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <line x1="2" y1="10" x2="22" y2="10" />
+              </svg>
+            </span>
+            <span class="nav-label">Billing</span>
+            <span class="nav-badge" id="sidebar-billing-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25);">AWS</span>
+          </button>
         </div>
 
         <div class="sidebar-footer">
@@ -1523,8 +2251,11 @@
             <div class="user-avatar" id="user-avatar-initial">A</div>
             <div class="user-details">
               <span class="user-email-text" id="nav-user-email">admin@investing.com</span>
-              <span class="user-status-text"><span class="live-dot" style="width:5px; height:5px;"></span>
-                Connected</span>
+              <span class="user-status-text">
+                <span class="live-dot" style="width:5px; height:5px;"></span>
+                <span>Connected</span>
+                <span id="nav-user-role-badge" class="role-badge role-badge-standard" style="display: none;">User</span>
+              </span>
             </div>
           </div>
           <button type="button" class="btn-logout" id="logout-btn" title="Sign out">
@@ -1572,7 +2303,7 @@
               <div class="options">
                 <div>
                   <label for="account-count">Number of accounts to run</label>
-                  <input id="account-count" type="number" value="1" min="1" step="1" inputmode="numeric" required />
+                  <input id="account-count" type="number" value="29" min="1" step="1" inputmode="numeric" required />
                   <p class="field-note">Credentials remain in Lambda; they are never sent from this UI.</p>
                 </div>
                 <button id="run-button" type="submit">
@@ -1594,7 +2325,7 @@
               <div class="logs-header">
                 <div class="logs-title-area">
                   <h2>Execution Batch Logs</h2>
-                  <div class="logs-subtitle"><span class="live-dot"></span> Live records grouped by execution run
+                  <div class="logs-subtitle"><span class="live-dot"></span> Live records from the last 3 days grouped by execution run
                     directly from database</div>
                 </div>
                 <div class="logs-actions">
@@ -1612,23 +2343,27 @@
                 <div id="batch-list" class="batch-list">
                   <div class="loading-state">Loading live run batches from database...</div>
                 </div>
+                <div class="pagination-bar" id="logs-pagination-bar">
+                  <div class="pagination-info" id="logs-pagination-info">Showing 0 to 0 of 0 batch logs</div>
+                  <div class="pagination-controls" id="logs-pagination-controls"></div>
+                </div>
               </div>
             </section>
           </div>
 
-          <!-- TAB 2: COMMENTS VIEW (24H SCRAPED COMMENTS) -->
+          <!-- TAB 2: COMMENTS VIEW (LAST WEEK'S SCRAPED COMMENTS) -->
           <div class="tab-content" id="tab-comments">
-            <div class="eyebrow">Scraped Feed &bull; Last 24 Hours</div>
+            <div class="eyebrow">Scraped Feed &bull; Last Week</div>
             <div class="comments-header-bar">
               <div>
-                <h1>24-Hour Scraped Comments</h1>
+                <h1>Weekly Scraped Comments</h1>
                 <p class="intro" style="margin-bottom:0;">Live commentary feed fetched from the database within the last
-                  24 hours. Ordered descending by latest fetch time.</p>
+                  week. Ordered descending by latest fetch time.</p>
               </div>
               <div class="comments-actions-group">
                 <div class="account-stepper-box">
                   <span>Accounts:</span>
-                  <input type="number" id="comments-account-count" value="1" min="1" step="1"
+                  <input type="number" id="comments-account-count" value="29" min="1" step="1"
                     title="Number of accounts to run" />
                 </div>
                 <button type="button" id="comments-report-btn" disabled>
@@ -1685,12 +2420,86 @@
                     Selected</button>
                 </div>
                 <div class="toolbar-right">
-                  <select id="comments-status-filter"
-                    style="width: auto; min-width: 140px; padding: 6px 10px; font-size: 0.82rem;">
-                    <option value="">All Statuses</option>
-                    <option value="not processed">Not Processed</option>
-                    <option value="reported">Reported / Runned</option>
-                  </select>
+                  <!-- Multi-Select User Filter Component -->
+                  <div class="multiselect-dropdown-wrapper" id="comments-user-multiselect">
+                    <button type="button" class="multiselect-trigger-btn" id="multiselect-trigger"
+                      title="Filter comments by one or multiple users">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                      <span class="multiselect-trigger-text" id="multiselect-trigger-text">All Users</span>
+                      <span class="multiselect-count-badge" id="multiselect-count-badge" style="display:none;">0</span>
+                      <button type="button" class="multiselect-clear-btn" id="multiselect-clear-btn"
+                        title="Clear selected users" style="display:none;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                      <svg class="chevron-user" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                        style="color:var(--muted); flex-shrink:0; transition: transform 0.2s ease;">
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+
+                    <div class="multiselect-menu" id="multiselect-menu">
+                      <div class="multiselect-menu-header">
+                        <span style="color:var(--muted);" id="multiselect-menu-title">Users</span>
+                        <div style="display:flex; gap:8px;">
+                          <button type="button" class="quick-toggle-btn" id="multiselect-select-all-btn">Select
+                            All</button>
+                          <button type="button" class="quick-toggle-btn" id="multiselect-clear-all-btn"
+                            style="color:var(--muted);">Clear</button>
+                        </div>
+                      </div>
+                      <div class="multiselect-search-box">
+                        <input type="text" id="multiselect-search-input" placeholder="Search user..."
+                          autocomplete="off" />
+                      </div>
+                      <div class="multiselect-list" id="multiselect-list">
+                        <!-- User checkbox items dynamically rendered -->
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Comment Search Input -->
+                  <div class="comments-search-wrapper">
+                    <span class="search-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                    </span>
+                    <input type="text" id="comments-search-input" placeholder="Search comments..." autocomplete="off"
+                      title="Search by comment text (part or whole), user name, or ID" />
+                    <button type="button" id="comments-clear-search-btn" class="clear-btn" title="Clear search">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Processing status tabs -->
+                  <div class="comments-status-tabs" role="group" aria-label="Comment processing status">
+                    <button type="button" class="btn-secondary comments-status-tab active" id="comments-not-processed-btn" aria-pressed="true">Not Processed</button>
+                    <button type="button" class="btn-secondary comments-status-tab" id="comments-processed-btn" aria-pressed="false">Processed</button>
+                  </div>
+
+                  <!-- Reset Filters Button -->
+                  <button type="button" id="comments-reset-filters-btn" class="btn-text"
+                    style="display:none; color: #f43f5e; font-size: 0.78rem; font-weight: 600;"
+                    title="Reset user, search and status filters">
+                    Reset Filters
+                  </button>
                 </div>
               </div>
 
@@ -1822,6 +2631,203 @@
             </div>
           </div>
 
+          <!-- TAB 4: BILLING VIEW (AWS ECS FARGATE COST ANALYTICS) -->
+          <div class="tab-content" id="tab-billing">
+            <div class="eyebrow">Cloud Cost Analytics &bull; AWS ECS Fargate</div>
+            <div class="comments-header-bar">
+              <div>
+                <h1>ECS Fargate Billing</h1>
+                <p class="intro" style="margin-bottom:0;" id="billing-period-intro">
+                  Live daily infrastructure spend and compute resource consumption from AWS Cost Explorer.
+                </p>
+              </div>
+              <div class="comments-actions-group">
+                <span id="billing-last-updated" style="font-size: 0.78rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;"></span>
+                <button type="button" class="btn-secondary" id="billing-refresh-btn" title="Refresh AWS ECS Billing data">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                  </svg>
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- STATUS / ALERT BANNER (IF ERROR) -->
+            <div id="billing-error-banner" style="display:none; margin-bottom: 20px;" class="status error"></div>
+
+            <!-- KPI SUMMARY CARDS -->
+            <div class="billing-kpi-grid">
+              <!-- Card 1: Total Cost -->
+              <div class="billing-kpi-card">
+                <div class="billing-kpi-header">
+                  <span class="billing-kpi-title">Total Spend</span>
+                  <div class="billing-kpi-icon" style="background: rgba(49, 196, 141, 0.15); color: #31c48d;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="1" x2="12" y2="23" />
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="billing-kpi-value" id="kpi-total-cost">$0.0000</div>
+                <div class="billing-kpi-sub">
+                  <span class="pill pill-success" id="kpi-currency-badge">USD</span>
+                  <span id="kpi-granularity-badge" style="color: var(--muted);">Daily Granularity</span>
+                </div>
+              </div>
+
+              <!-- Card 2: Service & Region -->
+              <div class="billing-kpi-card">
+                <div class="billing-kpi-header">
+                  <span class="billing-kpi-title">Service & Region</span>
+                  <div class="billing-kpi-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                      <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                      <line x1="6" y1="6" x2="6.01" y2="6" />
+                      <line x1="6" y1="18" x2="6.01" y2="18" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="billing-kpi-value" id="kpi-service-name" style="font-size: 1.35rem;">AWS ECS Fargate</div>
+                <div class="billing-kpi-sub">
+                  <span class="pill pill-accounts" id="kpi-region-badge">us-west-2</span>
+                  <span>Oregon Region</span>
+                </div>
+              </div>
+
+              <!-- Card 3: Query Period -->
+              <div class="billing-kpi-card">
+                <div class="billing-kpi-header">
+                  <span class="billing-kpi-title">Query Window</span>
+                  <div class="billing-kpi-icon" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="billing-kpi-value" id="kpi-period-days" style="font-size: 1.45rem;">— Days</div>
+                <div class="billing-kpi-sub" id="kpi-period-dates" style="font-family: 'JetBrains Mono', monospace; font-size: 0.74rem;">—</div>
+              </div>
+
+              <!-- Card 4: Peak Spend Day -->
+              <div class="billing-kpi-card">
+                <div class="billing-kpi-header">
+                  <span class="billing-kpi-title">Peak Daily Spend</span>
+                  <div class="billing-kpi-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                      <polyline points="17 6 23 6 23 12" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="billing-kpi-value" id="kpi-peak-cost" style="color: #fde047;">$0.0000</div>
+                <div class="billing-kpi-sub" id="kpi-peak-date">No peak recorded</div>
+              </div>
+            </div>
+
+            <!-- DAILY SPEND VISUAL TIMELINE / CHART CARD -->
+            <div class="card billing-chart-card">
+              <div class="billing-chart-header">
+                <div>
+                  <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 4px;">Daily Spend Timeline</h3>
+                  <div style="font-size: 0.8rem; color: var(--muted);">Hover over any bar to view exact daily costs and resource breakdowns</div>
+                </div>
+                <div id="chart-legend" style="display:flex; align-items:center; gap:14px; font-size:0.75rem; color: var(--muted);">
+                  <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; background:#38bdf8; border-radius:2px;"></span> Daily Cost</span>
+                  <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; background:#31c48d; border-radius:2px;"></span> Peak Day</span>
+                  <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; background:rgba(148,163,184,0.2); border-radius:2px;"></span> Zero Cost ($0)</span>
+                </div>
+              </div>
+              <div class="billing-chart-bars" id="billing-chart-bars-container">
+                <div class="loading-state" style="width:100%;"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading cost timeline...</div>
+              </div>
+            </div>
+
+            <!-- RESOURCE TYPE COST DRIVERS BREAKDOWN -->
+            <div class="card billing-breakdown-card">
+              <div class="comments-toolbar" style="margin-bottom: 16px;">
+                <div class="toolbar-left">
+                  <h3 style="font-size: 1.05rem; font-weight: 700;">Cost Drivers by Resource Type</h3>
+                  <span class="pill pill-accounts" id="usage-types-count-badge">0 Categories</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--muted);">Aggregated over the queried billing period</div>
+              </div>
+              <div id="usage-types-list-container">
+                <div class="loading-state">Loading resource breakdown...</div>
+              </div>
+            </div>
+
+            <!-- ITEMIZED DAILY BREAKDOWN TABLE -->
+            <div class="card" style="padding: 20px;">
+              <div class="comments-toolbar">
+                <div class="toolbar-left">
+                  <h3 style="font-size: 1.05rem; font-weight: 700;">Daily Itemized Records</h3>
+                  <div class="billing-filter-chips">
+                    <button type="button" class="billing-chip active" id="filter-all-days" onclick="filterBillingDays('all')">All Days (<span id="count-all-days">0</span>)</button>
+                    <button type="button" class="billing-chip" id="filter-active-days" onclick="filterBillingDays('active')">Active Usage Only (<span id="count-active-days">0</span>)</button>
+                  </div>
+                </div>
+                <div class="toolbar-right">
+                  <input type="text" id="billing-search-input" placeholder="Search date (e.g. 2026-09-15)..."
+                    style="padding: 7px 12px; font-size: 0.82rem; min-width: 220px; width: auto;" />
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table id="billing-daily-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 50px;">#</th>
+                      <th style="width: 170px;">Date Period</th>
+                      <th style="width: 130px;">Activity Status</th>
+                      <th style="width: 150px;">Total Spend (USD)</th>
+                      <th>Primary Usage Types</th>
+                      <th style="width: 130px; text-align: center;">Itemization</th>
+                    </tr>
+                  </thead>
+                  <tbody id="billing-table-body">
+                    <tr>
+                      <td colspan="6" class="loading-state">
+                        <span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading billing data from API...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- HISTORICAL MONTHLY SPEND (LAST 3 MONTHS) -->
+            <div class="card previous-months-card" id="previous-months-section" style="margin-top: 24px; padding: 20px;">
+              <div class="comments-toolbar" style="margin-bottom: 16px;">
+                <div class="toolbar-left">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="billing-kpi-icon" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; width: 32px; height: 32px;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 style="font-size: 1.05rem; font-weight: 700; margin:0;">Historical Monthly Spend (Last 3 Months)</h3>
+                      <div style="font-size: 0.78rem; color: var(--muted);">Individual monthly infrastructure billing totals from AWS Cost Explorer</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="toolbar-right">
+                  <span class="pill pill-accounts" id="previous-months-count-badge">Last 3 Months</span>
+                </div>
+              </div>
+
+              <div class="previous-months-grid" id="previous-months-container">
+                <div class="loading-state" style="grid-column: 1 / -1;"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading previous months summary...</div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </main>
     </div>
@@ -1833,26 +2839,46 @@
     // ─────────────────────────────────────────────────────────────────
     const AUTH_STORAGE_KEY = "investing_auth_token";
     const USER_EMAIL_KEY = "investing_auth_email";
+    const USER_ROLE_KEY = "investing_auth_role";
+    const USER_IS_SUPERADMIN_KEY = "investing_auth_is_superadmin";
 
     function getAuthToken() {
       return localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY) || "";
     }
 
-    function saveAuthToken(token, email, remember) {
-      if (remember) {
-        localStorage.setItem(AUTH_STORAGE_KEY, token);
-        localStorage.setItem(USER_EMAIL_KEY, email);
-      } else {
-        sessionStorage.setItem(AUTH_STORAGE_KEY, token);
-        sessionStorage.setItem(USER_EMAIL_KEY, email);
-      }
+    function isCurrentUserSuperAdmin() {
+      return localStorage.getItem(USER_IS_SUPERADMIN_KEY) === "true" ||
+        sessionStorage.getItem(USER_IS_SUPERADMIN_KEY) === "true";
+    }
+
+    function getCurrentUserRole() {
+      return localStorage.getItem(USER_ROLE_KEY) || sessionStorage.getItem(USER_ROLE_KEY) || (isCurrentUserSuperAdmin() ? "super_admin" : "admin");
+    }
+
+    function saveAuthToken(token, email, remember, isSuperAdmin = false, role = "admin") {
+      const store = remember ? localStorage : sessionStorage;
+      const otherStore = remember ? sessionStorage : localStorage;
+
+      otherStore.removeItem(AUTH_STORAGE_KEY);
+      otherStore.removeItem(USER_EMAIL_KEY);
+      otherStore.removeItem(USER_ROLE_KEY);
+      otherStore.removeItem(USER_IS_SUPERADMIN_KEY);
+
+      store.setItem(AUTH_STORAGE_KEY, token);
+      store.setItem(USER_EMAIL_KEY, email);
+      store.setItem(USER_ROLE_KEY, role || (isSuperAdmin ? "super_admin" : "admin"));
+      store.setItem(USER_IS_SUPERADMIN_KEY, isSuperAdmin ? "true" : "false");
     }
 
     function clearAuth() {
       localStorage.removeItem(AUTH_STORAGE_KEY);
       localStorage.removeItem(USER_EMAIL_KEY);
+      localStorage.removeItem(USER_ROLE_KEY);
+      localStorage.removeItem(USER_IS_SUPERADMIN_KEY);
       sessionStorage.removeItem(AUTH_STORAGE_KEY);
       sessionStorage.removeItem(USER_EMAIL_KEY);
+      sessionStorage.removeItem(USER_ROLE_KEY);
+      sessionStorage.removeItem(USER_IS_SUPERADMIN_KEY);
     }
 
     function getStoredEmail() {
@@ -1896,29 +2922,63 @@
       }
     }
 
-    function showAppView(email) {
+    function showAppView(email, isSuperAdmin = null, role = null) {
       loginView.style.display = "none";
       appView.style.display = "block";
       const userMail = email || getStoredEmail();
       navUserEmail.textContent = userMail;
       userAvatarInitial.textContent = (userMail.charAt(0) || "A").toUpperCase();
 
+      const superAdmin = (typeof isSuperAdmin === "boolean") ? isSuperAdmin : isCurrentUserSuperAdmin();
+
+      // Show Billing section in navigation ONLY if Super Admin
+      if (navBtnBilling) {
+        navBtnBilling.style.display = superAdmin ? "flex" : "none";
+      }
+
+      // Update user role badge in sidebar footer
+      const roleBadge = document.getElementById("nav-user-role-badge");
+      if (roleBadge) {
+        if (superAdmin) {
+          roleBadge.textContent = "Super Admin";
+          roleBadge.className = "role-badge role-badge-super";
+          roleBadge.style.display = "inline-flex";
+        } else {
+          roleBadge.textContent = "Standard User";
+          roleBadge.className = "role-badge role-badge-standard";
+          roleBadge.style.display = "inline-flex";
+        }
+      }
+
+      // If user is not super admin but billing tab was active, fallback to dashboard
+      if (!superAdmin && tabBilling && tabBilling.classList.contains("active")) {
+        switchTab("dashboard");
+      }
+
       initConfig();
       loadLogs(false);
+      loadCommentUsers();
       loadComments(1);
     }
 
-    // Navigation Tabs Switching (Dashboard vs Comments vs Users)
+    // Navigation Tabs Switching (Dashboard vs Comments vs Users vs Billing)
     const navBtnDashboard = document.getElementById("nav-btn-dashboard");
     const navBtnComments = document.getElementById("nav-btn-comments");
     const navBtnUsers = document.getElementById("nav-btn-users");
+    const navBtnBilling = document.getElementById("nav-btn-billing");
     const tabDashboard = document.getElementById("tab-dashboard");
     const tabComments = document.getElementById("tab-comments");
     const tabUsers = document.getElementById("tab-users");
+    const tabBilling = document.getElementById("tab-billing");
 
     function switchTab(tabName) {
-      [navBtnDashboard, navBtnComments, navBtnUsers].forEach(btn => btn.classList.remove("active"));
-      [tabDashboard, tabComments, tabUsers].forEach(tab => tab.classList.remove("active"));
+      // Disallow non-superadmin from viewing billing tab
+      if (tabName === "billing" && !isCurrentUserSuperAdmin()) {
+        tabName = "dashboard";
+      }
+
+      [navBtnDashboard, navBtnComments, navBtnUsers, navBtnBilling].forEach(btn => btn && btn.classList.remove("active"));
+      [tabDashboard, tabComments, tabUsers, tabBilling].forEach(tab => tab && tab.classList.remove("active"));
 
       if (tabName === "dashboard") {
         navBtnDashboard.classList.add("active");
@@ -1926,17 +2986,28 @@
       } else if (tabName === "comments") {
         navBtnComments.classList.add("active");
         tabComments.classList.add("active");
+        loadCommentUsers();
         loadComments(currentCommentsPage);
       } else if (tabName === "users") {
         navBtnUsers.classList.add("active");
         tabUsers.classList.add("active");
         loadUsers(currentUsersPage);
+      } else if (tabName === "billing") {
+        if (!isCurrentUserSuperAdmin()) {
+          switchTab("dashboard");
+          return;
+        }
+        navBtnBilling.classList.add("active");
+        tabBilling.classList.add("active");
+        loadBillingData();
       }
     }
 
     navBtnDashboard.addEventListener("click", () => switchTab("dashboard"));
     navBtnComments.addEventListener("click", () => switchTab("comments"));
     navBtnUsers.addEventListener("click", () => switchTab("users"));
+    navBtnBilling.addEventListener("click", () => switchTab("billing"));
+
 
     // ─────────────────────────────────────────────────────────────────
     // LOGIN FORM LOGIC
@@ -1985,9 +3056,9 @@
           throw new Error(data.error || "Authentication failed.");
         }
 
-        saveAuthToken(data.token, data.email, rememberMeCheckbox.checked);
+        saveAuthToken(data.token, data.email, rememberMeCheckbox.checked, !!data.is_super_admin, data.role);
         loginPasswordInput.value = "";
-        showAppView(data.email);
+        showAppView(data.email, !!data.is_super_admin, data.role);
       } catch (err) {
         loginAlertText.textContent = err.message || "Invalid credentials.";
         loginAlert.classList.add("show");
@@ -2020,7 +3091,9 @@
         if (res.ok) {
           const data = await res.json();
           if (data.authenticated) {
-            showAppView(data.email);
+            const remember = !!localStorage.getItem(AUTH_STORAGE_KEY);
+            saveAuthToken(token, data.email, remember, !!data.is_super_admin, data.role);
+            showAppView(data.email, !!data.is_super_admin, data.role);
             return;
           }
         }
@@ -2040,26 +3113,141 @@
     const COMMENTS_API_URL = "/api/comments";
     const COMMENTS_STATUS_API_URL = "/api/comments/status";
     const USERS_API_URL = "/api/users";
+    const BILLING_API_URL = "/api/billing/ecs-fargate";
     const RUN_API_URL = "http://74.207.229.12:3000/api/run";
-    let lambdaApiUrl = "https://nr9andj3qe.execute-api.us-east-2.amazonaws.com/dev/investing-dev";
+    let lambdaApiUrl = "https://al4vj8u8yh.execute-api.us-west-2.amazonaws.com/dev/investing-scrapper";
     let scraperApiUrl = "http://74.207.229.12:3000/api/run";
+    let billingApiUrl = "";
+    let billingApiKey = "";
 
-    async function triggerRunApi() {
-      const url = scraperApiUrl || RUN_API_URL;
-      const headers = {};
-      const token = getAuthToken();
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
+
+
+    async function triggerRunApi(rawUsers = [], rawUserNames = [], rawUserIds = []) {
+      const url = "/api/run";
 
       try {
-        const res = await fetch(url, {
-          method: "GET",
-          headers: headers
-        });
+        let res;
+        let normalizedUsers = [];
+        if (Array.isArray(rawUsers)) {
+          normalizedUsers = rawUsers;
+        } else if (rawUsers && typeof rawUsers === "object") {
+          normalizedUsers = [rawUsers];
+        } else if (typeof rawUsers === "string" && rawUsers.trim()) {
+          normalizedUsers = [{ user_name: rawUsers.trim(), user_id: "" }];
+        }
+
+        const hasUsers = normalizedUsers.length > 0;
+
+        if (hasUsers) {
+          // Build CLEAN user objects with ONLY user_name and user_id
+          const cleanUsers = normalizedUsers.map(u => {
+            let nameStr = "";
+            let uidStr = "";
+
+            if (typeof u === "string") {
+              const trimmed = u.trim();
+              if (/^\d+$/.test(trimmed)) {
+                uidStr = trimmed;
+              } else {
+                nameStr = trimmed;
+              }
+            } else if (u && typeof u === "object") {
+              nameStr = String(u.user_name || u.userName || u.username || u.name || "").trim();
+              uidStr = String(u.user_id || u.userId || u.id || "").trim();
+              // If uid equals name and is not numeric, it's not a real ID
+              if (uidStr === nameStr && !/^\d+$/.test(uidStr)) {
+                uidStr = "";
+              }
+            }
+
+            // Cross-match with availableUsersList to fill missing identifier
+            if (!uidStr && nameStr && Array.isArray(availableUsersList)) {
+              const match = availableUsersList.find(au =>
+                au.user_name && au.user_name.trim().toLowerCase() === nameStr.toLowerCase()
+              );
+              if (match && match.user_id) {
+                uidStr = String(match.user_id).trim();
+              }
+            }
+            if (!nameStr && uidStr && Array.isArray(availableUsersList)) {
+              const match = availableUsersList.find(au =>
+                String(au.user_id || "").trim() === uidStr
+              );
+              if (match && match.user_name) {
+                nameStr = String(match.user_name).trim();
+              }
+            }
+
+            return { user_name: nameStr, user_id: uidStr };
+          });
+
+          const namesList = cleanUsers.map(u => u.user_name).filter(Boolean);
+          const idsList = cleanUsers.map(u => u.user_id).filter(Boolean);
+          const firstName = cleanUsers[0] ? cleanUsers[0].user_name : "";
+
+          // Clean minimal payload — matches exact Postman format
+          const payload = {
+            users: cleanUsers,
+            user_names: namesList,
+            user_ids: idsList,
+            user_name: namesList.length === 1 ? firstName : namesList.join(", "),
+            user: firstName || (idsList[0] || "")
+          };
+
+          console.log("%c[SCRAPER TRIGGER] Triggering scraper API for selected users:", "background: #0284c7; color: white; font-weight: bold; padding: 3px 8px; border-radius: 4px;");
+          console.log("👉 Clean Users:", cleanUsers);
+          console.log("👉 User Names:", namesList);
+          console.log("👉 User IDs:", idsList);
+          console.log("👉 Payload sent to /api/run:", JSON.stringify(payload, null, 2));
+
+          res = await authFetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          // Also trigger directly from browser to 74.207.229.12:3000 (just like Postman)
+          try {
+            const clientTargetUrl = (typeof scraperApiUrl === "string" && scraperApiUrl.startsWith("http") && !scraperApiUrl.includes("74.207.229.12"))
+              ? scraperApiUrl
+              : "http://74.207.229.12:3000/api/run";
+
+            fetch(clientTargetUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            }).then(async r => {
+              console.log("%c[DIRECT BROWSER SCRAPER SUCCESS]", "background: #10b981; color: white; font-weight: bold; padding: 2px 6px; border-radius: 3px;", `Triggered ${clientTargetUrl}`);
+            }).catch(e => {
+              console.debug("Direct client fetch notice:", e.message);
+            });
+          } catch (_) {}
+        } else {
+          // No user selected: Send simple GET request (runs scraper for all DB users)
+          console.log("%c[SCRAPER TRIGGER] Triggering scraper for ALL database users (GET)...", "background: #0284c7; color: white; font-weight: bold; padding: 3px 8px; border-radius: 4px;");
+          res = await authFetch(url, { method: "GET" });
+
+          try {
+            const clientTargetUrl = (typeof scraperApiUrl === "string" && scraperApiUrl.startsWith("http") && !scraperApiUrl.includes("74.207.229.12"))
+              ? scraperApiUrl
+              : "http://74.207.229.12:3000/api/run";
+
+            fetch(clientTargetUrl, { method: "GET" })
+              .then(() => console.log("%c[DIRECT BROWSER SCRAPER SUCCESS]", "background: #10b981; color: white; padding: 2px 6px;", `Triggered ${clientTargetUrl} GET`))
+              .catch(() => {});
+          } catch (_) {}
+        }
+
+        if (res && res.ok) {
+          const resData = await res.clone().json().catch(() => ({}));
+          console.log("%c[SCRAPER SUCCESS] Server responded:", "background: #10b981; color: white; font-weight: bold; padding: 3px 8px; border-radius: 4px;", resData);
+        } else if (res) {
+          const errData = await res.clone().json().catch(() => ({}));
+          console.warn("%c[SCRAPER WARNING] Server status " + res.status + ":", "background: #f59e0b; color: white; font-weight: bold; padding: 3px 8px; border-radius: 4px;", errData);
+        }
         return res;
       } catch (err) {
-        console.warn("Could not reach /api/run endpoint:", err);
+        console.error("Could not reach scraper API endpoint:", err);
       }
     }
 
@@ -2074,11 +3262,18 @@
           if (config.scraper_api_url) {
             scraperApiUrl = config.scraper_api_url;
           }
+          if (config.billing_api_url) {
+            billingApiUrl = config.billing_api_url;
+          }
+          if (config.billing_api_key) {
+            billingApiKey = config.billing_api_key;
+          }
         }
       } catch (err) {
         console.warn("Could not load /api/config:", err);
       }
     }
+
 
     function escapeHtml(str) {
       if (!str) return "";
@@ -2093,12 +3288,17 @@
     // ─────────────────────────────────────────────────────────────────
     // 3. COMMENTS VIEW LOGIC
     // ─────────────────────────────────────────────────────────────────
+    const COMMENTS_USERS_API_URL = "/api/comments/users";
     let currentCommentsPage = 1;
     let totalCommentsPages = 1;
     let totalCommentsCount = 0;
     const commentsPageSize = 10;
     let currentCommentsList = [];
     const selectedComments = new Map();
+
+    // Multi-Select User Filter State
+    const selectedUserFilters = new Set();
+    let availableUsersList = [];
 
     const commentsTableBody = document.getElementById("comments-table-body");
     const selectAllPageCheckbox = document.getElementById("select-all-page-checkbox");
@@ -2109,7 +3309,12 @@
     const commentsReportBtn = document.getElementById("comments-report-btn");
     const commentsRunScraperBtn = document.getElementById("comments-run-scraper-btn");
     const commentsRefreshBtn = document.getElementById("comments-refresh-btn");
-    const commentsStatusFilter = document.getElementById("comments-status-filter");
+    const commentsSearchInput = document.getElementById("comments-search-input");
+    const commentsClearSearchBtn = document.getElementById("comments-clear-search-btn");
+    const commentsNotProcessedBtn = document.getElementById("comments-not-processed-btn");
+    const commentsProcessedBtn = document.getElementById("comments-processed-btn");
+    let activeCommentsStatus = "not processed";
+    const commentsResetFiltersBtn = document.getElementById("comments-reset-filters-btn");
     const paginationInfo = document.getElementById("pagination-info");
     const paginationControls = document.getElementById("pagination-controls");
     const commentsAccountCount = document.getElementById("comments-account-count");
@@ -2118,8 +3323,225 @@
     const scraperStatusText = document.getElementById("scraper-status-text");
     const scraperCountdownSpan = document.getElementById("scraper-countdown");
     const stopScraperPollingBtn = document.getElementById("stop-scraper-polling-btn");
+
+    // Multi-Select DOM Elements
+    const multiselectTrigger = document.getElementById("multiselect-trigger");
+    const multiselectMenu = document.getElementById("multiselect-menu");
+    const multiselectTriggerText = document.getElementById("multiselect-trigger-text");
+    const multiselectCountBadge = document.getElementById("multiselect-count-badge");
+    const multiselectClearBtn = document.getElementById("multiselect-clear-btn");
+    const multiselectMenuTitle = document.getElementById("multiselect-menu-title");
+    const multiselectSearchInput = document.getElementById("multiselect-search-input");
+    const multiselectList = document.getElementById("multiselect-list");
+    const multiselectSelectAllBtn = document.getElementById("multiselect-select-all-btn");
+    const multiselectClearAllBtn = document.getElementById("multiselect-clear-all-btn");
+
     let scraperPollInterval = null;
     let scraperRemainingSeconds = 0;
+    let commentsSearchDebounceTimer = null;
+
+    function updateResetFiltersBtnVisibility() {
+      const hasUser = selectedUserFilters.size > 0;
+      const hasSearch = Boolean(commentsSearchInput && commentsSearchInput.value.trim());
+      const hasStatus = activeCommentsStatus !== "not processed";
+      if (commentsResetFiltersBtn) {
+        commentsResetFiltersBtn.style.display = (hasUser || hasSearch || hasStatus) ? "inline-block" : "none";
+      }
+    }
+
+    function updateMultiSelectUI() {
+      if (!multiselectTriggerText) return;
+      const count = selectedUserFilters.size;
+      if (count === 0) {
+        multiselectTriggerText.textContent = `All Users (${availableUsersList.length})`;
+        if (multiselectCountBadge) multiselectCountBadge.style.display = "none";
+        if (multiselectClearBtn) multiselectClearBtn.style.display = "none";
+        if (multiselectTrigger) multiselectTrigger.classList.remove("has-selection");
+      } else if (count === 1) {
+        const firstVal = Array.from(selectedUserFilters)[0];
+        const userObj = availableUsersList.find(u => u.key === firstVal || u.user_name === firstVal || u.user_id === firstVal);
+        multiselectTriggerText.textContent = userObj ? (userObj.user_name || `ID: ${userObj.user_id}`) : firstVal;
+        if (multiselectCountBadge) multiselectCountBadge.style.display = "none";
+        if (multiselectClearBtn) multiselectClearBtn.style.display = "inline-flex";
+        if (multiselectTrigger) multiselectTrigger.classList.add("has-selection");
+      } else {
+        multiselectTriggerText.textContent = `${count} Users Selected`;
+        if (multiselectCountBadge) {
+          multiselectCountBadge.textContent = count;
+          multiselectCountBadge.style.display = "inline-flex";
+        }
+        if (multiselectClearBtn) multiselectClearBtn.style.display = "inline-flex";
+        if (multiselectTrigger) multiselectTrigger.classList.add("has-selection");
+      }
+      updateResetFiltersBtnVisibility();
+    }
+
+    function renderMultiSelectList(filterText = "") {
+      if (!multiselectList) return;
+      const q = (filterText || "").trim().toLowerCase();
+      const filtered = availableUsersList.filter(u => {
+        if (!q) return true;
+        const name = (u.user_name || "").toLowerCase();
+        const id = (u.user_id || "").toLowerCase();
+        return name.includes(q) || id.includes(q);
+      });
+
+      if (!filtered.length) {
+        multiselectList.innerHTML = `<div style="padding: 10px; color: var(--muted); text-align: center; font-size: 0.78rem;">No users found</div>`;
+        return;
+      }
+
+      multiselectList.innerHTML = filtered.map(u => {
+        const isChecked = selectedUserFilters.has(u.key);
+        const nameDisplay = u.user_name || "—";
+        const idDisplay = u.user_id ? `ID: ${u.user_id}` : "";
+        return `
+          <label class="multiselect-item ${isChecked ? 'selected' : ''}" data-user-key="${escapeHtml(u.key)}">
+            <input type="checkbox" class="multiselect-checkbox" data-user-key="${escapeHtml(u.key)}" ${isChecked ? 'checked' : ''} />
+            <div class="multiselect-item-label">
+              <span class="multiselect-item-name">${escapeHtml(nameDisplay)}</span>
+              ${idDisplay ? `<span class="multiselect-item-id">${escapeHtml(idDisplay)}</span>` : ''}
+            </div>
+          </label>
+        `;
+      }).join("");
+
+      multiselectList.querySelectorAll(".multiselect-checkbox").forEach(cb => {
+        cb.addEventListener("change", (e) => {
+          const key = e.target.getAttribute("data-user-key");
+          if (e.target.checked) {
+            selectedUserFilters.add(key);
+          } else {
+            selectedUserFilters.delete(key);
+          }
+          const itemLabel = e.target.closest(".multiselect-item");
+          if (itemLabel) {
+            itemLabel.classList.toggle("selected", e.target.checked);
+          }
+          updateMultiSelectUI();
+          currentCommentsPage = 1;
+          loadComments(1);
+        });
+      });
+    }
+
+    async function loadCommentUsers() {
+      try {
+        const res = await authFetch(`${COMMENTS_USERS_API_URL}?hours=168`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && Array.isArray(data.users)) {
+          availableUsersList = data.users.map(u => {
+            const name = (u.user_name || "").trim();
+            const uid = (u.user_id || "").trim();
+            const key = name || uid;
+            return {
+              user_name: name,
+              user_id: uid,
+              key: key,
+              label: name ? (uid ? `${name} (ID: ${uid})` : name) : `User ${uid}`
+            };
+          });
+
+          if (multiselectMenuTitle) {
+            multiselectMenuTitle.textContent = `Users (${availableUsersList.length})`;
+          }
+          renderMultiSelectList(multiselectSearchInput ? multiselectSearchInput.value : "");
+          updateMultiSelectUI();
+        }
+      } catch (err) {
+        console.warn("Could not load distinct comment users:", err);
+      }
+    }
+    window.loadCommentUsers = loadCommentUsers;
+
+    // Multi-Select Event Handlers
+    if (multiselectTrigger) {
+      multiselectTrigger.addEventListener("click", (e) => {
+        if (e.target.closest("#multiselect-clear-btn")) return;
+        const isOpen = multiselectMenu.classList.contains("open");
+        if (isOpen) {
+          multiselectMenu.classList.remove("open");
+          const chev = multiselectTrigger.querySelector(".chevron-user");
+          if (chev) chev.style.transform = "rotate(0deg)";
+        } else {
+          multiselectMenu.classList.add("open");
+          const chev = multiselectTrigger.querySelector(".chevron-user");
+          if (chev) chev.style.transform = "rotate(180deg)";
+          if (multiselectSearchInput) {
+            multiselectSearchInput.focus();
+          }
+        }
+      });
+    }
+
+    if (multiselectClearBtn) {
+      multiselectClearBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectedUserFilters.clear();
+        renderMultiSelectList(multiselectSearchInput ? multiselectSearchInput.value : "");
+        updateMultiSelectUI();
+        currentCommentsPage = 1;
+        loadComments(1);
+      });
+    }
+
+    if (multiselectSearchInput) {
+      multiselectSearchInput.addEventListener("input", () => {
+        renderMultiSelectList(multiselectSearchInput.value);
+      });
+    }
+
+    if (multiselectSelectAllBtn) {
+      multiselectSelectAllBtn.addEventListener("click", () => {
+        availableUsersList.forEach(u => selectedUserFilters.add(u.key));
+        renderMultiSelectList(multiselectSearchInput ? multiselectSearchInput.value : "");
+        updateMultiSelectUI();
+        currentCommentsPage = 1;
+        loadComments(1);
+      });
+    }
+
+    if (multiselectClearAllBtn) {
+      multiselectClearAllBtn.addEventListener("click", () => {
+        selectedUserFilters.clear();
+        renderMultiSelectList(multiselectSearchInput ? multiselectSearchInput.value : "");
+        updateMultiSelectUI();
+        currentCommentsPage = 1;
+        loadComments(1);
+      });
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest("#comments-user-multiselect")) {
+        if (multiselectMenu && multiselectMenu.classList.contains("open")) {
+          multiselectMenu.classList.remove("open");
+          const chev = multiselectTrigger.querySelector(".chevron-user");
+          if (chev) chev.style.transform = "rotate(0deg)";
+        }
+      }
+    });
+
+    function highlightText(text, query) {
+      if (!text) return "";
+      if (!query || !query.trim()) return escapeHtml(text);
+      const str = String(text);
+      const q = query.trim();
+      const escapedQuery = q.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+      try {
+        const regex = new RegExp(`(${escapedQuery})`, 'gi');
+        const parts = str.split(regex);
+        return parts.map(part => {
+          if (part.toLowerCase() === q.toLowerCase()) {
+            return `<mark class="search-highlight">${escapeHtml(part)}</mark>`;
+          }
+          return escapeHtml(part);
+        }).join("");
+      } catch (_) {
+        return escapeHtml(str);
+      }
+    }
 
     function stopScraperPolling() {
       if (scraperPollInterval) {
@@ -2137,26 +3559,35 @@
       }
     }
 
-    function startScraperPolling(durationSeconds = 120) {
+    function startScraperPolling(durationSeconds = 120, targetUser = "") {
       stopScraperPolling();
       scraperRemainingSeconds = durationSeconds;
       if (scraperStatusBanner) {
         scraperStatusBanner.style.display = "flex";
+      }
+      if (scraperStatusText) {
+        if (targetUser) {
+          scraperStatusText.innerHTML = `Scraper running for <strong>${escapeHtml(targetUser)}</strong>... Auto-syncing DB every 5s (<strong id="scraper-countdown">${scraperRemainingSeconds}s</strong> remaining)`;
+        } else {
+          scraperStatusText.innerHTML = `Scraper running in background... Auto-syncing DB every 5s (<strong id="scraper-countdown">${scraperRemainingSeconds}s</strong> remaining)`;
+        }
       }
       if (scraperCountdownSpan) {
         scraperCountdownSpan.textContent = `${scraperRemainingSeconds}s`;
       }
       if (commentsRunScraperBtn) {
         commentsRunScraperBtn.disabled = true;
+        const btnLabel = targetUser ? `Scraping: ${escapeHtml(targetUser)}` : `Scraper Running`;
         commentsRunScraperBtn.innerHTML = `
           <span class="spinner" style="width:13px; height:13px; border-width:2px; border-color:#fff; border-top-color:transparent; display:inline-block;"></span>
-          <span>Scraper Running</span>`;
+          <span>${btnLabel}</span>`;
       }
 
       scraperPollInterval = setInterval(async () => {
         scraperRemainingSeconds -= 5;
-        if (scraperCountdownSpan) {
-          scraperCountdownSpan.textContent = `${Math.max(0, scraperRemainingSeconds)}s`;
+        const countSpan = document.getElementById("scraper-countdown");
+        if (countSpan) {
+          countSpan.textContent = `${Math.max(0, scraperRemainingSeconds)}s`;
         }
         await loadComments(currentCommentsPage, true);
 
@@ -2235,20 +3666,145 @@
       updateSelectionUI();
     });
 
-    commentsStatusFilter.addEventListener("change", () => {
+    if (commentsSearchInput) {
+      commentsSearchInput.addEventListener("input", () => {
+        const val = commentsSearchInput.value.trim();
+        if (commentsClearSearchBtn) {
+          commentsClearSearchBtn.style.display = val ? "inline-flex" : "none";
+        }
+        updateResetFiltersBtnVisibility();
+        clearTimeout(commentsSearchDebounceTimer);
+        commentsSearchDebounceTimer = setTimeout(() => {
+          currentCommentsPage = 1;
+          loadComments(1);
+        }, 280);
+      });
+
+      commentsSearchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          clearTimeout(commentsSearchDebounceTimer);
+          currentCommentsPage = 1;
+          loadComments(1);
+        }
+      });
+    }
+
+    if (commentsClearSearchBtn) {
+      commentsClearSearchBtn.addEventListener("click", () => {
+        if (commentsSearchInput) {
+          commentsSearchInput.value = "";
+          commentsSearchInput.focus();
+        }
+        commentsClearSearchBtn.style.display = "none";
+        updateResetFiltersBtnVisibility();
+        currentCommentsPage = 1;
+        loadComments(1);
+      });
+    }
+
+    function setCommentsStatus(status) {
+      activeCommentsStatus = status;
+      commentsNotProcessedBtn.classList.toggle("active", status === "not processed");
+      commentsProcessedBtn.classList.toggle("active", status === "processed");
+      commentsNotProcessedBtn.setAttribute("aria-pressed", String(status === "not processed"));
+      commentsProcessedBtn.setAttribute("aria-pressed", String(status === "processed"));
       currentCommentsPage = 1;
       loadComments(1);
-    });
+    }
+    commentsNotProcessedBtn.addEventListener("click", () => setCommentsStatus("not processed"));
+    commentsProcessedBtn.addEventListener("click", () => setCommentsStatus("processed"));
+
+    if (commentsResetFiltersBtn) {
+      commentsResetFiltersBtn.addEventListener("click", () => {
+        selectedUserFilters.clear();
+        if (multiselectSearchInput) multiselectSearchInput.value = "";
+        renderMultiSelectList("");
+        updateMultiSelectUI();
+        if (commentsSearchInput) commentsSearchInput.value = "";
+        if (commentsClearSearchBtn) commentsClearSearchBtn.style.display = "none";
+        setCommentsStatus("not processed");
+        updateResetFiltersBtnVisibility();
+        currentCommentsPage = 1;
+        loadComments(1);
+      });
+    }
 
     if (commentsRunScraperBtn) {
       commentsRunScraperBtn.addEventListener("click", async () => {
+        const selectedUsers = Array.from(selectedUserFilters).map(key => {
+          const kStr = String(key || "").trim().toLowerCase();
+          const found = availableUsersList.find(u =>
+            String(u.key || "").trim().toLowerCase() === kStr ||
+            String(u.user_name || "").trim().toLowerCase() === kStr ||
+            String(u.user_id || "").trim() === String(key).trim() ||
+            String(u.id || "").trim() === String(key).trim()
+          );
+          if (found) {
+            return {
+              user_name: found.user_name || "",
+              user_id: found.user_id || found.id || "",
+              id: found.id || found.user_id || ""
+            };
+          }
+          const isNum = /^\d+$/.test(String(key).trim());
+          return {
+            user_name: isNum ? "" : String(key).trim(),
+            user_id: isNum ? String(key).trim() : "",
+            id: String(key).trim()
+          };
+        });
+
+        // Ensure both user_name and user_id are populated if one can be matched in availableUsersList
+        selectedUsers.forEach(u => {
+          if (!u.user_id && u.user_name) {
+            const match = availableUsersList.find(au => au.user_name && au.user_name.trim().toLowerCase() === u.user_name.trim().toLowerCase());
+            if (match && match.user_id) u.user_id = String(match.user_id).trim();
+          }
+          if (!u.user_name && u.user_id) {
+            const match = availableUsersList.find(au => String(au.user_id).trim() === String(u.user_id).trim());
+            if (match && match.user_name) u.user_name = match.user_name.trim();
+          }
+        });
+
+        const userNames = selectedUsers.map(u => u.user_name).filter(Boolean);
+        const userIds = selectedUsers.map(u => u.user_id).filter(Boolean);
+
+        let targetLabel = "";
+        if (selectedUsers.length === 1) {
+          const u = selectedUsers[0];
+          if (u.user_name && u.user_id) {
+            targetLabel = `${u.user_name} (ID: ${u.user_id})`;
+          } else {
+            targetLabel = u.user_name || (u.user_id ? `ID: ${u.user_id}` : "");
+          }
+        } else if (selectedUsers.length > 1) {
+          const formattedUsers = selectedUsers.map(u => {
+            if (u.user_name && u.user_id) return `${u.user_name} (ID: ${u.user_id})`;
+            return u.user_name || (u.user_id ? `ID: ${u.user_id}` : "");
+          }).filter(Boolean);
+          targetLabel = `${selectedUsers.length} Users (${formattedUsers.join(", ")})`;
+        }
+
+        console.log("%c[RUN SCRAPER CLICKED]", "background: #0284c7; color: white; font-weight: bold; padding: 3px 8px; border-radius: 4px;");
+        console.log("Selected User Filters:", Array.from(selectedUserFilters));
+        console.log("Resolved Selected Users:", selectedUsers);
+        console.log("Passed Names:", userNames, "Passed IDs:", userIds);
+
         try {
-          await triggerRunApi();
+          if (selectedUsers.length > 0) {
+            await triggerRunApi(selectedUsers, userNames, userIds);
+          } else {
+            await triggerRunApi();
+          }
         } catch (err) {
           console.warn("Run API error on scraper trigger:", err);
         }
-        startScraperPolling(120);
-        await loadComments(currentCommentsPage, true);
+
+        // Set to first page and load comments for selected users
+        currentCommentsPage = 1;
+        startScraperPolling(120, targetLabel);
+        await loadComments(1, false);
       });
     }
 
@@ -2259,6 +3815,7 @@
     }
 
     commentsRefreshBtn.addEventListener("click", async () => {
+      await loadCommentUsers();
       await loadComments(currentCommentsPage, false);
     });
 
@@ -2286,14 +3843,24 @@
       currentCommentsPage = page;
       if (!isSilent) {
         commentsRefreshBtn.disabled = true;
-        commentsTableBody.innerHTML = `<tr><td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading 24h comments from database...</td></tr>`;
+        commentsTableBody.innerHTML = `<tr><td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading weekly comments from database...</td></tr>`;
       }
 
       try {
-        const filterVal = commentsStatusFilter.value;
-        let url = `${COMMENTS_API_URL}?page=${page}&page_size=${commentsPageSize}&hours=24`;
+        const filterVal = activeCommentsStatus;
+        const searchVal = commentsSearchInput ? commentsSearchInput.value.trim() : "";
+
+        let url = `${COMMENTS_API_URL}?page=${page}&page_size=${commentsPageSize}&hours=168`;
         if (filterVal) {
           url += `&status=${encodeURIComponent(filterVal)}`;
+        }
+        if (selectedUserFilters.size > 0) {
+          Array.from(selectedUserFilters).forEach(u => {
+            url += `&user=${encodeURIComponent(u)}`;
+          });
+        }
+        if (searchVal) {
+          url += `&search=${encodeURIComponent(searchVal)}`;
         }
 
         const res = await authFetch(url);
@@ -2313,12 +3880,13 @@
         pageCommentsCountSpan.textContent = currentCommentsList.length;
 
         if (sidebarCommentsBadge) {
-          sidebarCommentsBadge.textContent = totalCommentsCount > 0 ? `${totalCommentsCount}` : "24h";
+          sidebarCommentsBadge.textContent = totalCommentsCount > 0 ? `${totalCommentsCount}` : "1w";
         }
 
-        renderCommentsTable(currentCommentsList);
+        renderCommentsTable(currentCommentsList, searchVal);
         renderPagination(data.page, data.total_pages, data.total);
         updateSelectionUI();
+        updateResetFiltersBtnVisibility();
       } catch (err) {
         if (!isSilent) {
           commentsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color: var(--danger);">Error loading comments: ${escapeHtml(err.message)}</td></tr>`;
@@ -2331,9 +3899,13 @@
     }
     window.loadComments = loadComments;
 
-    function renderCommentsTable(comments) {
+    function renderCommentsTable(comments, searchQuery = "") {
       if (!comments.length) {
-        commentsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state">No comments found within the last 24 hours.</td></tr>`;
+        const hasFilters = Boolean(activeCommentsStatus === "processed" || searchQuery || selectedUserFilters.size > 0);
+        const emptyMsg = hasFilters
+          ? "No comments found matching your search and filter criteria."
+          : "No comments found within the last week.";
+        commentsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state">${escapeHtml(emptyMsg)}</td></tr>`;
         return;
       }
 
@@ -2341,9 +3913,13 @@
         const isChecked = selectedComments.has(c.id);
         const commentIdDisplay = c.comment_id || "—";
         const commentUrl = c.url || "#";
-        const userNameDisplay = c.user_name ? escapeHtml(c.user_name) : "—";
-        const userIdDisplay = c.user_id ? escapeHtml(c.user_id) : "—";
+        const rawUserName = c.user_name || "";
+        const rawUserId = c.user_id ? String(c.user_id) : "";
         const fetchedAtDisplay = c.fetched_at || "—";
+
+        // Highlight matching query in username and user ID
+        const userNameDisplay = highlightText(rawUserName || "—", searchQuery);
+        const userIdDisplay = highlightText(rawUserId || "—", searchQuery);
 
         const stLower = (c.status || "not processed").toLowerCase();
         let statusTagClass = "status-not-processed";
@@ -2355,6 +3931,8 @@
 
         const commentText = c.comment_text || "";
         const isLong = commentText.length > 55 || commentText.includes("\n");
+        const highlightedCommentPreview = highlightText(commentText || "—", searchQuery);
+        const highlightedCommentFull = highlightText(commentText, searchQuery);
 
         return `
           <tr class="comment-row ${isChecked ? 'row-selected' : ''}" data-comment-db-id="${c.id}">
@@ -2377,9 +3955,9 @@
             <td><span style="font-weight: 600; color: #f1f5f9;">${userNameDisplay}</span></td>
             <td>
               <div class="comment-bubble">
-                <div class="comment-text-preview" title="${escapeHtml(commentText)}">${escapeHtml(commentText || "—")}</div>
+                <div class="comment-text-preview" title="${escapeHtml(commentText)}">${highlightedCommentPreview}</div>
                 ${isLong ? `
-                  <div class="comment-text-full">${escapeHtml(commentText)}</div>
+                  <div class="comment-text-full">${highlightedCommentFull}</div>
                   <button type="button" class="read-toggle-btn" onclick="toggleCommentExpand(this)">Read more</button>
                 ` : ''}
               </div>
@@ -2443,7 +4021,7 @@
     commentsReportBtn.addEventListener("click", async () => {
       if (selectedComments.size === 0) return;
 
-      const numAccounts = Number(commentsAccountCount.value) || 1;
+      const numAccounts = Number(commentsAccountCount.value) || 29;
       if (!Number.isInteger(numAccounts) || numAccounts < 1) {
         alert("Number of accounts must be at least 1.");
         return;
@@ -2477,6 +4055,7 @@
       commentsReportBtn.disabled = true;
       commentsReportBtn.innerHTML = `<span class="spinner"></span><span>Reporting ${comment_ids.length} item(s)...</span>`;
 
+      let processingId = null;
       try {
         const storageResponse = await authFetch(STORAGE_API_URL, {
           method: "POST",
@@ -2493,22 +4072,31 @@
           throw new Error(`Could not save request: ${errMsg}`);
         }
 
-        const processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : "—";
-        const targetLambdaUrl = (storageJson && storageJson.lambda_api_url) || lambdaApiUrl;
-
-        const lambdaResponse = await fetch(targetLambdaUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        const lambdaText = await lambdaResponse.text();
+        processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : null;
         let lambdaJson = null;
-        try { lambdaJson = lambdaText ? JSON.parse(lambdaText) : null; } catch (_) { }
+        try {
+          const lambdaResponse = await authFetch("/api/report", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
 
-        if (!lambdaResponse.ok) {
-          const lambdaErrMsg = (lambdaJson && (lambdaJson.message || lambdaJson.error)) || lambdaText || `HTTP ${lambdaResponse.status}`;
-          throw new Error(`Reporting API returned HTTP ${lambdaResponse.status}: ${lambdaErrMsg}`);
+          const lambdaText = await lambdaResponse.text();
+          try { lambdaJson = lambdaText ? JSON.parse(lambdaText) : null; } catch (_) { }
+
+          if (!lambdaResponse.ok) {
+            const isTimeout = lambdaResponse.status === 504 ||
+              (lambdaJson && (lambdaJson.upstream_status === 504 || (lambdaJson.error && String(lambdaJson.error).toLowerCase().includes("timed out"))));
+            if (!isTimeout) {
+              const lambdaErrMsg = (lambdaJson && (lambdaJson.message || lambdaJson.error)) || lambdaText || `HTTP ${lambdaResponse.status}`;
+              throw new Error(`Reporting API returned HTTP ${lambdaResponse.status}: ${lambdaErrMsg}`);
+            }
+          }
+        } catch (lambdaErr) {
+          const errMsgStr = String(lambdaErr.message || "").toLowerCase();
+          if (!errMsgStr.includes("504") && !errMsgStr.includes("timed out") && !errMsgStr.includes("timeout")) {
+            throw lambdaErr;
+          }
         }
 
         try {
@@ -2544,7 +4132,8 @@ Live execution batch logs are updating below...`, "success");
         setTimeout(() => loadLogs(true), 12000);
         setTimeout(() => loadLogs(true), 20000);
       } catch (err) {
-        alert(`Error reporting comments: ${err.message}`);
+        const requestRef = processingId !== null ? ` Processing ID: ${processingId}.` : "";
+        alert(`Error reporting comments: ${err.message}${requestRef}`);
       } finally {
         commentsReportBtn.disabled = selectedComments.size === 0;
         commentsReportBtn.innerHTML = `<span>Report Selected (<span id="selected-count-btn">${selectedComments.size}</span>)</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`;
@@ -2607,6 +4196,7 @@ Live execution batch logs are updating below...`, "success");
         newUserIdInput.value = "";
         newUserNameInput.value = "";
         loadUsers(1);
+        loadCommentUsers();
       } catch (err) {
         showAddUserStatus(err.message, "error");
       } finally {
@@ -2716,6 +4306,7 @@ Live execution batch logs are updating below...`, "success");
 
         showAddUserStatus(`✓ ${data.message || 'User deleted successfully!'}`, "success");
         loadUsers(currentUsersPage);
+        loadCommentUsers();
       } catch (err) {
         showAddUserStatus(`Error deleting user: ${err.message}`, "error");
         alert(`Could not delete user: ${err.message}`);
@@ -2798,17 +4389,24 @@ Live execution batch logs are updating below...`, "success");
     commentIdsInput.addEventListener("input", updateCounts);
     userIdsInput.addEventListener("input", updateCounts);
 
-    let openBatchIds = new Set([1]);
+    const logsPaginationBar = document.getElementById("logs-pagination-bar");
+    const logsPaginationInfo = document.getElementById("logs-pagination-info");
+    const logsPaginationControls = document.getElementById("logs-pagination-controls");
+
+    let currentLogsPage = 1;
+    const logsPageSize = 10;
+    let allLogsBatches = [];
+    let openBatchIds = new Set();
 
     function renderBatches(batches) {
       if (!batches || !batches.length) {
-        batchListContainer.innerHTML = `<div class="empty-state">No execution runs found in the database.</div>`;
+        batchListContainer.innerHTML = `<div class="empty-state">No execution runs found in the last 3 days.</div>`;
         return;
       }
 
       batchListContainer.innerHTML = batches.map((batch, index) => {
-        const batchNum = batch.batch_number || (batches.length - index);
-        const isOpen = openBatchIds.has(batchNum) || (index === 0 && openBatchIds.size === 0);
+        const batchNum = batch.batch_number || (allLogsBatches.length - ((currentLogsPage - 1) * logsPageSize + index));
+        const isOpen = openBatchIds.has(batchNum) || (index === 0 && openBatchIds.size === 0 && currentLogsPage === 1);
 
         let commentDisplay = "";
         let userDisplay = "";
@@ -2912,6 +4510,74 @@ Live execution batch logs are updating below...`, "success");
       }).join("");
     }
 
+    function renderLogsPagination(page, totalPages, totalCount) {
+      if (!logsPaginationInfo || !logsPaginationControls) return;
+
+      const start = totalCount === 0 ? 0 : (page - 1) * logsPageSize + 1;
+      const end = Math.min(page * logsPageSize, totalCount);
+      logsPaginationInfo.textContent = `Showing ${start}–${end} of ${totalCount} batch logs (last 3 days)`;
+
+      if (totalPages <= 1) {
+        logsPaginationControls.innerHTML = "";
+        return;
+      }
+
+      let buttonsHtml = "";
+      buttonsHtml += `
+        <button type="button" class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="changeLogsPage(${page - 1})" title="Previous page">&lt;</button>
+      `;
+
+      let pagesToShow = [];
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
+      } else {
+        pagesToShow.push(1);
+        if (page > 3) pagesToShow.push("...");
+        const startP = Math.max(2, page - 1);
+        const endP = Math.min(totalPages - 1, page + 1);
+        for (let i = startP; i <= endP; i++) {
+          if (!pagesToShow.includes(i)) pagesToShow.push(i);
+        }
+        if (page < totalPages - 2) pagesToShow.push("...");
+        if (!pagesToShow.includes(totalPages)) pagesToShow.push(totalPages);
+      }
+
+      pagesToShow.forEach(p => {
+        if (p === "...") {
+          buttonsHtml += `<span style="color: var(--muted); padding: 0 4px;">...</span>`;
+        } else {
+          buttonsHtml += `
+            <button type="button" class="page-btn ${p === page ? 'active' : ''}" onclick="changeLogsPage(${p})">${p}</button>
+          `;
+        }
+      });
+
+      buttonsHtml += `
+        <button type="button" class="page-btn" ${page >= totalPages ? 'disabled' : ''} onclick="changeLogsPage(${page + 1})" title="Next page">&gt;</button>
+      `;
+
+      logsPaginationControls.innerHTML = buttonsHtml;
+    }
+
+    function renderLogsCurrentPage() {
+      const totalCount = allLogsBatches.length;
+      const totalPages = Math.ceil(totalCount / logsPageSize) || 1;
+      if (currentLogsPage > totalPages) currentLogsPage = totalPages;
+      if (currentLogsPage < 1) currentLogsPage = 1;
+
+      const startIdx = (currentLogsPage - 1) * logsPageSize;
+      const endIdx = startIdx + logsPageSize;
+      const pageBatches = allLogsBatches.slice(startIdx, endIdx);
+
+      renderBatches(pageBatches);
+      renderLogsPagination(currentLogsPage, totalPages, totalCount);
+    }
+
+    window.changeLogsPage = function (newPage) {
+      currentLogsPage = newPage;
+      renderLogsCurrentPage();
+    };
+
     window.toggleBatch = function (batchNum) {
       const card = document.querySelector(`.batch-card[data-batch-id="${batchNum}"]`);
       if (!card) return;
@@ -2929,23 +4595,28 @@ Live execution batch logs are updating below...`, "success");
         refreshLogsBtn.disabled = true;
       }
       try {
-        const res = await authFetch(LOGS_API_URL);
+        const res = await authFetch(LOGS_API_URL + "?days=3");
         if (!res.ok) {
           if (res.status === 401) return;
           throw new Error(`HTTP ${res.status}`);
         }
         const data = await res.json();
         if (data.success && Array.isArray(data.batches)) {
-          if (data.batches.length > 0 && openBatchIds.size === 0) {
-            openBatchIds.add(data.batches[0].batch_number || 1);
+          allLogsBatches = data.batches;
+          if (allLogsBatches.length > 0 && openBatchIds.size === 0 && currentLogsPage === 1) {
+            openBatchIds.add(allLogsBatches[0].batch_number || 1);
           }
-          renderBatches(data.batches);
+          renderLogsCurrentPage();
         } else if (!isBackground) {
           batchListContainer.innerHTML = `<div class="empty-state" style="color: var(--danger);">Failed to load logs: ${escapeHtml(data.error || "Unknown error")}</div>`;
+          if (logsPaginationInfo) logsPaginationInfo.textContent = "";
+          if (logsPaginationControls) logsPaginationControls.innerHTML = "";
         }
       } catch (err) {
         if (!isBackground) {
           batchListContainer.innerHTML = `<div class="empty-state" style="color: var(--danger);">Error connecting to logs API: ${escapeHtml(err.message)}</div>`;
+          if (logsPaginationInfo) logsPaginationInfo.textContent = "";
+          if (logsPaginationControls) logsPaginationControls.innerHTML = "";
         }
       } finally {
         if (!isBackground) {
@@ -2986,6 +4657,7 @@ Live execution batch logs are updating below...`, "success");
       runButton.innerHTML = `<span class="spinner"></span><span>Starting job...</span>`;
       showStatus("Saving the request...", "success");
 
+      let processingId = null;
       try {
         const storageResponse = await authFetch(STORAGE_API_URL, {
           method: "POST",
@@ -3003,31 +4675,37 @@ Live execution batch logs are updating below...`, "success");
           throw new Error(`Could not save the request: ${errMsg}`);
         }
 
-        const processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : "—";
-        const targetLambdaUrl = (storageJson && storageJson.lambda_api_url) || lambdaApiUrl;
-        if (!targetLambdaUrl) {
-          throw new Error("Lambda API URL is not configured in .env");
-        }
-
-        showStatus(`Request saved successfully (Processing ID: ${processingId})\nStarting the Lambda job...`, "success");
-        const lambdaResponse = await fetch(targetLambdaUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const lambdaText = await lambdaResponse.text();
+        processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : null;
         let lambdaJson = null;
+        let lambdaStatus = 200;
         try {
-          lambdaJson = lambdaText ? JSON.parse(lambdaText) : null;
-        } catch (_) { }
+          const lambdaResponse = await authFetch("/api/report", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const lambdaText = await lambdaResponse.text();
+          try {
+            lambdaJson = lambdaText ? JSON.parse(lambdaText) : null;
+          } catch (_) { }
 
-        if (!lambdaResponse.ok) {
-          const lambdaErrMsg = (lambdaJson && (lambdaJson.message || lambdaJson.error)) || lambdaText || `HTTP ${lambdaResponse.status}`;
-          throw new Error(`Reporting API returned HTTP ${lambdaResponse.status}: ${lambdaErrMsg}`);
+          if (!lambdaResponse.ok) {
+            const isTimeout = lambdaResponse.status === 504 ||
+              (lambdaJson && (lambdaJson.upstream_status === 504 || (lambdaJson.error && String(lambdaJson.error).toLowerCase().includes("timed out"))));
+            if (!isTimeout) {
+              const lambdaErrMsg = (lambdaJson && (lambdaJson.message || lambdaJson.error)) || lambdaText || `HTTP ${lambdaResponse.status}`;
+              throw new Error(`Reporting API returned HTTP ${lambdaResponse.status}: ${lambdaErrMsg}`);
+            }
+          }
+          lambdaStatus = (lambdaJson && lambdaJson.statusCode) || lambdaResponse.status || 200;
+        } catch (lambdaErr) {
+          const errMsgStr = String(lambdaErr.message || "").toLowerCase();
+          if (!errMsgStr.includes("504") && !errMsgStr.includes("timed out") && !errMsgStr.includes("timeout")) {
+            throw lambdaErr;
+          }
         }
 
-        const lambdaStatus = (lambdaJson && lambdaJson.statusCode) || lambdaResponse.status || 200;
-        showStatus(`Request saved successfully (Processing ID: ${processingId})\nReporting job submitted successfully (Status: ${lambdaStatus})`, "success");
+        showStatus(`Request saved successfully (Processing ID: ${processingId})\nReporting job submitted successfully (Status: ${lambdaStatus})\nLive execution batch logs are updating below...`, "success");
 
         await loadLogs(true);
         setTimeout(() => loadLogs(true), 2500);
@@ -3035,12 +4713,615 @@ Live execution batch logs are updating below...`, "success");
         setTimeout(() => loadLogs(true), 12000);
         setTimeout(() => loadLogs(true), 20000);
       } catch (error) {
-        showStatus(`Could not start the reporting job: ${error.message}`, "error");
+        const requestRef = processingId !== null ? ` Processing ID: ${processingId}.` : "";
+        showStatus(`Could not start the reporting job: ${error.message}${requestRef}`, "error");
       } finally {
         runButton.disabled = false;
         runButton.innerHTML = `<span>Run reporting job</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`;
       }
     });
+
+    // ─────────────────────────────────────────────────────────────────
+    // 6. AWS ECS FARGATE BILLING ANALYTICS
+    // ─────────────────────────────────────────────────────────────────
+    const billingRefreshBtn = document.getElementById("billing-refresh-btn");
+    const billingLastUpdated = document.getElementById("billing-last-updated");
+    const billingErrorBanner = document.getElementById("billing-error-banner");
+    const billingPeriodIntro = document.getElementById("billing-period-intro");
+
+    const kpiTotalCost = document.getElementById("kpi-total-cost");
+    const kpiCurrencyBadge = document.getElementById("kpi-currency-badge");
+    const kpiGranularityBadge = document.getElementById("kpi-granularity-badge");
+    const kpiServiceName = document.getElementById("kpi-service-name");
+    const kpiRegionBadge = document.getElementById("kpi-region-badge");
+    const kpiPeriodDays = document.getElementById("kpi-period-days");
+    const kpiPeriodDates = document.getElementById("kpi-period-dates");
+    const kpiPeakCost = document.getElementById("kpi-peak-cost");
+    const kpiPeakDate = document.getElementById("kpi-peak-date");
+
+    const billingChartBarsContainer = document.getElementById("billing-chart-bars-container");
+    const usageTypesListContainer = document.getElementById("usage-types-list-container");
+    const usageTypesCountBadge = document.getElementById("usage-types-count-badge");
+    const billingTableBody = document.getElementById("billing-table-body");
+    const countAllDays = document.getElementById("count-all-days");
+    const countActiveDays = document.getElementById("count-active-days");
+    const filterAllDaysBtn = document.getElementById("filter-all-days");
+    const filterActiveDaysBtn = document.getElementById("filter-active-days");
+    const billingSearchInput = document.getElementById("billing-search-input");
+    const previousMonthsContainer = document.getElementById("previous-months-container");
+    const previousMonthsCountBadge = document.getElementById("previous-months-count-badge");
+
+    let billingDataCache = null;
+    let currentBillingFilter = "all";
+    let expandedBillingDates = new Set();
+    let billingSearchQuery = "";
+
+    function formatBillingCurrency(amount, currency = "USD") {
+      const num = Number(amount) || 0;
+      if (num === 0) return "$0.0000";
+      if (num < 0.0001) return `$${num.toFixed(6)}`;
+      return `$${num.toFixed(4)}`;
+    }
+
+    function formatBillingDate(dateStr) {
+      if (!dateStr) return "—";
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const mIdx = parseInt(parts[1], 10) - 1;
+        if (mIdx >= 0 && mIdx < 12) {
+          return `${monthNames[mIdx]} ${parseInt(parts[2], 10)}, ${parts[0]}`;
+        }
+      }
+      return dateStr;
+    }
+
+    function formatUsageTypeClean(rawType) {
+      if (!rawType) return "Other Usage";
+      if (rawType.includes("Fargate-vCPU-Hours")) return "Fargate vCPU Compute Hours";
+      if (rawType.includes("Fargate-GB-Hours")) return "Fargate RAM Memory (GB-Hours)";
+      if (rawType.includes("DataTransfer-In")) return "Data Transfer In (Internet)";
+      if (rawType.includes("DataTransfer-Out")) return "Data Transfer Out (Internet)";
+      if (rawType.includes("DataTransfer-Regional")) return "Regional Data Transfer";
+      if (rawType.includes("CloudFront-In")) return "CloudFront Edge Inbound";
+      if (rawType.includes("CloudFront-Out")) return "CloudFront Edge Outbound";
+      if (rawType.includes("USE1-AWS")) return "AWS Inter-Region Transfer (US East 1)";
+      if (rawType.includes("USE2-AWS")) return "AWS Inter-Region Transfer (US East 2)";
+      if (rawType.includes("USW1-AWS")) return "AWS Inter-Region Transfer (US West 1)";
+      if (rawType.includes("APN1-AWS") || rawType.includes("APS1-AWS")) return "AWS Inter-Region Transfer (Asia Pacific)";
+      if (rawType.includes("EUC1-AWS") || rawType.includes("EU-AWS")) return "AWS Inter-Region Transfer (Europe)";
+      if (rawType.includes("CAN1-AWS")) return "AWS Inter-Region Transfer (Canada)";
+      return rawType.replace(/^USW2-/, "").replace(/-/g, " ");
+    }
+
+    async function loadBillingData(forceRefresh = false) {
+      if (!isCurrentUserSuperAdmin()) {
+        console.warn("loadBillingData: Access denied. Current user is not a super admin.");
+        return;
+      }
+
+      if (billingRefreshBtn) {
+        billingRefreshBtn.disabled = true;
+        const refreshIcon = billingRefreshBtn.querySelector("svg");
+        if (refreshIcon) refreshIcon.style.animation = "spin 0.7s linear infinite";
+      }
+
+      if (billingErrorBanner) billingErrorBanner.style.display = "none";
+      if (billingTableBody) {
+        billingTableBody.innerHTML = `<tr><td colspan="6" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Fetching live billing analytics from AWS...</td></tr>`;
+      }
+      if (billingChartBarsContainer) {
+        billingChartBarsContainer.innerHTML = `<div class="loading-state" style="width:100%;"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading cost timeline...</div>`;
+      }
+      if (usageTypesListContainer) {
+        usageTypesListContainer.innerHTML = `<div class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Aggregating cost drivers...</div>`;
+      }
+      if (previousMonthsContainer) {
+        previousMonthsContainer.innerHTML = `<div class="loading-state" style="grid-column: 1 / -1;"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading previous months summary...</div>`;
+      }
+
+      let data = null;
+      let lastErrorMessage = "";
+
+      // 1. First attempt: Direct fetch from browser (if billingApiUrl configured)
+      let directUrl = billingApiUrl || "";
+      if (directUrl) {
+        try {
+          const u = new URL(directUrl, window.location.href);
+          if (billingApiKey) u.searchParams.set("api_key", billingApiKey);
+          directUrl = u.toString();
+
+          const directRes = await fetch(directUrl, { method: "GET" });
+          if (directRes.ok) {
+            const json = await directRes.json();
+            if (json && (json.status === "success" || Array.isArray(json.results))) {
+              data = json;
+            }
+          }
+        } catch (directErr) {
+          console.warn("Direct browser billing fetch error:", directErr);
+          lastErrorMessage = directErr.message || String(directErr);
+        }
+      }
+
+      // 2. Second attempt: Backend proxy (/api/billing/ecs-fargate)
+      if (!data) {
+        try {
+          const res = await authFetch(BILLING_API_URL);
+          if (!res.ok) {
+            if (res.status === 401) return;
+            if (res.status === 403) {
+              throw new Error("Super Admin access required to view billing.");
+            }
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.error || `Billing API returned HTTP ${res.status}`);
+          }
+          const proxyJson = await res.json();
+          if (proxyJson && (proxyJson.status === "success" || Array.isArray(proxyJson.results))) {
+            data = proxyJson;
+          } else {
+            throw new Error(proxyJson.error || "Invalid response structure from Billing API");
+          }
+        } catch (proxyErr) {
+          console.warn("Backend proxy billing fetch error:", proxyErr);
+          lastErrorMessage = proxyErr.message || lastErrorMessage;
+        }
+      }
+
+      try {
+        if (!data) {
+          throw new Error(lastErrorMessage || "Could not connect to Billing API");
+        }
+
+        billingDataCache = data;
+        renderBillingDashboard(data);
+
+        const now = new Date();
+        if (billingLastUpdated) {
+          billingLastUpdated.textContent = `Updated ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+      } catch (err) {
+
+        if (billingErrorBanner) {
+          billingErrorBanner.style.display = "block";
+          billingErrorBanner.innerHTML = `
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+              <div>
+                <strong>Failed to load billing metrics:</strong> ${escapeHtml(err.message)}
+              </div>
+              <button type="button" class="btn-secondary" style="padding:4px 12px; font-size:0.78rem;" onclick="loadBillingData(true)">Retry</button>
+            </div>
+          `;
+        }
+        if (billingTableBody) {
+          billingTableBody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color: var(--danger);">Unable to display billing data. Please verify your billing service connection and retry.</td></tr>`;
+        }
+        if (billingChartBarsContainer) {
+          billingChartBarsContainer.innerHTML = `<div class="empty-state" style="width:100%; color: var(--danger); font-size:0.85rem;">Timeline unavailable</div>`;
+        }
+        if (usageTypesListContainer) {
+          usageTypesListContainer.innerHTML = `<div class="empty-state" style="color: var(--danger); font-size:0.85rem;">Breakdown unavailable</div>`;
+        }
+        if (previousMonthsContainer) {
+          previousMonthsContainer.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1; color: var(--danger); font-size:0.85rem;">Historical monthly summary unavailable</div>`;
+        }
+      } finally {
+        if (billingRefreshBtn) {
+          billingRefreshBtn.disabled = false;
+          const refreshIcon = billingRefreshBtn.querySelector("svg");
+          if (refreshIcon) refreshIcon.style.animation = "";
+        }
+      }
+    }
+    window.loadBillingData = loadBillingData;
+
+    function renderBillingDashboard(data) {
+      const results = Array.isArray(data.results) ? data.results : [];
+      const totalCost = Number(data.total_cost_usd) || 0;
+      const currency = data.currency || "USD";
+      const service = data.service || "AWS ECS Fargate";
+      const region = data.region || "us-west-2";
+      const granularity = data.granularity || "DAILY";
+      const queryPeriod = data.query_period || {};
+
+      // 1. Update KPI Summary Cards
+      if (kpiTotalCost) kpiTotalCost.textContent = formatBillingCurrency(totalCost, currency);
+      if (kpiCurrencyBadge) kpiCurrencyBadge.textContent = currency;
+      if (kpiGranularityBadge) kpiGranularityBadge.textContent = `${granularity} Granularity`;
+      if (kpiServiceName) kpiServiceName.textContent = service;
+      if (kpiRegionBadge) kpiRegionBadge.textContent = region;
+
+      if (queryPeriod.start_date && queryPeriod.end_date) {
+        if (kpiPeriodDays) kpiPeriodDays.textContent = `${results.length} Days`;
+        if (kpiPeriodDates) kpiPeriodDates.textContent = `${formatBillingDate(queryPeriod.start_date)} – ${formatBillingDate(queryPeriod.end_date)}`;
+        if (billingPeriodIntro) billingPeriodIntro.textContent = `Live infrastructure spend from ${formatBillingDate(queryPeriod.start_date)} to ${formatBillingDate(queryPeriod.end_date)} for ${service} (${region}).`;
+      } else {
+        if (kpiPeriodDays) kpiPeriodDays.textContent = `${results.length} Days`;
+        if (kpiPeriodDates) kpiPeriodDates.textContent = "—";
+      }
+
+      // Find Peak Day & Aggregates
+      let peakDay = null;
+      let maxCost = 0;
+      let activeDaysCount = 0;
+      const usageTypeAggMap = {};
+
+      results.forEach(day => {
+        const dayCost = Number(day.total_cost_usd) || 0;
+        if (dayCost > 0) activeDaysCount++;
+        if (dayCost > maxCost) {
+          maxCost = dayCost;
+          peakDay = day;
+        }
+
+        const breakdown = Array.isArray(day.breakdown) ? day.breakdown : [];
+        breakdown.forEach(item => {
+          const type = item.usage_type || "Unknown";
+          const cost = Number(item.cost_usd) || 0;
+          const qty = Number(item.usage_quantity) || 0;
+          const unit = item.unit || "USD";
+
+          if (!usageTypeAggMap[type]) {
+            usageTypeAggMap[type] = {
+              usage_type: type,
+              total_cost: 0,
+              total_quantity: 0,
+              unit: unit,
+            };
+          }
+          usageTypeAggMap[type].total_cost += cost;
+          usageTypeAggMap[type].total_quantity += qty;
+        });
+      });
+
+      if (peakDay && maxCost > 0) {
+        const peakDateStr = peakDay.time_period ? peakDay.time_period.start : "";
+        const pctOfTotal = totalCost > 0 ? ((maxCost / totalCost) * 100).toFixed(1) : "0";
+        if (kpiPeakCost) kpiPeakCost.textContent = formatBillingCurrency(maxCost, currency);
+        if (kpiPeakDate) kpiPeakDate.innerHTML = `<span style="color:var(--accent); font-weight:700;">${formatBillingDate(peakDateStr)}</span> &bull; ${pctOfTotal}% of total`;
+      } else {
+        if (kpiPeakCost) kpiPeakCost.textContent = "$0.0000";
+        if (kpiPeakDate) kpiPeakDate.textContent = "No charges in period";
+      }
+
+      // Update Filter counts
+      if (countAllDays) countAllDays.textContent = results.length;
+      if (countActiveDays) countActiveDays.textContent = activeDaysCount;
+
+      // 2. Render Daily Bar Chart
+      renderBillingBarChart(results, maxCost, currency);
+
+      // 3. Render Usage Type Drivers
+      renderUsageTypeDrivers(usageTypeAggMap, totalCost, currency);
+
+      // 4. Render Itemized Table
+      renderBillingTable(results, currency);
+
+      // 5. Render Previous 3 Months Summary
+      renderPreviousMonthsSummary(data.previous_3_months_summary, currency);
+    }
+
+    function renderPreviousMonthsSummary(summaryList, currency = "USD") {
+      if (!previousMonthsContainer) return;
+      const list = Array.isArray(summaryList) ? summaryList : [];
+
+      if (previousMonthsCountBadge) {
+        previousMonthsCountBadge.textContent = `${list.length} Month${list.length === 1 ? '' : 's'}`;
+      }
+
+      if (!list.length) {
+        previousMonthsContainer.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1; width: 100%;">No previous monthly spend records reported for this service.</div>`;
+        return;
+      }
+
+      const total3Months = list.reduce((sum, item) => sum + (Number(item.total_cost_usd) || 0), 0);
+
+      previousMonthsContainer.innerHTML = list.map(item => {
+        const cost = Number(item.total_cost_usd) || 0;
+        const monthName = item.month_name || item.month || "Unknown Month";
+        const monthCode = item.month || "";
+        const startDate = item.start_date || "";
+        const endDate = item.end_date || "";
+        const hasSpend = cost > 0;
+        const pctOf3Months = total3Months > 0 ? ((cost / total3Months) * 100).toFixed(1) : "0.0";
+
+        let dateDisplay = "—";
+        if (startDate && endDate) {
+          dateDisplay = `${formatBillingDate(startDate)} &ndash; ${formatBillingDate(endDate)}`;
+        } else if (startDate) {
+          dateDisplay = formatBillingDate(startDate);
+        }
+
+        return `
+          <div class="previous-month-card">
+            <div class="previous-month-header">
+              <div>
+                <div class="previous-month-title">${escapeHtml(monthName)}</div>
+                <div class="previous-month-dates">${dateDisplay}</div>
+              </div>
+              <span class="pill ${hasSpend ? 'pill-success' : 'pill-accounts'}">${escapeHtml(monthCode || monthName)}</span>
+            </div>
+
+            <div class="previous-month-body">
+              <div class="previous-month-cost-label">Total Month Cost</div>
+              <div class="previous-month-cost-val ${hasSpend ? 'has-cost' : ''}">
+                ${formatBillingCurrency(cost, currency)}
+              </div>
+            </div>
+
+            <div class="previous-month-footer">
+              <span class="pill ${hasSpend ? 'pill-success' : 'pill-muted-success'}" style="font-size:0.72rem;">
+                ${hasSpend ? 'Active Billing' : 'Zero Spend ($0.00)'}
+              </span>
+              <span style="font-size:0.75rem; color:var(--muted); font-family:'JetBrains Mono', monospace;">
+                ${hasSpend ? `${pctOf3Months}% of 3-mo total` : 'No charges'}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderBillingBarChart(results, maxCost, currency) {
+      if (!billingChartBarsContainer) return;
+      if (!results.length) {
+        billingChartBarsContainer.innerHTML = `<div class="empty-state" style="width:100%;">No daily data available.</div>`;
+        return;
+      }
+
+      const effectiveMax = maxCost > 0 ? maxCost : 1;
+
+      billingChartBarsContainer.innerHTML = results.map(day => {
+        const dateStr = day.time_period ? day.time_period.start : "";
+        const parts = dateStr.split("-");
+        const shortDate = parts.length === 3 ? `${parts[1]}/${parts[2]}` : dateStr;
+        const dayCost = Number(day.total_cost_usd) || 0;
+        const breakdown = Array.isArray(day.breakdown) ? day.breakdown : [];
+        const isPeak = dayCost === maxCost && maxCost > 0;
+        const isZero = dayCost === 0;
+
+        let heightPct = isZero ? 4 : Math.max(12, (dayCost / effectiveMax) * 92);
+        let colClasses = "billing-bar-col";
+        if (isZero) colClasses += " zero-cost";
+        if (isPeak) colClasses += " peak-cost";
+
+        return `
+          <div class="${colClasses}" onclick="focusBillingDate('${escapeHtml(dateStr)}')">
+            <div class="billing-bar-tooltip">
+              <div style="font-weight:700; color:#fff; margin-bottom:2px;">${formatBillingDate(dateStr)}</div>
+              <div style="color:var(--accent); font-size:0.85rem; font-weight:800;">${formatBillingCurrency(dayCost, currency)}</div>
+              <div style="color:var(--muted); font-size:0.7rem; margin-top:2px;">${breakdown.length} usage item${breakdown.length === 1 ? '' : 's'}</div>
+            </div>
+            <div class="billing-bar-fill" style="height: ${heightPct.toFixed(1)}%;"></div>
+            <div class="billing-bar-label">${escapeHtml(shortDate)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderUsageTypeDrivers(usageTypeAggMap, totalCost, currency) {
+      if (!usageTypesListContainer) return;
+      const items = Object.values(usageTypeAggMap).sort((a, b) => b.total_cost - a.total_cost);
+      if (usageTypesCountBadge) {
+        usageTypesCountBadge.textContent = `${items.length} Categor${items.length === 1 ? 'y' : 'ies'}`;
+      }
+
+      if (!items.length) {
+        usageTypesListContainer.innerHTML = `<div class="empty-state">No categorized usage charges recorded during this billing period.</div>`;
+        return;
+      }
+
+      usageTypesListContainer.innerHTML = items.map(item => {
+        const cost = item.total_cost;
+        const pct = totalCost > 0 ? ((cost / totalCost) * 100).toFixed(1) : "0.0";
+        const cleanName = formatUsageTypeClean(item.usage_type);
+        const qtyFormatted = item.total_quantity > 0
+          ? `${item.total_quantity.toFixed(4).replace(/\.?0+$/, '')} units`
+          : "—";
+
+        return `
+          <div class="usage-item-row">
+            <div class="usage-item-left">
+              <div class="usage-item-name">
+                <span>${escapeHtml(cleanName)}</span>
+                <code style="font-size: 0.72rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;">${escapeHtml(item.usage_type)}</code>
+              </div>
+              <div class="usage-item-progress-track">
+                <div class="usage-item-progress-bar" style="width: ${Math.max(cost > 0 ? 3 : 0, Number(pct))}%;"></div>
+              </div>
+            </div>
+            <div class="usage-item-right">
+              <div class="usage-item-cost">${formatBillingCurrency(cost, currency)}</div>
+              <div class="usage-item-pct">${pct}% of total spend (${qtyFormatted})</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderBillingTable(results, currency) {
+      if (!billingTableBody) return;
+      let filtered = results;
+      if (currentBillingFilter === "active") {
+        filtered = filtered.filter(d => (Number(d.total_cost_usd) || 0) > 0);
+      }
+      if (billingSearchQuery) {
+        filtered = filtered.filter(d => {
+          const start = d.time_period ? d.time_period.start : "";
+          const end = d.time_period ? d.time_period.end : "";
+          return start.includes(billingSearchQuery) || end.includes(billingSearchQuery);
+        });
+      }
+
+      if (!filtered.length) {
+        billingTableBody.innerHTML = `<tr><td colspan="6" class="empty-state">No billing records match the selected filter or search.</td></tr>`;
+        return;
+      }
+
+      billingTableBody.innerHTML = filtered.map((day, idx) => {
+        const start = day.time_period ? day.time_period.start : "";
+        const end = day.time_period ? day.time_period.end : "";
+        const cost = Number(day.total_cost_usd) || 0;
+        const breakdown = Array.isArray(day.breakdown) ? day.breakdown : [];
+        const isExpanded = expandedBillingDates.has(start);
+        const hasCharges = cost > 0;
+
+        let statusBadge = hasCharges
+          ? `<span class="pill pill-success">Active Usage</span>`
+          : `<span class="pill pill-muted-success" style="opacity:0.6;">Zero Spend</span>`;
+
+        let driverText = "—";
+        if (breakdown.length > 0) {
+          const topDriver = [...breakdown].sort((a, b) => (Number(b.cost_usd) || 0) - (Number(a.cost_usd) || 0))[0];
+          if (topDriver && Number(topDriver.cost_usd) > 0) {
+            driverText = `${formatUsageTypeClean(topDriver.usage_type)} (${formatBillingCurrency(topDriver.cost_usd, currency)})`;
+          } else {
+            driverText = `${breakdown.length} usage metrics`;
+          }
+        }
+
+        let breakdownHtml = "";
+        if (isExpanded) {
+          if (breakdown.length === 0) {
+            breakdownHtml = `
+              <tr class="nested-breakdown-row">
+                <td colspan="6" style="padding: 0 14px 14px 14px;">
+                  <div class="nested-breakdown-box">
+                    <div style="font-size: 0.8rem; color: var(--muted); text-align: center;">No individual sub-resource breakdown items reported for this day.</div>
+                  </div>
+                </td>
+              </tr>
+            `;
+          } else {
+            const itemsRows = breakdown.map(item => {
+              const itemCost = Number(item.cost_usd) || 0;
+              const itemQty = Number(item.usage_quantity) || 0;
+              const itemPct = cost > 0 ? ((itemCost / cost) * 100).toFixed(1) : "0.0";
+              const cleanType = formatUsageTypeClean(item.usage_type);
+
+              return `
+                <tr>
+                  <td style="font-weight:600; color:#fff;">${escapeHtml(cleanType)} <code style="font-size:0.74rem; color:var(--muted); font-family: 'JetBrains Mono', monospace;">${escapeHtml(item.usage_type)}</code></td>
+                  <td style="font-family:'JetBrains Mono', monospace; font-size:0.82rem; color:#93c5fd;">${itemQty.toFixed(4).replace(/\.?0+$/, '')}</td>
+                  <td style="font-family:'JetBrains Mono', monospace; font-size:0.82rem; color:var(--accent); font-weight:700;">${formatBillingCurrency(itemCost, currency)}</td>
+                  <td style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:var(--muted);">${itemPct}%</td>
+                </tr>
+              `;
+            }).join("");
+
+            breakdownHtml = `
+              <tr class="nested-breakdown-row">
+                <td colspan="6" style="padding: 0 14px 14px 14px;">
+                  <div class="nested-breakdown-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                      <span style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:#38bdf8;">Itemized Cost Line Items &bull; ${formatBillingDate(start)}</span>
+                      <span class="pill pill-accounts">${breakdown.length} Items</span>
+                    </div>
+                    <div class="table-container">
+                      <table style="background: rgba(11, 16, 32, 0.75);">
+                        <thead>
+                          <tr>
+                            <th>Resource / Usage Type</th>
+                            <th>Quantity</th>
+                            <th>Cost (${escapeHtml(currency)})</th>
+                            <th>% of Day</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${itemsRows}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }
+        }
+
+        const expandBtnText = isExpanded ? "Hide Details" : (breakdown.length > 0 ? `Details (${breakdown.length})` : "Details");
+
+        return `
+          <tr id="billing-row-${escapeHtml(start)}" style="${hasCharges ? 'background: rgba(56, 189, 248, 0.03);' : ''}">
+            <td style="color: var(--muted);">${idx + 1}</td>
+            <td>
+              <div style="font-weight: 700; color: #f8fafc; font-family: 'JetBrains Mono', monospace; font-size: 0.86rem;">${escapeHtml(start)}</div>
+              <div style="font-size: 0.72rem; color: var(--muted);">${formatBillingDate(start)}</div>
+            </td>
+            <td>${statusBadge}</td>
+            <td>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 800; color: ${hasCharges ? 'var(--accent)' : 'var(--muted)'};">
+                ${formatBillingCurrency(cost, currency)}
+              </span>
+            </td>
+            <td>
+              <span style="font-size: 0.82rem; color: #e2e8f0;">${escapeHtml(driverText)}</span>
+            </td>
+            <td style="text-align: center;">
+              <button type="button" class="billing-expand-btn" onclick="toggleBillingDayExpand('${escapeHtml(start)}')">
+                <span>${expandBtnText}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: ${isExpanded ? 'rotate(180deg)' : 'none'}; transition: transform 0.2s ease;">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+            </td>
+          </tr>
+          ${breakdownHtml}
+        `;
+      }).join("");
+    }
+
+    window.toggleBillingDayExpand = function (dateStr) {
+      if (expandedBillingDates.has(dateStr)) {
+        expandedBillingDates.delete(dateStr);
+      } else {
+        expandedBillingDates.add(dateStr);
+      }
+      if (billingDataCache) {
+        renderBillingTable(billingDataCache.results || [], billingDataCache.currency || "USD");
+      }
+    };
+
+    window.focusBillingDate = function (dateStr) {
+      expandedBillingDates.add(dateStr);
+      if (billingDataCache) {
+        renderBillingTable(billingDataCache.results || [], billingDataCache.currency || "USD");
+        const row = document.getElementById(`billing-row-${dateStr}`);
+        if (row) {
+          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          row.style.outline = "2px solid #38bdf8";
+          setTimeout(() => { row.style.outline = "none"; }, 2000);
+        }
+      }
+    };
+
+    window.filterBillingDays = function (filterType) {
+      currentBillingFilter = filterType;
+      if (filterAllDaysBtn) filterAllDaysBtn.classList.toggle("active", filterType === "all");
+      if (filterActiveDaysBtn) filterActiveDaysBtn.classList.toggle("active", filterType === "active");
+      if (billingDataCache) {
+        renderBillingTable(billingDataCache.results || [], billingDataCache.currency || "USD");
+      }
+    };
+
+    let billingSearchTimeout = null;
+    if (billingSearchInput) {
+      billingSearchInput.addEventListener("input", () => {
+        clearTimeout(billingSearchTimeout);
+        billingSearchTimeout = setTimeout(() => {
+          billingSearchQuery = billingSearchInput.value.trim();
+          if (billingDataCache) {
+            renderBillingTable(billingDataCache.results || [], billingDataCache.currency || "USD");
+          }
+        }, 250);
+      });
+    }
+
+    if (billingRefreshBtn) {
+      billingRefreshBtn.addEventListener("click", () => {
+        loadBillingData(true);
+      });
+    }
   </script>
 </body>
 
