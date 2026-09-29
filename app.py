@@ -525,8 +525,8 @@ def _save_processing_request(payload: dict[str, object]) -> int:
     return int(row[0])
 
 
-def _fetch_batches_from_tracker():
-    """Fetch all rows from BackendProcessingTracker and group into batches."""
+def _fetch_batches_from_tracker(days: int = 3):
+    """Fetch rows from BackendProcessingTracker from the last N days (default 3) and group into batches."""
     if pyodbc is None:
         raise RuntimeError("pyodbc is not installed")
     if not DB_CONNECTION_STRING:
@@ -535,11 +535,12 @@ def _fetch_batches_from_tracker():
     query = """
         SELECT task_id, account_email, comment_ids, user_ids, status, is_success, starting_date
         FROM dbo.BackendProcessingTracker
+        WHERE starting_date >= DATEADD(day, -?, sysdatetime())
         ORDER BY starting_date DESC, task_id DESC
     """
     with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
         cursor = connection.cursor()
-        cursor.execute(query)
+        cursor.execute(query, days)
         rows = cursor.fetchall()
 
     batches = []
@@ -641,11 +642,15 @@ def index():
 @require_auth
 def get_logs():
     try:
-        batches = _fetch_batches_from_tracker()
+        days = request.args.get("days", default=3, type=int)
+        if not days or days < 1:
+            days = 3
+        batches = _fetch_batches_from_tracker(days=days)
         return jsonify({
             "success": True,
             "total_batches": len(batches),
             "batches": batches,
+            "days": days,
         })
     except Exception as error:
         app.logger.exception("Could not fetch logs from SQL Server")

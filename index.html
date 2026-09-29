@@ -2325,7 +2325,7 @@
               <div class="logs-header">
                 <div class="logs-title-area">
                   <h2>Execution Batch Logs</h2>
-                  <div class="logs-subtitle"><span class="live-dot"></span> Live records grouped by execution run
+                  <div class="logs-subtitle"><span class="live-dot"></span> Live records from the last 3 days grouped by execution run
                     directly from database</div>
                 </div>
                 <div class="logs-actions">
@@ -2342,6 +2342,10 @@
               <div class="card" style="padding: 16px;">
                 <div id="batch-list" class="batch-list">
                   <div class="loading-state">Loading live run batches from database...</div>
+                </div>
+                <div class="pagination-bar" id="logs-pagination-bar">
+                  <div class="pagination-info" id="logs-pagination-info">Showing 0 to 0 of 0 batch logs</div>
+                  <div class="pagination-controls" id="logs-pagination-controls"></div>
                 </div>
               </div>
             </section>
@@ -4385,17 +4389,24 @@ Live execution batch logs are updating below...`, "success");
     commentIdsInput.addEventListener("input", updateCounts);
     userIdsInput.addEventListener("input", updateCounts);
 
-    let openBatchIds = new Set([1]);
+    const logsPaginationBar = document.getElementById("logs-pagination-bar");
+    const logsPaginationInfo = document.getElementById("logs-pagination-info");
+    const logsPaginationControls = document.getElementById("logs-pagination-controls");
+
+    let currentLogsPage = 1;
+    const logsPageSize = 10;
+    let allLogsBatches = [];
+    let openBatchIds = new Set();
 
     function renderBatches(batches) {
       if (!batches || !batches.length) {
-        batchListContainer.innerHTML = `<div class="empty-state">No execution runs found in the database.</div>`;
+        batchListContainer.innerHTML = `<div class="empty-state">No execution runs found in the last 3 days.</div>`;
         return;
       }
 
       batchListContainer.innerHTML = batches.map((batch, index) => {
-        const batchNum = batch.batch_number || (batches.length - index);
-        const isOpen = openBatchIds.has(batchNum) || (index === 0 && openBatchIds.size === 0);
+        const batchNum = batch.batch_number || (allLogsBatches.length - ((currentLogsPage - 1) * logsPageSize + index));
+        const isOpen = openBatchIds.has(batchNum) || (index === 0 && openBatchIds.size === 0 && currentLogsPage === 1);
 
         let commentDisplay = "";
         let userDisplay = "";
@@ -4499,6 +4510,74 @@ Live execution batch logs are updating below...`, "success");
       }).join("");
     }
 
+    function renderLogsPagination(page, totalPages, totalCount) {
+      if (!logsPaginationInfo || !logsPaginationControls) return;
+
+      const start = totalCount === 0 ? 0 : (page - 1) * logsPageSize + 1;
+      const end = Math.min(page * logsPageSize, totalCount);
+      logsPaginationInfo.textContent = `Showing ${start}–${end} of ${totalCount} batch logs (last 3 days)`;
+
+      if (totalPages <= 1) {
+        logsPaginationControls.innerHTML = "";
+        return;
+      }
+
+      let buttonsHtml = "";
+      buttonsHtml += `
+        <button type="button" class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="changeLogsPage(${page - 1})" title="Previous page">&lt;</button>
+      `;
+
+      let pagesToShow = [];
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
+      } else {
+        pagesToShow.push(1);
+        if (page > 3) pagesToShow.push("...");
+        const startP = Math.max(2, page - 1);
+        const endP = Math.min(totalPages - 1, page + 1);
+        for (let i = startP; i <= endP; i++) {
+          if (!pagesToShow.includes(i)) pagesToShow.push(i);
+        }
+        if (page < totalPages - 2) pagesToShow.push("...");
+        if (!pagesToShow.includes(totalPages)) pagesToShow.push(totalPages);
+      }
+
+      pagesToShow.forEach(p => {
+        if (p === "...") {
+          buttonsHtml += `<span style="color: var(--muted); padding: 0 4px;">...</span>`;
+        } else {
+          buttonsHtml += `
+            <button type="button" class="page-btn ${p === page ? 'active' : ''}" onclick="changeLogsPage(${p})">${p}</button>
+          `;
+        }
+      });
+
+      buttonsHtml += `
+        <button type="button" class="page-btn" ${page >= totalPages ? 'disabled' : ''} onclick="changeLogsPage(${page + 1})" title="Next page">&gt;</button>
+      `;
+
+      logsPaginationControls.innerHTML = buttonsHtml;
+    }
+
+    function renderLogsCurrentPage() {
+      const totalCount = allLogsBatches.length;
+      const totalPages = Math.ceil(totalCount / logsPageSize) || 1;
+      if (currentLogsPage > totalPages) currentLogsPage = totalPages;
+      if (currentLogsPage < 1) currentLogsPage = 1;
+
+      const startIdx = (currentLogsPage - 1) * logsPageSize;
+      const endIdx = startIdx + logsPageSize;
+      const pageBatches = allLogsBatches.slice(startIdx, endIdx);
+
+      renderBatches(pageBatches);
+      renderLogsPagination(currentLogsPage, totalPages, totalCount);
+    }
+
+    window.changeLogsPage = function (newPage) {
+      currentLogsPage = newPage;
+      renderLogsCurrentPage();
+    };
+
     window.toggleBatch = function (batchNum) {
       const card = document.querySelector(`.batch-card[data-batch-id="${batchNum}"]`);
       if (!card) return;
@@ -4516,23 +4595,28 @@ Live execution batch logs are updating below...`, "success");
         refreshLogsBtn.disabled = true;
       }
       try {
-        const res = await authFetch(LOGS_API_URL);
+        const res = await authFetch(LOGS_API_URL + "?days=3");
         if (!res.ok) {
           if (res.status === 401) return;
           throw new Error(`HTTP ${res.status}`);
         }
         const data = await res.json();
         if (data.success && Array.isArray(data.batches)) {
-          if (data.batches.length > 0 && openBatchIds.size === 0) {
-            openBatchIds.add(data.batches[0].batch_number || 1);
+          allLogsBatches = data.batches;
+          if (allLogsBatches.length > 0 && openBatchIds.size === 0 && currentLogsPage === 1) {
+            openBatchIds.add(allLogsBatches[0].batch_number || 1);
           }
-          renderBatches(data.batches);
+          renderLogsCurrentPage();
         } else if (!isBackground) {
           batchListContainer.innerHTML = `<div class="empty-state" style="color: var(--danger);">Failed to load logs: ${escapeHtml(data.error || "Unknown error")}</div>`;
+          if (logsPaginationInfo) logsPaginationInfo.textContent = "";
+          if (logsPaginationControls) logsPaginationControls.innerHTML = "";
         }
       } catch (err) {
         if (!isBackground) {
           batchListContainer.innerHTML = `<div class="empty-state" style="color: var(--danger);">Error connecting to logs API: ${escapeHtml(err.message)}</div>`;
+          if (logsPaginationInfo) logsPaginationInfo.textContent = "";
+          if (logsPaginationControls) logsPaginationControls.innerHTML = "";
         }
       } finally {
         if (!isBackground) {
