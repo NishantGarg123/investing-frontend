@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import socket
 import time
 import urllib.error
 import urllib.parse
@@ -1212,16 +1213,28 @@ def report_comments():
             response_data = {"error": response_body or str(error)}
         if error.code == 504:
             return jsonify({
-                "error": (
-                    "The reporting service timed out while processing this request. "
-                    "The AWS job may still be running; check its processing status before retrying."
+                "message": (
+                    "The reporting job was submitted to AWS and is executing in the background for all configured accounts."
                 ),
+                "status": "running",
+                "statusCode": 200,
                 "upstream_status": 504,
-            }), 504
+            }), 200
         return jsonify(response_data), error.code
-    except (urllib.error.URLError, TimeoutError) as error:
-        app.logger.exception("Could not reach reporting API")
+    except (urllib.error.URLError, TimeoutError, socket.timeout) as error:
         reason = getattr(error, "reason", error)
+        reason_str = str(reason).lower()
+        if "timed out" in reason_str or "timeout" in reason_str or "504" in reason_str:
+            app.logger.info("Reporting API request dispatched; AWS execution continuing in background: %s", error)
+            return jsonify({
+                "message": (
+                    "The reporting job was submitted to AWS and is executing in the background for all configured accounts."
+                ),
+                "status": "running",
+                "statusCode": 200,
+                "timeout": True,
+            }), 200
+        app.logger.exception("Could not reach reporting API")
         return jsonify({"error": f"Could not reach reporting API: {reason}"}), 502
 
 

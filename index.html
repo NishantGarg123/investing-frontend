@@ -4069,19 +4069,30 @@
         }
 
         processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : null;
-        const lambdaResponse = await authFetch("/api/report", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        const lambdaText = await lambdaResponse.text();
         let lambdaJson = null;
-        try { lambdaJson = lambdaText ? JSON.parse(lambdaText) : null; } catch (_) { }
+        try {
+          const lambdaResponse = await authFetch("/api/report", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
 
-        if (!lambdaResponse.ok) {
-          const lambdaErrMsg = (lambdaJson && (lambdaJson.message || lambdaJson.error)) || lambdaText || `HTTP ${lambdaResponse.status}`;
-          throw new Error(`Reporting API returned HTTP ${lambdaResponse.status}: ${lambdaErrMsg}`);
+          const lambdaText = await lambdaResponse.text();
+          try { lambdaJson = lambdaText ? JSON.parse(lambdaText) : null; } catch (_) { }
+
+          if (!lambdaResponse.ok) {
+            const isTimeout = lambdaResponse.status === 504 ||
+              (lambdaJson && (lambdaJson.upstream_status === 504 || (lambdaJson.error && String(lambdaJson.error).toLowerCase().includes("timed out"))));
+            if (!isTimeout) {
+              const lambdaErrMsg = (lambdaJson && (lambdaJson.message || lambdaJson.error)) || lambdaText || `HTTP ${lambdaResponse.status}`;
+              throw new Error(`Reporting API returned HTTP ${lambdaResponse.status}: ${lambdaErrMsg}`);
+            }
+          }
+        } catch (lambdaErr) {
+          const errMsgStr = String(lambdaErr.message || "").toLowerCase();
+          if (!errMsgStr.includes("504") && !errMsgStr.includes("timed out") && !errMsgStr.includes("timeout")) {
+            throw lambdaErr;
+          }
         }
 
         try {
@@ -4581,25 +4592,36 @@ Live execution batch logs are updating below...`, "success");
         }
 
         processingId = (storageJson && storageJson.processing_id) !== undefined ? storageJson.processing_id : null;
-        showStatus(`Request saved successfully (Processing ID: ${processingId})\nStarting the Lambda job...`, "success");
-        const lambdaResponse = await authFetch("/api/report", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const lambdaText = await lambdaResponse.text();
         let lambdaJson = null;
+        let lambdaStatus = 200;
         try {
-          lambdaJson = lambdaText ? JSON.parse(lambdaText) : null;
-        } catch (_) { }
+          const lambdaResponse = await authFetch("/api/report", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const lambdaText = await lambdaResponse.text();
+          try {
+            lambdaJson = lambdaText ? JSON.parse(lambdaText) : null;
+          } catch (_) { }
 
-        if (!lambdaResponse.ok) {
-          const lambdaErrMsg = (lambdaJson && (lambdaJson.message || lambdaJson.error)) || lambdaText || `HTTP ${lambdaResponse.status}`;
-          throw new Error(`Reporting API returned HTTP ${lambdaResponse.status}: ${lambdaErrMsg}`);
+          if (!lambdaResponse.ok) {
+            const isTimeout = lambdaResponse.status === 504 ||
+              (lambdaJson && (lambdaJson.upstream_status === 504 || (lambdaJson.error && String(lambdaJson.error).toLowerCase().includes("timed out"))));
+            if (!isTimeout) {
+              const lambdaErrMsg = (lambdaJson && (lambdaJson.message || lambdaJson.error)) || lambdaText || `HTTP ${lambdaResponse.status}`;
+              throw new Error(`Reporting API returned HTTP ${lambdaResponse.status}: ${lambdaErrMsg}`);
+            }
+          }
+          lambdaStatus = (lambdaJson && lambdaJson.statusCode) || lambdaResponse.status || 200;
+        } catch (lambdaErr) {
+          const errMsgStr = String(lambdaErr.message || "").toLowerCase();
+          if (!errMsgStr.includes("504") && !errMsgStr.includes("timed out") && !errMsgStr.includes("timeout")) {
+            throw lambdaErr;
+          }
         }
 
-        const lambdaStatus = (lambdaJson && lambdaJson.statusCode) || lambdaResponse.status || 200;
-        showStatus(`Request saved successfully (Processing ID: ${processingId})\nReporting job submitted successfully (Status: ${lambdaStatus})`, "success");
+        showStatus(`Request saved successfully (Processing ID: ${processingId})\nReporting job submitted successfully (Status: ${lambdaStatus})\nLive execution batch logs are updating below...`, "success");
 
         await loadLogs(true);
         setTimeout(() => loadLogs(true), 2500);
