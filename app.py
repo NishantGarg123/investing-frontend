@@ -50,6 +50,11 @@ BILLING_API_KEY = os.getenv(
     "BILLING_API_KEY",
     "ak_live_7e8b4f1c9a3d5206e1",
 ).strip()
+ECS_TRACKER_API_URL = os.getenv(
+    "ECS_TRACKER_API_URL",
+    "https://0ix0sky0j6.execute-api.us-west-2.amazonaws.com/dev/ecs-tracker",
+).strip()
+ECS_CLEANUP_TOKEN = os.getenv("ECS_CLEANUP_TOKEN", "##ECSDELETE##").strip()
 
 
 
@@ -371,6 +376,7 @@ def get_config():
     cfg = {
         "lambda_api_url": LAMBDA_API_URL,
         "scraper_api_url": SCRAPER_API_URL,
+        "ecs_tracker_api_url": ECS_TRACKER_API_URL,
     }
     if is_super:
         cfg["billing_api_url"] = BILLING_API_URL
@@ -1241,6 +1247,59 @@ def report_comments():
             }), 200
         app.logger.exception("Could not reach reporting API")
         return jsonify({"error": f"Could not reach reporting API: {reason}"}), 502
+
+
+@app.post("/api/ecs-tracker")
+@require_auth
+def ecs_tracker_cleanup():
+    """Forward ECS cleanup request to AWS Lambda."""
+    if not ECS_TRACKER_API_URL:
+        return jsonify({"error": "ECS Tracker API URL is not configured."}), 503
+
+    payload = {
+        "token": ECS_CLEANUP_TOKEN,
+        "body": {
+            "token": ECS_CLEANUP_TOKEN
+        }
+    }
+
+    try:
+        body = json.dumps(payload).encode("utf-8")
+        outbound = urllib.request.Request(
+            ECS_TRACKER_API_URL,
+            data=body,
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(outbound, timeout=45) as response:
+            response_body = response.read().decode("utf-8", errors="replace")
+            try:
+                response_data = json.loads(response_body) if response_body else {}
+                if isinstance(response_data, dict) and "body" in response_data and isinstance(response_data["body"], str):
+                    try:
+                        inner = json.loads(response_data["body"])
+                        response_data.update(inner)
+                    except Exception:
+                        pass
+            except json.JSONDecodeError:
+                response_data = {"message": response_body}
+            return jsonify(response_data), response.status
+    except urllib.error.HTTPError as error:
+        response_body = error.read().decode("utf-8", errors="replace")
+        try:
+            response_data = json.loads(response_body) if response_body else {}
+            if isinstance(response_data, dict) and "body" in response_data and isinstance(response_data["body"], str):
+                try:
+                    inner = json.loads(response_data["body"])
+                    response_data.update(inner)
+                except Exception:
+                    pass
+        except json.JSONDecodeError:
+            response_data = {"error": response_body or str(error)}
+        return jsonify(response_data), error.code
+    except Exception as error:
+        app.logger.exception("Could not reach ECS tracker cleanup API")
+        return jsonify({"error": f"Could not reach ECS cleanup API: {error}"}), 502
 
 
 @app.route("/api/run", methods=["GET", "POST"])
