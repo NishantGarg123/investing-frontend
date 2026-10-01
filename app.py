@@ -402,6 +402,9 @@ def get_billing_ecs_fargate():
             query_params = urllib.parse.parse_qs(url_parts.query)
             if api_key:
                 query_params["api_key"] = [api_key]
+            for k, v in request.args.items():
+                if k not in ("token", "api_key") and v:
+                    query_params[k] = [v]
             new_query = urllib.parse.urlencode(query_params, doseq=True)
             return urllib.parse.urlunparse((
                 url_parts.scheme,

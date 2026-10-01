@@ -2316,6 +2316,194 @@
       flex-wrap: wrap;
     }
 
+    /* ── Billing Month & Year Filter Bar ── */
+    .billing-filter-bar {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .billing-filter-bar::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #38bdf8, #a855f7);
+      border-top-left-radius: var(--radius);
+      border-top-right-radius: var(--radius);
+    }
+
+    .billing-filter-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .billing-filter-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.02em;
+    }
+
+    .billing-select-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .billing-select-wrap label {
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .billing-select-input {
+      padding: 7px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      cursor: pointer;
+      min-height: 34px;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .billing-select-input:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(30, 41, 59, 0.7);
+    }
+
+    .billing-select-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+
+    .billing-filter-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .previous-month-card.clickable-month {
+      cursor: pointer;
+    }
+
+    .previous-month-card.clickable-month:hover {
+      border-color: #38bdf8;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.2);
+    }
+
+    /* ── Confirm Reported Comment Modal ── */
+    .confirm-reported-dialog {
+      background: linear-gradient(180deg, #131d33 0%, #0c1222 100%);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 25px 65px -10px rgba(0, 0, 0, 0.85), 0 0 35px rgba(245, 158, 11, 0.18);
+      overflow: hidden;
+      transform: scale(0.95) translateY(8px);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-overlay.open .confirm-reported-dialog {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-warn-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #f59e0b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+    }
+
+    .comment-confirm-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .comment-confirm-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.84rem;
+    }
+
+    .comment-confirm-text-box {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #f8fafc;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      max-height: 100px;
+      overflow-y: auto;
+      word-break: break-word;
+    }
+
+    .comment-confirm-checkbox-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: rgba(49, 196, 141, 0.08);
+      border: 1px solid rgba(49, 196, 141, 0.25);
+      border-radius: 10px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+
+    .comment-confirm-checkbox-wrap:hover {
+      background: rgba(49, 196, 141, 0.14);
+      border-color: rgba(49, 196, 141, 0.4);
+    }
+
+    .comment-confirm-checkbox-wrap label {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #a7f3d0;
+      cursor: pointer;
+    }
+
     @media (max-width: 900px) {
       .app-layout {
         flex-direction: column;
@@ -2955,6 +3143,74 @@
             <!-- STATUS / ALERT BANNER (IF ERROR) -->
             <div id="billing-error-banner" style="display:none; margin-bottom: 20px;" class="status error"></div>
 
+            <!-- BILLING MONTH & YEAR FILTER BAR -->
+            <div class="billing-filter-bar" id="billing-filter-bar-container">
+              <div class="billing-filter-controls">
+                <div class="billing-filter-label">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <span>Filter Period:</span>
+                </div>
+
+                <!-- Month Selector -->
+                <div class="billing-select-wrap">
+                  <label for="billing-month-select">Month</label>
+                  <select id="billing-month-select" class="billing-select-input" aria-label="Select billing month">
+                    <option value="">Current Month (Default)</option>
+                    <option value="01">01 - January</option>
+                    <option value="02">02 - February</option>
+                    <option value="03">03 - March</option>
+                    <option value="04">04 - April</option>
+                    <option value="05">05 - May</option>
+                    <option value="06">06 - June</option>
+                    <option value="07">07 - July</option>
+                    <option value="08">08 - August</option>
+                    <option value="09">09 - September</option>
+                    <option value="10">10 - October</option>
+                    <option value="11">11 - November</option>
+                    <option value="12">12 - December</option>
+                  </select>
+                </div>
+
+                <!-- Year Selector -->
+                <div class="billing-select-wrap">
+                  <label for="billing-year-select">Year</label>
+                  <select id="billing-year-select" class="billing-select-input" aria-label="Select billing year">
+                    <!-- Populated dynamically -->
+                  </select>
+                </div>
+
+                <!-- Actions: Apply & Reset -->
+                <div class="billing-filter-actions">
+                  <button type="button" class="btn-primary" id="billing-apply-filter-btn" style="padding: 6px 14px; font-size: 0.8rem; min-height: 34px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
+                    <span>Apply Filter</span>
+                  </button>
+                  <button type="button" class="btn-secondary" id="billing-reset-filter-btn" style="padding: 6px 12px; font-size: 0.8rem; min-height: 34px; display: none;" title="Reset to Current Month">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="1 4 1 10 7 10"></polyline>
+                      <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                    <span>Current Month</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Active Filter Status Indicator -->
+              <div id="billing-filter-status-indicator" style="display: flex; align-items: center; gap: 8px;">
+                <span class="pill pill-success" id="billing-current-filter-badge" style="font-size: 0.78rem; font-weight: 600;">
+                  <span class="live-dot" style="width: 6px; height: 6px; background: #31c48d; margin-right: 5px;"></span>
+                  Showing Current Month
+                </span>
+              </div>
+            </div>
+
             <!-- KPI SUMMARY CARDS -->
             <div class="billing-kpi-grid">
               <!-- Card 1: Total Cost -->
@@ -3201,6 +3457,69 @@
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
           </svg>
           <span>Confirm Delete</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRM REPORTED COMMENT SELECTION MODAL -->
+  <div id="confirm-reported-modal" class="modal-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="confirm-reported-title">
+    <div class="modal-dialog confirm-reported-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-warn-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <div>
+            <h3 id="confirm-reported-title" class="modal-title">Confirm Selection</h3>
+            <div class="modal-subtitle">This comment has already been reported</div>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" id="confirm-reported-close-btn" aria-label="Close modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="comment-confirm-card">
+          <div class="comment-confirm-row">
+            <span><strong>Comment ID:</strong> <code id="confirm-modal-comment-id" style="color:var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 0.88rem;">—</code></span>
+            <span class="status-tag status-reported" id="confirm-modal-status">Reported</span>
+          </div>
+          <div class="comment-confirm-row">
+            <span><strong>User:</strong> <span id="confirm-modal-user" style="color:#f8fafc; font-weight:600;">—</span></span>
+            <span style="font-size:0.75rem; color:var(--muted); font-family: 'JetBrains Mono', monospace;" id="confirm-modal-user-id">—</span>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--muted); margin-bottom:4px; font-weight:600;">Comment Text:</div>
+            <div class="comment-confirm-text-box" id="confirm-modal-text">—</div>
+          </div>
+        </div>
+
+        <div class="comment-confirm-checkbox-wrap" id="confirm-reported-checkbox-container" onclick="toggleReportedConsentCheckbox()">
+          <input type="checkbox" id="confirm-reported-consent-checkbox" checked style="width:18px; height:18px; accent-color:var(--accent); cursor:pointer;" onclick="event.stopPropagation(); toggleReportedConsentCheckbox(this.checked);" />
+          <label for="confirm-reported-consent-checkbox" onclick="event.preventDefault();">
+            I confirm to run for this comment
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="confirm-reported-cancel-btn">
+          Cancel
+        </button>
+        <button type="button" class="btn-primary" id="confirm-reported-btn" style="min-height: 38px; padding: 0 20px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Confirm</span>
         </button>
       </div>
     </div>
@@ -4010,28 +4329,181 @@
       });
     }
 
+    let pendingConfirmComment = null;
+    let pendingBatchComments = null;
+
+    function openConfirmReportedModal(commentItem) {
+      pendingConfirmComment = commentItem;
+      pendingBatchComments = null;
+
+      const modal = document.getElementById("confirm-reported-modal");
+      if (!modal) return;
+
+      const commentIdEl = document.getElementById("confirm-modal-comment-id");
+      const userEl = document.getElementById("confirm-modal-user");
+      const userIdEl = document.getElementById("confirm-modal-user-id");
+      const textEl = document.getElementById("confirm-modal-text");
+      const statusEl = document.getElementById("confirm-modal-status");
+      const titleEl = document.getElementById("confirm-reported-title");
+      const subtitleEl = modal.querySelector(".modal-subtitle");
+      const consentCb = document.getElementById("confirm-reported-consent-checkbox");
+      const confirmBtn = document.getElementById("confirm-reported-btn");
+
+      if (titleEl) titleEl.textContent = "Confirm Selection";
+      if (subtitleEl) subtitleEl.textContent = "This comment has already been reported";
+      if (commentIdEl) commentIdEl.textContent = commentItem.comment_id || String(commentItem.id);
+      if (userEl) userEl.textContent = commentItem.user_name || "Unknown User";
+      if (userIdEl) userIdEl.textContent = commentItem.user_id ? `ID: ${commentItem.user_id}` : "";
+      if (textEl) textEl.textContent = commentItem.comment_text || "(No comment text)";
+      if (statusEl) statusEl.textContent = commentItem.status || "Reported";
+      if (consentCb) consentCb.checked = true;
+      if (confirmBtn) confirmBtn.disabled = false;
+
+      modal.style.display = "flex";
+      void modal.offsetWidth;
+      modal.classList.add("open");
+    }
+
+    function openConfirmBatchReportedModal(allComments, reportedComments) {
+      pendingBatchComments = allComments;
+      pendingConfirmComment = null;
+
+      const modal = document.getElementById("confirm-reported-modal");
+      if (!modal) return;
+
+      const commentIdEl = document.getElementById("confirm-modal-comment-id");
+      const userEl = document.getElementById("confirm-modal-user");
+      const userIdEl = document.getElementById("confirm-modal-user-id");
+      const textEl = document.getElementById("confirm-modal-text");
+      const statusEl = document.getElementById("confirm-modal-status");
+      const titleEl = document.getElementById("confirm-reported-title");
+      const subtitleEl = modal.querySelector(".modal-subtitle");
+      const consentCb = document.getElementById("confirm-reported-consent-checkbox");
+      const confirmBtn = document.getElementById("confirm-reported-btn");
+
+      if (titleEl) titleEl.textContent = "Confirm Batch Selection";
+      if (subtitleEl) subtitleEl.textContent = `Includes ${reportedComments.length} already reported comment(s)`;
+      if (commentIdEl) commentIdEl.textContent = `${allComments.length} Comments Selected`;
+      if (userEl) userEl.textContent = `${reportedComments.length} Reported, ${allComments.length - reportedComments.length} Unprocessed`;
+      if (userIdEl) userIdEl.textContent = "";
+      if (textEl) textEl.textContent = `You are selecting ${allComments.length} comments on this page, including ${reportedComments.length} comment(s) that have already been reported.`;
+      if (statusEl) statusEl.textContent = `${reportedComments.length} Reported`;
+      if (consentCb) consentCb.checked = true;
+      if (confirmBtn) confirmBtn.disabled = false;
+
+      modal.style.display = "flex";
+      void modal.offsetWidth;
+      modal.classList.add("open");
+    }
+
+    function closeConfirmReportedModal(confirmed = false) {
+      const modal = document.getElementById("confirm-reported-modal");
+      if (modal) {
+        modal.classList.remove("open");
+        setTimeout(() => {
+          if (!modal.classList.contains("open")) {
+            modal.style.display = "none";
+          }
+        }, 200);
+      }
+
+      if (confirmed) {
+        if (pendingConfirmComment) {
+          selectedComments.set(pendingConfirmComment.id, pendingConfirmComment);
+        } else if (pendingBatchComments) {
+          pendingBatchComments.forEach(item => selectedComments.set(item.id, item));
+        }
+      } else {
+        if (pendingConfirmComment) {
+          selectedComments.delete(pendingConfirmComment.id);
+        }
+      }
+
+      pendingConfirmComment = null;
+      pendingBatchComments = null;
+      updateSelectionUI();
+    }
+
+    window.toggleReportedConsentCheckbox = function(checked) {
+      const consentCb = document.getElementById("confirm-reported-consent-checkbox");
+      const confirmBtn = document.getElementById("confirm-reported-btn");
+      if (checked === undefined && consentCb) {
+        consentCb.checked = !consentCb.checked;
+      }
+      if (confirmBtn && consentCb) {
+        confirmBtn.disabled = !consentCb.checked;
+      }
+    };
+
+    const confirmReportedModal = document.getElementById("confirm-reported-modal");
+    const confirmReportedBtn = document.getElementById("confirm-reported-btn");
+    const confirmReportedCancelBtn = document.getElementById("confirm-reported-cancel-btn");
+    const confirmReportedCloseBtn = document.getElementById("confirm-reported-close-btn");
+
+    if (confirmReportedBtn) {
+      confirmReportedBtn.addEventListener("click", () => closeConfirmReportedModal(true));
+    }
+    if (confirmReportedCancelBtn) {
+      confirmReportedCancelBtn.addEventListener("click", () => closeConfirmReportedModal(false));
+    }
+    if (confirmReportedCloseBtn) {
+      confirmReportedCloseBtn.addEventListener("click", () => closeConfirmReportedModal(false));
+    }
+
+    if (confirmReportedModal) {
+      confirmReportedModal.addEventListener("click", (e) => {
+        if (e.target === confirmReportedModal) {
+          closeConfirmReportedModal(false);
+        }
+      });
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && confirmReportedModal && confirmReportedModal.classList.contains("open")) {
+        closeConfirmReportedModal(false);
+      }
+    });
+
     window.toggleCommentSelect = function (dbId) {
       const item = currentCommentsList.find(c => c.id === dbId);
       if (!item) return;
 
       if (selectedComments.has(dbId)) {
         selectedComments.delete(dbId);
+        updateSelectionUI();
       } else {
-        selectedComments.set(dbId, item);
+        const stLower = (item.status || "").toLowerCase().trim();
+        const isReported = stLower !== "not processed" && stLower !== "" && (stLower.includes("reported") || stLower.includes("run") || stLower.includes("complete") || activeCommentsStatus === "processed");
+
+        if (isReported) {
+          updateSelectionUI();
+          openConfirmReportedModal(item);
+        } else {
+          selectedComments.set(dbId, item);
+          updateSelectionUI();
+        }
       }
-      updateSelectionUI();
     };
 
     selectAllPageCheckbox.addEventListener("change", () => {
       const isChecked = selectAllPageCheckbox.checked;
-      currentCommentsList.forEach(item => {
-        if (isChecked) {
-          selectedComments.set(item.id, item);
-        } else {
-          selectedComments.delete(item.id);
-        }
+      if (!isChecked) {
+        currentCommentsList.forEach(item => selectedComments.delete(item.id));
+        updateSelectionUI();
+        return;
+      }
+
+      const reportedItems = currentCommentsList.filter(item => {
+        const stLower = (item.status || "").toLowerCase().trim();
+        return stLower !== "not processed" && stLower !== "" && (stLower.includes("reported") || stLower.includes("run") || stLower.includes("complete") || activeCommentsStatus === "processed");
       });
-      updateSelectionUI();
+
+      if (reportedItems.length > 0) {
+        openConfirmBatchReportedModal(currentCommentsList, reportedItems);
+      } else {
+        currentCommentsList.forEach(item => selectedComments.set(item.id, item));
+        updateSelectionUI();
+      }
     });
 
     clearSelectionBtn.addEventListener("click", () => {
@@ -5311,6 +5783,12 @@ Live execution batch logs are reloading...`, "success");
     const billingErrorBanner = document.getElementById("billing-error-banner");
     const billingPeriodIntro = document.getElementById("billing-period-intro");
 
+    const billingMonthSelect = document.getElementById("billing-month-select");
+    const billingYearSelect = document.getElementById("billing-year-select");
+    const billingApplyFilterBtn = document.getElementById("billing-apply-filter-btn");
+    const billingResetFilterBtn = document.getElementById("billing-reset-filter-btn");
+    const billingCurrentFilterBadge = document.getElementById("billing-current-filter-badge");
+
     const kpiTotalCost = document.getElementById("kpi-total-cost");
     const kpiCurrencyBadge = document.getElementById("kpi-currency-badge");
     const kpiGranularityBadge = document.getElementById("kpi-granularity-badge");
@@ -5337,6 +5815,22 @@ Live execution batch logs are reloading...`, "success");
     let currentBillingFilter = "all";
     let expandedBillingDates = new Set();
     let billingSearchQuery = "";
+    let selectedBillingMonth = "";
+    let selectedBillingYear = "";
+
+    function initBillingYearOptions() {
+      if (!billingYearSelect) return;
+      const currentYear = new Date().getFullYear();
+      billingYearSelect.innerHTML = "";
+      for (let y = currentYear + 1; y >= currentYear - 3; y--) {
+        const opt = document.createElement("option");
+        opt.value = String(y);
+        opt.textContent = String(y);
+        if (y === currentYear) opt.selected = true;
+        billingYearSelect.appendChild(opt);
+      }
+    }
+    initBillingYearOptions();
 
     function formatBillingCurrency(amount, currency = "USD") {
       const num = Number(amount) || 0;
@@ -5402,6 +5896,24 @@ Live execution batch logs are reloading...`, "success");
         previousMonthsContainer.innerHTML = `<div class="loading-state" style="grid-column: 1 / -1;"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading previous months summary...</div>`;
       }
 
+      const isCustomPeriod = Boolean(selectedBillingMonth && selectedBillingYear);
+      const queryParams = new URLSearchParams();
+
+      if (isCustomPeriod) {
+        const yNum = parseInt(selectedBillingYear, 10);
+        const mNum = parseInt(selectedBillingMonth, 10);
+        const daysInMonth = new Date(yNum, mNum, 0).getDate();
+        const mmPadded = String(mNum).padStart(2, '0');
+        const startDateStr = `${yNum}-${mmPadded}-01`;
+        const endDateStr = `${yNum}-${mmPadded}-${String(daysInMonth).padStart(2, '0')}`;
+
+        queryParams.set("month", selectedBillingMonth);
+        queryParams.set("year", selectedBillingYear);
+        queryParams.set("start_date", startDateStr);
+        queryParams.set("end_date", endDateStr);
+        queryParams.set("period", `${yNum}-${mmPadded}`);
+      }
+
       let data = null;
       let lastErrorMessage = "";
 
@@ -5411,6 +5923,7 @@ Live execution batch logs are reloading...`, "success");
         try {
           const u = new URL(directUrl, window.location.href);
           if (billingApiKey) u.searchParams.set("api_key", billingApiKey);
+          queryParams.forEach((val, key) => u.searchParams.set(key, val));
           directUrl = u.toString();
 
           const directRes = await fetch(directUrl, { method: "GET" });
@@ -5429,7 +5942,13 @@ Live execution batch logs are reloading...`, "success");
       // 2. Second attempt: Backend proxy (/api/billing/ecs-fargate)
       if (!data) {
         try {
-          const res = await authFetch(BILLING_API_URL);
+          let proxyUrl = BILLING_API_URL;
+          const qStr = queryParams.toString();
+          if (qStr) {
+            proxyUrl += (proxyUrl.includes("?") ? "&" : "?") + qStr;
+          }
+
+          const res = await authFetch(proxyUrl);
           if (!res.ok) {
             if (res.status === 401) return;
             if (res.status === 403) {
@@ -5456,14 +5975,31 @@ Live execution batch logs are reloading...`, "success");
         }
 
         billingDataCache = data;
-        renderBillingDashboard(data);
+        renderBillingDashboard(data, isCustomPeriod);
+
+        // Update Filter Bar State & Indicators
+        if (isCustomPeriod) {
+          if (billingResetFilterBtn) billingResetFilterBtn.style.display = "inline-flex";
+          const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+          const mIdx = parseInt(selectedBillingMonth, 10) - 1;
+          const mName = (mIdx >= 0 && mIdx < 12) ? monthNames[mIdx] : selectedBillingMonth;
+          if (billingCurrentFilterBadge) {
+            billingCurrentFilterBadge.className = "pill pill-accounts";
+            billingCurrentFilterBadge.innerHTML = `<span style="color:#38bdf8; font-weight:700;">● Filtered: ${mName} ${selectedBillingYear}</span>`;
+          }
+        } else {
+          if (billingResetFilterBtn) billingResetFilterBtn.style.display = "none";
+          if (billingCurrentFilterBadge) {
+            billingCurrentFilterBadge.className = "pill pill-success";
+            billingCurrentFilterBadge.innerHTML = `<span class="live-dot" style="width: 6px; height: 6px; background: #31c48d; margin-right: 5px;"></span> Showing Current Month`;
+          }
+        }
 
         const now = new Date();
         if (billingLastUpdated) {
           billingLastUpdated.textContent = `Updated ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
         }
       } catch (err) {
-
         if (billingErrorBanner) {
           billingErrorBanner.style.display = "block";
           billingErrorBanner.innerHTML = `
@@ -5497,7 +6033,7 @@ Live execution batch logs are reloading...`, "success");
     }
     window.loadBillingData = loadBillingData;
 
-    function renderBillingDashboard(data) {
+    function renderBillingDashboard(data, isCustom = false) {
       const results = Array.isArray(data.results) ? data.results : [];
       const totalCost = Number(data.total_cost_usd) || 0;
       const currency = data.currency || "USD";
@@ -5516,7 +6052,13 @@ Live execution batch logs are reloading...`, "success");
       if (queryPeriod.start_date && queryPeriod.end_date) {
         if (kpiPeriodDays) kpiPeriodDays.textContent = `${results.length} Days`;
         if (kpiPeriodDates) kpiPeriodDates.textContent = `${formatBillingDate(queryPeriod.start_date)} – ${formatBillingDate(queryPeriod.end_date)}`;
-        if (billingPeriodIntro) billingPeriodIntro.textContent = `Live infrastructure spend from ${formatBillingDate(queryPeriod.start_date)} to ${formatBillingDate(queryPeriod.end_date)} for ${service} (${region}).`;
+        if (billingPeriodIntro) {
+          if (isCustom) {
+            billingPeriodIntro.textContent = `Infrastructure spend and resource consumption for ${formatBillingDate(queryPeriod.start_date)} to ${formatBillingDate(queryPeriod.end_date)} for ${service} (${region}).`;
+          } else {
+            billingPeriodIntro.textContent = `Live daily infrastructure spend and compute resource consumption from AWS Cost Explorer for ${formatBillingDate(queryPeriod.start_date)} to ${formatBillingDate(queryPeriod.end_date)}.`;
+          }
+        }
       } else {
         if (kpiPeriodDays) kpiPeriodDays.textContent = `${results.length} Days`;
         if (kpiPeriodDates) kpiPeriodDates.textContent = "—";
@@ -5615,7 +6157,7 @@ Live execution batch logs are reloading...`, "success");
         }
 
         return `
-          <div class="previous-month-card">
+          <div class="previous-month-card clickable-month" onclick="selectHistoricalMonth('${escapeHtml(monthCode)}', '${escapeHtml(startDate)}', '${escapeHtml(endDate)}')" title="Click to view full billing breakdown for ${escapeHtml(monthName)}">
             <div class="previous-month-header">
               <div>
                 <div class="previous-month-title">${escapeHtml(monthName)}</div>
@@ -5635,14 +6177,44 @@ Live execution batch logs are reloading...`, "success");
               <span class="pill ${hasSpend ? 'pill-success' : 'pill-muted-success'}" style="font-size:0.72rem;">
                 ${hasSpend ? 'Active Billing' : 'Zero Spend ($0.00)'}
               </span>
-              <span style="font-size:0.75rem; color:var(--muted); font-family:'JetBrains Mono', monospace;">
-                ${hasSpend ? `${pctOf3Months}% of 3-mo total` : 'No charges'}
-              </span>
+              <button type="button" class="billing-expand-btn" style="padding: 2px 8px; font-size: 0.72rem;" onclick="event.stopPropagation(); selectHistoricalMonth('${escapeHtml(monthCode)}', '${escapeHtml(startDate)}', '${escapeHtml(endDate)}')">
+                <span>Inspect Month</span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
             </div>
           </div>
         `;
       }).join("");
     }
+
+    window.selectHistoricalMonth = function(monthCode, startDate, endDate) {
+      let y = "";
+      let m = "";
+
+      if (monthCode && monthCode.includes("-")) {
+        const parts = monthCode.split("-");
+        y = parts[0];
+        m = parts[1];
+      } else if (startDate && startDate.includes("-")) {
+        const parts = startDate.split("-");
+        y = parts[0];
+        m = parts[1];
+      }
+
+      if (m && y) {
+        selectedBillingMonth = m.padStart(2, '0');
+        selectedBillingYear = y;
+        if (billingMonthSelect) billingMonthSelect.value = selectedBillingMonth;
+        if (billingYearSelect) billingYearSelect.value = selectedBillingYear;
+        loadBillingData(true);
+        const filterBar = document.getElementById("billing-filter-bar-container");
+        if (filterBar) {
+          filterBar.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+    };
 
     function renderBillingBarChart(results, maxCost, currency) {
       if (!billingChartBarsContainer) return;
@@ -5896,6 +6468,43 @@ Live execution batch logs are reloading...`, "success");
             renderBillingTable(billingDataCache.results || [], billingDataCache.currency || "USD");
           }
         }, 250);
+      });
+    }
+
+    if (billingApplyFilterBtn) {
+      billingApplyFilterBtn.addEventListener("click", () => {
+        const mVal = billingMonthSelect ? billingMonthSelect.value : "";
+        const yVal = billingYearSelect ? billingYearSelect.value : "";
+
+        if (!mVal) {
+          selectedBillingMonth = "";
+          selectedBillingYear = "";
+        } else {
+          selectedBillingMonth = mVal;
+          selectedBillingYear = yVal || String(new Date().getFullYear());
+        }
+        loadBillingData(true);
+      });
+    }
+
+    if (billingResetFilterBtn) {
+      billingResetFilterBtn.addEventListener("click", () => {
+        selectedBillingMonth = "";
+        selectedBillingYear = "";
+        if (billingMonthSelect) billingMonthSelect.value = "";
+        if (billingYearSelect) billingYearSelect.value = String(new Date().getFullYear());
+        loadBillingData(true);
+      });
+    }
+
+    if (billingMonthSelect) {
+      billingMonthSelect.addEventListener("change", () => {
+        const mVal = billingMonthSelect.value;
+        if (!mVal) {
+          selectedBillingMonth = "";
+          selectedBillingYear = "";
+          loadBillingData(true);
+        }
       });
     }
 
