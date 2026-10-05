@@ -615,9 +615,9 @@
     }
 
     .shell {
-      width: min(100% - 48px, 1140px);
+      width: min(100% - 32px, 1600px);
       margin: 0 auto;
-      padding: 36px 0 72px;
+      padding: 28px 0 60px;
     }
 
     .tab-content {
@@ -849,6 +849,46 @@
       cursor: not-allowed;
       transform: none;
       box-shadow: none;
+    }
+
+    .btn-action-report {
+      background: var(--accent);
+      color: #032217;
+      font-weight: 800;
+      border: 1px solid var(--accent);
+    }
+
+    .btn-action-report:hover:not(:disabled) {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-action-upvote {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #ffffff;
+      border: 1px solid #38bdf8;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
+      font-weight: 800;
+    }
+
+    .btn-action-upvote:hover:not(:disabled) {
+      background: linear-gradient(135deg, #0369a1, #075985);
+      border-color: #7dd3fc;
+      transform: translateY(-1px);
+    }
+
+    .btn-action-downvote {
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      color: #ffffff;
+      border: 1px solid #fb7185;
+      box-shadow: 0 4px 14px rgba(225, 29, 72, 0.25);
+      font-weight: 800;
+    }
+
+    .btn-action-downvote:hover:not(:disabled) {
+      background: linear-gradient(135deg, #be123c, #9f1239);
+      border-color: #fda4af;
+      transform: translateY(-1px);
     }
 
     .logs-actions {
@@ -1124,6 +1164,61 @@
       transform: none;
     }
 
+    /* ── User Daily Report Limit Reached Modal & Indicators ── */
+    .limit-modal-dialog {
+      background: linear-gradient(180deg, #131e33 0%, #0c1424 100%);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 25px 65px -10px rgba(0, 0, 0, 0.85), 0 0 35px rgba(245, 158, 11, 0.2);
+      overflow: hidden;
+      transform: scale(0.95) translateY(8px);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-overlay.open .limit-modal-dialog {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-warning-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 0 18px rgba(245, 158, 11, 0.25);
+    }
+
+    .user-limit-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      vertical-align: middle;
+      line-height: 1.25;
+      box-sizing: border-box;
+      max-width: 100%;
+    }
+
+    .user-limit-tag.tag-completed {
+      background: rgba(245, 158, 11, 0.16);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+    }
+
     .status {
       display: none;
       margin-top: 22px;
@@ -1386,11 +1481,16 @@
 
     .status-tag {
       display: inline-block;
-      padding: 3px 8px;
-      border-radius: 5px;
-      font-size: 0.75rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.62rem;
       font-weight: 700;
       text-transform: capitalize;
+      white-space: nowrap;
+      line-height: 1.3;
+      letter-spacing: 0.01em;
+      box-sizing: border-box;
+      max-width: 100%;
     }
 
     .status-not-processed,
@@ -1409,6 +1509,18 @@
       background: rgba(34, 197, 94, 0.15);
       color: #86efac;
       border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .status-upvoted {
+      background: rgba(56, 189, 248, 0.15);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .status-downvoted {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.3);
     }
 
     .status-failed,
@@ -1773,8 +1885,46 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
+    #comments-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+    }
+
+    #comments-table th,
+    #comments-table td {
+      padding: 10px 8px;
+      overflow: hidden;
+      vertical-align: middle;
+      box-sizing: border-box;
+    }
+
+    #comments-table th {
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    #comments-table th:first-child,
+    #comments-table td:first-child {
+      padding: 10px 4px;
+      text-align: center;
+    }
+
+    #comments-table th:last-child,
+    #comments-table td:last-child {
+      text-align: center;
+      padding: 10px 4px;
+    }
+
+    #tab-comments .table-container {
+      overflow-x: hidden;
+      width: 100%;
+    }
+
     .comment-bubble {
-      max-width: 440px;
+      width: 100%;
+      max-width: 100%;
       position: relative;
     }
 
@@ -1782,7 +1932,8 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 420px;
+      width: 100%;
+      max-width: 100%;
       color: #f1f5f9;
       font-size: 0.88rem;
       line-height: 1.4;
@@ -2316,6 +2467,218 @@
       flex-wrap: wrap;
     }
 
+    /* ── Super Admin Daily Limits Section Styles ── */
+    .limit-stepper {
+      display: inline-flex;
+      align-items: center;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .limit-stepper:focus-within {
+      border-color: #c084fc;
+      box-shadow: 0 0 0 2px rgba(192, 132, 252, 0.2);
+    }
+
+    .limit-stepper .stepper-btn {
+      width: 32px;
+      height: 34px;
+      background: rgba(30, 41, 59, 0.6);
+      border: none;
+      color: var(--text);
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      user-select: none;
+      padding: 0;
+    }
+
+    .limit-stepper .stepper-btn:hover:not(:disabled) {
+      background: rgba(168, 85, 247, 0.25);
+      color: #c084fc;
+    }
+
+    .limit-stepper .stepper-btn:active:not(:disabled) {
+      transform: scale(0.92);
+    }
+
+    .limit-stepper .stepper-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      color: var(--muted-dark);
+    }
+
+    .limit-stepper .limit-number-input {
+      width: 54px;
+      height: 34px;
+      background: transparent;
+      border: none;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #f8fafc;
+      padding: 0 4px;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+
+    .limit-stepper .limit-number-input::-webkit-outer-spin-button,
+    .limit-stepper .limit-number-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .btn-action-apply {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 7px;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-action-apply:hover:not(:disabled) {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #34d399;
+      color: #ecfdf5;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+    }
+
+    .btn-action-apply.highlighted {
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-color: #34d399;
+      color: #ffffff;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.45);
+      animation: pulse-apply 1.8s infinite;
+    }
+
+    @keyframes pulse-apply {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+      70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .btn-action-apply.applied {
+      background: rgba(16, 185, 129, 0.3);
+      border-color: #10b981;
+      color: #a7f3d0;
+    }
+
+    .btn-action-apply:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-action-reset-limit {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 8px;
+      font-size: 0.74rem;
+      border-radius: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      margin-left: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action-reset-limit:hover {
+      background: rgba(244, 63, 94, 0.12);
+      border-color: rgba(244, 63, 94, 0.35);
+      color: #fda4af;
+    }
+
+    .limit-progress-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .limit-progress-pill.safe {
+      background: rgba(34, 197, 94, 0.12);
+      color: #86efac;
+      border: 1px solid rgba(34, 197, 94, 0.25);
+    }
+
+    .limit-progress-pill.warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fde047;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .limit-progress-pill.full {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.35);
+    }
+
+    .limit-user-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .limit-user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(99, 102, 241, 0.3));
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      color: #c084fc;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.78rem;
+      flex-shrink: 0;
+    }
+
+    .limits-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 18px;
+      background: #0f172a;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 16px rgba(16, 185, 129, 0.2);
+      color: #ecfdf5;
+      font-size: 0.84rem;
+      font-weight: 500;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toast-slide-in 0.25s ease-out;
+    }
+
+    @keyframes toast-slide-in {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
     @media (max-width: 900px) {
       .app-layout {
         flex-direction: column;
@@ -2355,7 +2718,7 @@
       }
 
       .shell {
-        width: min(100% - 24px, 980px);
+        width: min(100% - 24px, 100%);
         padding-top: 24px;
       }
 
@@ -2523,6 +2886,25 @@
             <span class="nav-badge" id="sidebar-users-badge">DB</span>
           </button>
 
+          <button type="button" class="nav-item" id="nav-btn-limits" data-tab="limits" style="display: none;">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14" />
+                <line x1="4" y1="10" x2="4" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12" y2="3" />
+                <line x1="20" y1="21" x2="20" y2="16" />
+                <line x1="20" y1="12" x2="20" y2="3" />
+                <line x1="1" y1="14" x2="7" y2="14" />
+                <line x1="9" y1="8" x2="15" y2="8" />
+                <line x1="17" y1="16" x2="23" y2="16" />
+              </svg>
+            </span>
+            <span class="nav-label">Report Limits</span>
+            <span class="nav-badge" id="sidebar-limits-badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.25);">LIMIT</span>
+          </button>
+
           <button type="button" class="nav-item" id="nav-btn-billing" data-tab="billing" style="display: none;">
             <span class="nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -2596,6 +2978,15 @@
                   <input id="account-count" type="number" value="29" min="1" step="1" inputmode="numeric" required />
                   <p class="field-note">Credentials remain in Lambda; they are never sent from this UI.</p>
                 </div>
+                <div>
+                  <label for="dashboard-action-type">Action Type</label>
+                  <select id="dashboard-action-type" style="min-width: 170px;">
+                    <option value="report_spam" selected>Report Spam</option>
+                    <option value="upvote">Upvote</option>
+                    <option value="downvote">Downvote</option>
+                  </select>
+                  <p class="field-note">Passed to API as ACTION_TYPE.</p>
+                </div>
                 <button id="run-button" type="submit">
                   <span>Run reporting job</span>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -2662,15 +3053,29 @@
               <div class="comments-actions-group">
                 <div class="account-stepper-box">
                   <span>Accounts:</span>
-                  <input type="number" id="comments-account-count" value="29" min="1" step="1"
+                  <input type="number" id="comments-account-count" value="20" min="1" step="1"
                     title="Number of accounts to run" />
                 </div>
-                <button type="button" id="comments-report-btn" disabled>
+                <button type="button" id="comments-report-btn" class="btn-action-report" disabled title="Report selected comments">
                   <span>Report Selected (<span id="selected-count-btn">0</span>)</span>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="13 17 18 12 13 7" />
                     <polyline points="6 17 11 12 6 7" />
+                  </svg>
+                </button>
+                <button type="button" id="comments-upvote-btn" class="btn-action-upvote" disabled title="Upvote selected comments">
+                  <span>Upvote (<span id="upvote-count-btn">0</span>)</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                  </svg>
+                </button>
+                <button type="button" id="comments-downvote-btn" class="btn-action-downvote" disabled title="Downvote selected comments">
+                  <span>Downvote (<span id="downvote-count-btn">0</span>)</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" />
                   </svg>
                 </button>
                 <button type="button" class="btn-primary" id="comments-run-scraper-btn"
@@ -2707,6 +3112,24 @@
                   style="color: #94a3b8; font-size: 0.78rem; text-decoration: underline; margin-left: 12px; cursor: pointer;">Stop
                   Auto-Sync</button>
               </div>
+
+              <!-- Comments User Limit Alert Banner -->
+              <div id="comments-user-limit-banner"
+                style="display:none; margin-bottom: 16px; padding: 11px 16px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.38); border-radius: 10px; font-size: 0.86rem; color: #fbbf24; align-items: center; justify-content: space-between; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.1);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                  <span id="comments-user-limit-banner-text"></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #fde68a; background: rgba(245, 158, 11, 0.18); padding: 3px 9px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3); white-space: nowrap;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Resets after 24 hours</span>
+                </div>
+              </div>
+
               <!-- Comments Toolbar -->
               <div class="comments-toolbar">
                 <div class="toolbar-left">
@@ -2807,13 +3230,13 @@
                 <table id="comments-table">
                   <thead>
                     <tr>
-                      <th style="width: 44px; text-align: center;">Select</th>
-                      <th style="width: 120px;">Comment ID</th>
-                      <th style="width: 130px;">User ID</th>
-                      <th style="width: 150px;">User Name</th>
+                      <th style="width: 36px; text-align: center;">Select</th>
+                      <th style="width: 95px;">Comment ID</th>
+                      <th style="width: 88px;">User ID</th>
+                      <th style="width: 145px;">User Name</th>
                       <th>Comment</th>
-                      <th style="width: 160px;">Fetched At &darr; (Latest)</th>
-                      <th style="width: 110px;">Status</th>
+                      <th style="width: 155px;">Fetched At &darr;</th>
+                      <th style="width: 110px; text-align: center;">Status</th>
                     </tr>
                   </thead>
                   <tbody id="comments-table-body">
@@ -2926,6 +3349,89 @@
               <div class="pagination-bar">
                 <div class="pagination-info" id="users-pagination-info">Showing 0 to 0 of 0 users</div>
                 <div class="pagination-controls" id="users-pagination-controls"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: USER REPORT LIMITS (SUPER ADMIN ONLY) -->
+          <div class="tab-content" id="tab-limits">
+            <div class="eyebrow">Super Admin Console &bull; Daily Governance</div>
+            <div class="comments-header-bar">
+              <div>
+                <h1>Daily User Report Limits</h1>
+                <p class="intro" style="margin-bottom:0;">
+                  Configure the maximum number of comments for a particular user that can be reported in a single calendar day. By default, minimum <strong>3 comments per day</strong> are allowed.
+                </p>
+              </div>
+              <div class="comments-actions-group">
+                <span id="limits-stats-pill" class="pill pill-accounts">0 Users</span>
+                <button type="button" class="btn-secondary" id="limits-refresh-btn" title="Refresh user limits">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                  </svg>
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Explanatory Banner -->
+            <div class="card limits-info-card" style="padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: rgba(30, 41, 59, 0.4); border-left: 3px solid #c084fc;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(168, 85, 247, 0.15); color: #c084fc; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                </div>
+                <div style="font-size: 0.84rem; line-height: 1.45; color: #cbd5e1;">
+                  <strong>How Daily Limits Work:</strong> By default, minimum <strong>3 comments</strong> of any user can be reported in a single day. You can adjust the maximum count for any user (e.g. select <strong>4</strong> for Don wood). The selected count is applied <strong>only after clicking the "Apply" button</strong> in that user's row.
+                </div>
+              </div>
+            </div>
+
+            <!-- Limits Directory Card -->
+            <div class="card" style="padding: 20px;">
+              <div class="comments-toolbar">
+                <div class="toolbar-left">
+                  <h3 style="font-size: 1.05rem; font-weight: 700;">Configured Users &amp; Daily Quotas</h3>
+                  <div class="billing-filter-chips">
+                    <button type="button" class="billing-chip active" id="filter-limits-all" onclick="filterUserLimits('all')">All (<span id="count-limits-all">0</span>)</button>
+                    <button type="button" class="billing-chip" id="filter-limits-custom" onclick="filterUserLimits('custom')">Custom Limits (<span id="count-limits-custom">0</span>)</button>
+                    <button type="button" class="billing-chip" id="filter-limits-reported" onclick="filterUserLimits('reported')">Reported Today (<span id="count-limits-reported">0</span>)</button>
+                  </div>
+                </div>
+                <div class="toolbar-right">
+                  <input type="text" id="limits-search-input" placeholder="Search user ID or name (e.g. Don wood)..."
+                    style="padding: 7px 12px; font-size: 0.82rem; min-width: 250px; width: auto;" />
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table id="limits-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 50px;">#</th>
+                      <th style="width: 150px;">User ID</th>
+                      <th>User Name</th>
+                      <th style="width: 140px; text-align: center;">Reported Today</th>
+                      <th style="width: 200px; text-align: center;">Max Comments / Day (Min 3)</th>
+                      <th style="width: 140px; text-align: center;">Active Limit</th>
+                      <th style="width: 140px; text-align: center;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="limits-table-body">
+                    <tr>
+                      <td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading user report limits...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="pagination-bar" id="limits-pagination-bar">
+                <div class="pagination-info" id="limits-pagination-info">Showing all 0 users</div>
+                <div class="pagination-controls" id="limits-pagination-controls" style="display:none;"></div>
               </div>
             </div>
           </div>
@@ -3206,6 +3712,110 @@
     </div>
   </div>
 
+  <!-- DAILY REPORTING LIMIT REACHED MODAL -->
+  <div id="limit-reached-modal" class="modal-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="limit-modal-title">
+    <div class="modal-dialog limit-modal-dialog">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(245, 158, 11, 0.25);">
+        <div class="modal-title-wrap">
+          <div class="modal-warning-badge">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div>
+            <h3 id="limit-modal-title" class="modal-title" style="color: #fbbf24;">Reporting Limit Reached</h3>
+            <div class="modal-subtitle" style="color: #94a3b8;">Daily user comment reporting quota completed</div>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" id="limit-modal-close-btn" aria-label="Close modal" onclick="closeLimitReachedModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body" style="gap: 18px;">
+        <!-- User Identity Card -->
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 12px; padding: 12px 16px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div id="limit-modal-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);">
+              PB
+            </div>
+            <div>
+              <div id="limit-modal-user-name" style="font-size: 1.05rem; font-weight: 700; color: #ffffff;">Paul Barron</div>
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                <span style="font-size: 0.75rem; color: #94a3b8;">User ID:</span>
+                <code id="limit-modal-user-id" style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px;">256948277</code>
+              </div>
+            </div>
+          </div>
+          <span style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em;">
+            Quota Completed
+          </span>
+        </div>
+
+        <!-- Main Alert Box with 24 Hours Reset Notice -->
+        <div style="background: rgba(245, 158, 11, 0.09); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 16px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <div style="flex: 1;">
+              <div style="font-size: 0.95rem; font-weight: 700; color: #fbbf24; margin-bottom: 4px;">Reporting Limit Completed</div>
+              <div id="limit-modal-message" style="font-size: 0.9rem; color: #e2e8f0; line-height: 1.5;">
+                Its limit of 4 is completed, all its limit is reached. Limit will be reset after 24 hours.
+              </div>
+              <div style="margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; background: rgba(245, 158, 11, 0.18); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 600; color: #fde68a;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Limit will be reset after 24 hours</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Limit Breakdown Metric Grid -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.12); border-radius: 10px; padding: 12px; text-align: center;">
+            <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em;">Daily Limit</div>
+            <div id="limit-modal-max-limit" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">4</div>
+            <div style="font-size: 0.7rem; color: var(--muted); margin-top: 2px;">comments/day</div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.12); border-radius: 10px; padding: 12px; text-align: center;">
+            <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em;">Reported (24h)</div>
+            <div id="limit-modal-reported-count" style="font-size: 1.35rem; font-weight: 800; color: #fbbf24; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">4</div>
+            <div style="font-size: 0.7rem; color: var(--muted); margin-top: 2px;">comments</div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: 10px; padding: 12px; text-align: center;">
+            <div style="font-size: 0.72rem; color: #fda4af; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em;">Available Now</div>
+            <div id="limit-modal-remaining" style="font-size: 1.35rem; font-weight: 800; color: #f43f5e; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">0</div>
+            <div style="font-size: 0.7rem; color: #f87171; margin-top: 2px;">quota left</div>
+          </div>
+        </div>
+
+        <!-- Super Admin Quick Action Notice -->
+        <div id="limit-modal-superadmin-box" style="display: none; align-items: center; justify-content: space-between; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 10px 14px; font-size: 0.82rem; color: #bae6fd;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>You have Super Admin access to adjust limits.</span>
+          </div>
+          <button type="button" class="btn-text" id="limit-modal-admin-btn" style="color: #38bdf8; font-size: 0.8rem; text-decoration: underline; font-weight: 700; cursor: pointer;">
+            Adjust in Report Limits &rarr;
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="border-top: 1px solid rgba(245, 158, 11, 0.15);">
+        <button type="button" class="btn-primary" id="limit-modal-ok-btn" onclick="closeLimitReachedModal()" style="min-width: 120px; background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #f59e0b; color: #ffffff; font-weight: 700;">
+          Understood
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ─────────────────────────────────────────────────────────────────
     // AUTH STATE & TOKEN MANAGEMENT
@@ -3304,9 +3914,12 @@
 
       const superAdmin = (typeof isSuperAdmin === "boolean") ? isSuperAdmin : isCurrentUserSuperAdmin();
 
-      // Show Billing section in navigation ONLY if Super Admin
+      // Show Billing and Limits sections in navigation ONLY if Super Admin
       if (navBtnBilling) {
         navBtnBilling.style.display = superAdmin ? "flex" : "none";
+      }
+      if (navBtnLimits) {
+        navBtnLimits.style.display = superAdmin ? "flex" : "none";
       }
 
       // Update user role badge in sidebar footer
@@ -3323,8 +3936,8 @@
         }
       }
 
-      // If user is not super admin but billing tab was active, fallback to dashboard
-      if (!superAdmin && tabBilling && tabBilling.classList.contains("active")) {
+      // If user is not super admin but billing or limits tab was active, fallback to dashboard
+      if (!superAdmin && ((tabBilling && tabBilling.classList.contains("active")) || (tabLimits && tabLimits.classList.contains("active")))) {
         switchTab("dashboard");
       }
 
@@ -3334,24 +3947,26 @@
       loadComments(1);
     }
 
-    // Navigation Tabs Switching (Dashboard vs Comments vs Users vs Billing)
+    // Navigation Tabs Switching (Dashboard vs Comments vs Users vs Limits vs Billing)
     const navBtnDashboard = document.getElementById("nav-btn-dashboard");
     const navBtnComments = document.getElementById("nav-btn-comments");
     const navBtnUsers = document.getElementById("nav-btn-users");
+    const navBtnLimits = document.getElementById("nav-btn-limits");
     const navBtnBilling = document.getElementById("nav-btn-billing");
     const tabDashboard = document.getElementById("tab-dashboard");
     const tabComments = document.getElementById("tab-comments");
     const tabUsers = document.getElementById("tab-users");
+    const tabLimits = document.getElementById("tab-limits");
     const tabBilling = document.getElementById("tab-billing");
 
     function switchTab(tabName) {
-      // Disallow non-superadmin from viewing billing tab
-      if (tabName === "billing" && !isCurrentUserSuperAdmin()) {
+      // Disallow non-superadmin from viewing billing or limits tab
+      if ((tabName === "billing" || tabName === "limits") && !isCurrentUserSuperAdmin()) {
         tabName = "dashboard";
       }
 
-      [navBtnDashboard, navBtnComments, navBtnUsers, navBtnBilling].forEach(btn => btn && btn.classList.remove("active"));
-      [tabDashboard, tabComments, tabUsers, tabBilling].forEach(tab => tab && tab.classList.remove("active"));
+      [navBtnDashboard, navBtnComments, navBtnUsers, navBtnLimits, navBtnBilling].forEach(btn => btn && btn.classList.remove("active"));
+      [tabDashboard, tabComments, tabUsers, tabLimits, tabBilling].forEach(tab => tab && tab.classList.remove("active"));
 
       if (tabName === "dashboard") {
         navBtnDashboard.classList.add("active");
@@ -3365,6 +3980,14 @@
         navBtnUsers.classList.add("active");
         tabUsers.classList.add("active");
         loadUsers(currentUsersPage);
+      } else if (tabName === "limits") {
+        if (!isCurrentUserSuperAdmin()) {
+          switchTab("dashboard");
+          return;
+        }
+        navBtnLimits.classList.add("active");
+        tabLimits.classList.add("active");
+        loadUserLimits();
       } else if (tabName === "billing") {
         if (!isCurrentUserSuperAdmin()) {
           switchTab("dashboard");
@@ -3379,6 +4002,7 @@
     navBtnDashboard.addEventListener("click", () => switchTab("dashboard"));
     navBtnComments.addEventListener("click", () => switchTab("comments"));
     navBtnUsers.addEventListener("click", () => switchTab("users"));
+    if (navBtnLimits) navBtnLimits.addEventListener("click", () => switchTab("limits"));
     navBtnBilling.addEventListener("click", () => switchTab("billing"));
 
 
@@ -3678,8 +4302,12 @@
     const pageCommentsCountSpan = document.getElementById("page-comments-count");
     const selectedCounterBadge = document.getElementById("selected-counter-badge");
     const selectedCountBtnSpan = document.getElementById("selected-count-btn");
+    const upvoteCountBtnSpan = document.getElementById("upvote-count-btn");
+    const downvoteCountBtnSpan = document.getElementById("downvote-count-btn");
     const clearSelectionBtn = document.getElementById("clear-selection-btn");
     const commentsReportBtn = document.getElementById("comments-report-btn");
+    const commentsUpvoteBtn = document.getElementById("comments-upvote-btn");
+    const commentsDownvoteBtn = document.getElementById("comments-downvote-btn");
     const commentsRunScraperBtn = document.getElementById("comments-run-scraper-btn");
     const commentsRefreshBtn = document.getElementById("comments-refresh-btn");
     const commentsSearchInput = document.getElementById("comments-search-input");
@@ -3768,12 +4396,18 @@
         const isChecked = selectedUserFilters.has(u.key);
         const nameDisplay = u.user_name || "—";
         const idDisplay = u.user_id ? `ID: ${u.user_id}` : "";
+        const limitInfo = getUserLimitInfo(u.user_id, u.user_name);
+        const isLimitFull = (limitInfo.reported_today || 0) >= (limitInfo.max_daily_comments || 3);
+        const limitTag = isLimitFull ? `<span style="font-size: 0.62rem; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.18); border: 1px solid rgba(245,158,11,0.35); padding: 1px 5px; border-radius: 4px; margin-left: 6px; white-space: nowrap;">Limit Reached (${limitInfo.reported_today}/${limitInfo.max_daily_comments})</span>` : '';
         return `
           <label class="multiselect-item ${isChecked ? 'selected' : ''}" data-user-key="${escapeHtml(u.key)}">
             <input type="checkbox" class="multiselect-checkbox" data-user-key="${escapeHtml(u.key)}" ${isChecked ? 'checked' : ''} />
-            <div class="multiselect-item-label">
-              <span class="multiselect-item-name">${escapeHtml(nameDisplay)}</span>
-              ${idDisplay ? `<span class="multiselect-item-id">${escapeHtml(idDisplay)}</span>` : ''}
+            <div class="multiselect-item-label" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <div>
+                <span class="multiselect-item-name">${escapeHtml(nameDisplay)}</span>
+                ${idDisplay ? `<span class="multiselect-item-id">${escapeHtml(idDisplay)}</span>` : ''}
+              </div>
+              ${limitTag}
             </div>
           </label>
         `;
@@ -3972,9 +4606,38 @@
 
     function updateSelectionUI() {
       const count = selectedComments.size;
-      selectedCounterBadge.textContent = `${count} Total Selected`;
-      selectedCountBtnSpan.textContent = count;
-      commentsReportBtn.disabled = count === 0;
+      if (selectedCounterBadge) {
+        selectedCounterBadge.textContent = `${count} Total Selected`;
+      }
+
+      // Dynamically query fresh span elements from DOM so detached references never occur
+      const reportSpan = document.getElementById("selected-count-btn") || (commentsReportBtn ? commentsReportBtn.querySelector("#selected-count-btn") : null);
+      if (reportSpan) {
+        reportSpan.textContent = count;
+      } else if (commentsReportBtn) {
+        const textSpan = commentsReportBtn.querySelector("span");
+        if (textSpan) textSpan.innerHTML = `Report Selected (<span id="selected-count-btn">${count}</span>)`;
+      }
+
+      const upvoteSpan = document.getElementById("upvote-count-btn") || (commentsUpvoteBtn ? commentsUpvoteBtn.querySelector("#upvote-count-btn") : null);
+      if (upvoteSpan) {
+        upvoteSpan.textContent = count;
+      } else if (commentsUpvoteBtn) {
+        const textSpan = commentsUpvoteBtn.querySelector("span");
+        if (textSpan) textSpan.innerHTML = `Upvote (<span id="upvote-count-btn">${count}</span>)`;
+      }
+
+      const downvoteSpan = document.getElementById("downvote-count-btn") || (commentsDownvoteBtn ? commentsDownvoteBtn.querySelector("#downvote-count-btn") : null);
+      if (downvoteSpan) {
+        downvoteSpan.textContent = count;
+      } else if (commentsDownvoteBtn) {
+        const textSpan = commentsDownvoteBtn.querySelector("span");
+        if (textSpan) textSpan.innerHTML = `Downvote (<span id="downvote-count-btn">${count}</span>)`;
+      }
+
+      if (commentsReportBtn) commentsReportBtn.disabled = count === 0;
+      if (commentsUpvoteBtn) commentsUpvoteBtn.disabled = count === 0;
+      if (commentsDownvoteBtn) commentsDownvoteBtn.disabled = count === 0;
 
       if (count > 0) {
         clearSelectionBtn.style.display = "inline-block";
@@ -4010,28 +4673,254 @@
       });
     }
 
-    window.toggleCommentSelect = function (dbId) {
+    // ─────────────────────────────────────────────────────────────────
+    // USER DAILY REPORT LIMITS LOGIC & CACHE
+    // ─────────────────────────────────────────────────────────────────
+    const commentsUserLimits = {};
+
+    function getUserLimitInfo(uid, uname) {
+      const cleanUid = uid ? String(uid).trim() : "";
+      const cleanUname = uname ? String(uname).trim() : "";
+
+      let info = (cleanUid && commentsUserLimits[cleanUid]) ||
+                 (cleanUname && commentsUserLimits[cleanUname.toLowerCase()]) ||
+                 null;
+
+      if (!info) {
+        return {
+          user_id: cleanUid,
+          user_name: cleanUname,
+          max_daily_comments: 3,
+          reported_today: 0,
+          remaining_today: 3,
+          is_custom: false,
+          reset_hours: 24
+        };
+      }
+      return info;
+    }
+
+    function getCurrentlySelectedCountForUser(uid, uname, excludeCommentId = null) {
+      const cleanUid = uid ? String(uid).trim() : "";
+      const cleanUnameLower = uname ? String(uname).trim().toLowerCase() : "";
+      let count = 0;
+      for (const [id, c] of selectedComments.entries()) {
+        if (excludeCommentId !== null && id === excludeCommentId) continue;
+        const cUid = c.user_id ? String(c.user_id).trim() : "";
+        const cUname = c.user_name ? String(c.user_name).trim().toLowerCase() : "";
+        if ((cleanUid && cUid === cleanUid) || (cleanUnameLower && cUname === cleanUnameLower)) {
+          count++;
+        }
+      }
+      return count;
+    }
+
+    const limitReachedModal = document.getElementById("limit-reached-modal");
+
+    function openLimitReachedModal({ userName, userId, maxLimit, reportedToday, currentlySelected }) {
+      if (!limitReachedModal) return;
+
+      const nameDisp = userName || (userId ? `User ID ${userId}` : "Unknown User");
+      const idDisp = userId ? `ID: ${userId}` : "N/A";
+      const totalUsed = (reportedToday || 0) + (currentlySelected || 0);
+
+      const avatarEl = document.getElementById("limit-modal-avatar");
+      if (avatarEl) {
+        avatarEl.textContent = (nameDisp.charAt(0) || "U").toUpperCase();
+      }
+
+      const nameEl = document.getElementById("limit-modal-user-name");
+      if (nameEl) nameEl.textContent = nameDisp;
+
+      const idEl = document.getElementById("limit-modal-user-id");
+      if (idEl) idEl.textContent = idDisp;
+
+      const maxLimitEl = document.getElementById("limit-modal-max-limit");
+      if (maxLimitEl) maxLimitEl.textContent = maxLimit || 4;
+
+      const reportedCountEl = document.getElementById("limit-modal-reported-count");
+      if (reportedCountEl) reportedCountEl.textContent = reportedToday || 0;
+
+      const remainingEl = document.getElementById("limit-modal-remaining");
+      if (remainingEl) remainingEl.textContent = "0";
+
+      const msgEl = document.getElementById("limit-modal-message");
+      if (msgEl) {
+        if ((reportedToday || 0) >= (maxLimit || 4)) {
+          msgEl.innerHTML = `Its limit of <strong>${maxLimit}</strong> is completed, all its limit is reached. Limit will be reset after 24 hours.`;
+        } else {
+          msgEl.innerHTML = `Its limit of <strong>${maxLimit}</strong> is completed (<strong>${reportedToday}</strong> reported today + <strong>${currentlySelected}</strong> currently selected), all its limit is reached. Limit will be reset after 24 hours.`;
+        }
+      }
+
+      const superAdminBox = document.getElementById("limit-modal-superadmin-box");
+      const superAdminBtn = document.getElementById("limit-modal-admin-btn");
+      if (superAdminBox) {
+        const isSuper = isCurrentUserSuperAdmin();
+        superAdminBox.style.display = isSuper ? "flex" : "none";
+        if (superAdminBtn) {
+          superAdminBtn.onclick = () => {
+            closeLimitReachedModal();
+            switchTab("limits");
+            const limitsSearch = document.getElementById("limits-search-input");
+            if (limitsSearch) {
+              limitsSearch.value = nameDisp || userId;
+              loadUserLimits();
+            }
+          };
+        }
+      }
+
+      limitReachedModal.style.display = "flex";
+      void limitReachedModal.offsetWidth;
+      limitReachedModal.classList.add("open");
+    }
+    window.openLimitReachedModal = openLimitReachedModal;
+
+    function closeLimitReachedModal() {
+      if (!limitReachedModal) return;
+      limitReachedModal.classList.remove("open");
+      setTimeout(() => {
+        if (!limitReachedModal.classList.contains("open")) {
+          limitReachedModal.style.display = "none";
+        }
+      }, 220);
+    }
+    window.closeLimitReachedModal = closeLimitReachedModal;
+
+    // Close on Escape or click outside
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && limitReachedModal && limitReachedModal.classList.contains("open")) {
+        closeLimitReachedModal();
+      }
+    });
+
+    if (limitReachedModal) {
+      limitReachedModal.addEventListener("click", (e) => {
+        if (e.target === limitReachedModal) {
+          closeLimitReachedModal();
+        }
+      });
+    }
+
+    function updateCommentsLimitBanner() {
+      const banner = document.getElementById("comments-user-limit-banner");
+      const bannerText = document.getElementById("comments-user-limit-banner-text");
+      if (!banner || !bannerText) return;
+
+      let hitUser = null;
+      if (selectedUserFilters.size > 0) {
+        for (const u of selectedUserFilters) {
+          const info = getUserLimitInfo("", u);
+          if (info && (info.reported_today || 0) >= (info.max_daily_comments || 3)) {
+            hitUser = info;
+            break;
+          }
+        }
+      } else if (currentCommentsList.length > 0) {
+        const firstUid = currentCommentsList[0].user_id;
+        const firstUname = currentCommentsList[0].user_name;
+        const allSame = currentCommentsList.every(c => c.user_id === firstUid);
+        if (allSame) {
+          const info = getUserLimitInfo(firstUid, firstUname);
+          if (info && (info.reported_today || 0) >= (info.max_daily_comments || 3)) {
+            hitUser = info;
+          }
+        }
+      }
+
+      if (hitUser) {
+        const name = hitUser.user_name || `User ID ${hitUser.user_id}`;
+        bannerText.innerHTML = `Daily reporting limit of <strong>${hitUser.max_daily_comments}</strong> comments for <strong>${escapeHtml(name)}</strong> is completed (${hitUser.reported_today}/${hitUser.max_daily_comments} reported today). All its limit is reached.`;
+        banner.style.display = "flex";
+      } else {
+        banner.style.display = "none";
+      }
+    }
+
+    window.toggleCommentSelect = function (dbId, event) {
       const item = currentCommentsList.find(c => c.id === dbId);
       if (!item) return;
 
+      const row = document.querySelector(`.comment-row[data-comment-db-id="${dbId}"]`);
+      const cb = (event && event.target) ? event.target : (row ? row.querySelector(".row-select-checkbox") : null);
+
       if (selectedComments.has(dbId)) {
         selectedComments.delete(dbId);
-      } else {
-        selectedComments.set(dbId, item);
+        updateSelectionUI();
+        return;
       }
+
+      // Check daily reporting limit before allowing selection
+      const uid = item.user_id ? String(item.user_id).trim() : "";
+      const uname = item.user_name ? String(item.user_name).trim() : "";
+      const limitInfo = getUserLimitInfo(uid, uname);
+      const maxLimit = limitInfo.max_daily_comments || 3;
+      const reportedToday = limitInfo.reported_today || 0;
+      const currentlySelected = getCurrentlySelectedCountForUser(uid, uname, dbId);
+
+      // If already reported + currently selected + 1 exceeds the daily limit:
+      if (reportedToday + currentlySelected + 1 > maxLimit) {
+        if (cb) cb.checked = false;
+        if (row) row.classList.remove("row-selected");
+        updateSelectionUI();
+
+        openLimitReachedModal({
+          userName: uname,
+          userId: uid,
+          maxLimit: maxLimit,
+          reportedToday: reportedToday,
+          currentlySelected: currentlySelected
+        });
+        return;
+      }
+
+      selectedComments.set(dbId, item);
       updateSelectionUI();
     };
 
     selectAllPageCheckbox.addEventListener("change", () => {
       const isChecked = selectAllPageCheckbox.checked;
+      if (!isChecked) {
+        currentCommentsList.forEach(item => {
+          selectedComments.delete(item.id);
+        });
+        updateSelectionUI();
+        return;
+      }
+
+      let blockedUsers = [];
       currentCommentsList.forEach(item => {
-        if (isChecked) {
+        if (selectedComments.has(item.id)) return;
+        const uid = item.user_id ? String(item.user_id).trim() : "";
+        const uname = item.user_name ? String(item.user_name).trim() : "";
+        const limitInfo = getUserLimitInfo(uid, uname);
+        const maxLimit = limitInfo.max_daily_comments || 3;
+        const reportedToday = limitInfo.reported_today || 0;
+        const currentlySelected = getCurrentlySelectedCountForUser(uid, uname);
+
+        if (reportedToday + currentlySelected + 1 <= maxLimit) {
           selectedComments.set(item.id, item);
         } else {
-          selectedComments.delete(item.id);
+          const key = uid || uname.toLowerCase();
+          if (!blockedUsers.some(b => (b.userId && b.userId === uid) || (b.userName && b.userName.toLowerCase() === uname.toLowerCase()))) {
+            blockedUsers.push({
+              userId: uid,
+              userName: uname,
+              maxLimit: maxLimit,
+              reportedToday: reportedToday,
+              currentlySelected: currentlySelected
+            });
+          }
         }
       });
+
       updateSelectionUI();
+
+      if (blockedUsers.length > 0) {
+        const target = blockedUsers.find(b => (b.userName && b.userName.toLowerCase().includes("paul barron")) || b.userId === "256948277") || blockedUsers[0];
+        openLimitReachedModal(target);
+      }
     });
 
     clearSelectionBtn.addEventListener("click", () => {
@@ -4247,6 +5136,10 @@
           throw new Error(data.error || "Failed to load comments");
         }
 
+        if (data.user_limits) {
+          Object.assign(commentsUserLimits, data.user_limits);
+        }
+
         currentCommentsList = data.comments || [];
         totalCommentsCount = data.total || 0;
         totalCommentsPages = data.total_pages || 1;
@@ -4260,6 +5153,7 @@
         renderPagination(data.page, data.total_pages, data.total);
         updateSelectionUI();
         updateResetFiltersBtnVisibility();
+        updateCommentsLimitBanner();
       } catch (err) {
         if (!isSilent) {
           commentsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color: var(--danger);">Error loading comments: ${escapeHtml(err.message)}</td></tr>`;
@@ -4294,10 +5188,25 @@
         const userNameDisplay = highlightText(rawUserName || "—", searchQuery);
         const userIdDisplay = highlightText(rawUserId || "—", searchQuery);
 
+        // Daily limit status check for user
+        const limitInfo = getUserLimitInfo(rawUserId, rawUserName);
+        const maxLimit = limitInfo.max_daily_comments || 3;
+        const reportedToday = limitInfo.reported_today || 0;
+        const isLimitCompleted = reportedToday >= maxLimit;
+        const limitTag = isLimitCompleted ? `
+          <span class="user-limit-tag tag-completed" title="Daily limit of ${maxLimit} completed (${reportedToday}/${maxLimit} reported today). Limit resets after 24 hours.">
+            Limit Reached (${reportedToday}/${maxLimit})
+          </span>
+        ` : '';
+
         const stLower = (c.status || "not processed").toLowerCase();
         let statusTagClass = "status-not-processed";
         if (stLower.includes("reported") || stLower.includes("runned") || stLower.includes("completed")) {
           statusTagClass = "status-reported";
+        } else if (stLower.includes("upvote")) {
+          statusTagClass = "status-upvoted";
+        } else if (stLower.includes("downvote")) {
+          statusTagClass = "status-downvoted";
         } else if (stLower.includes("fail") || stLower.includes("error")) {
           statusTagClass = "status-failed";
         }
@@ -4309,24 +5218,29 @@
 
         return `
           <tr class="comment-row ${isChecked ? 'row-selected' : ''}" data-comment-db-id="${c.id}">
-            <td style="text-align: center;">
+            <td style="text-align: center; padding: 10px 4px;">
               <input
                 type="checkbox"
                 class="row-select-checkbox"
                 ${isChecked ? 'checked' : ''}
-                onchange="toggleCommentSelect(${c.id})"
-                style="width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer;"
+                onchange="toggleCommentSelect(${c.id}, event)"
+                style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;"
               />
             </td>
             <td>
               <a href="${escapeHtml(commentUrl)}" target="_blank" rel="noopener noreferrer" class="comment-id-badge" title="Open comment on investing.com">
-                ${escapeHtml(commentIdDisplay)}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                <span>${escapeHtml(commentIdDisplay)}</span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               </a>
             </td>
-            <td><code style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #cbd5e1;">${userIdDisplay}</code></td>
-            <td><span style="font-weight: 600; color: #f1f5f9;">${userNameDisplay}</span></td>
+            <td><code style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #cbd5e1; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${userIdDisplay}</code></td>
             <td>
+              <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                <span style="font-weight: 600; color: #f1f5f9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;" title="${escapeHtml(rawUserName)}">${userNameDisplay}</span>
+                ${limitTag}
+              </div>
+            </td>
+            <td style="overflow: hidden;">
               <div class="comment-bubble">
                 <div class="comment-text-preview" title="${escapeHtml(commentText)}">${highlightedCommentPreview}</div>
                 ${isLong ? `
@@ -4335,8 +5249,8 @@
                 ` : ''}
               </div>
             </td>
-            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--muted);">${escapeHtml(fetchedAtDisplay)}</td>
-            <td>
+            <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); white-space: nowrap; letter-spacing: -0.02em; padding: 10px 6px;">${escapeHtml(fetchedAtDisplay)}</td>
+            <td style="text-align: center; padding: 6px 4px;">
               <span class="status-tag ${statusTagClass}">${escapeHtml(c.status || "not processed")}</span>
             </td>
           </tr>
@@ -4391,10 +5305,10 @@
       paginationControls.innerHTML = buttonsHtml;
     }
 
-    commentsReportBtn.addEventListener("click", async () => {
+    async function executeCommentBatchAction(actionType = "report_spam") {
       if (selectedComments.size === 0) return;
 
-      const numAccounts = Number(commentsAccountCount.value) || 29;
+      const numAccounts = Number(commentsAccountCount.value) || 20;
       if (!Number.isInteger(numAccounts) || numAccounts < 1) {
         alert("Number of accounts must be at least 1.");
         return;
@@ -4419,14 +5333,43 @@
         return;
       }
 
+      // Map actionType: "report" / "report_spam" -> "report_spam", "upvote" -> "upvote", "downvote" -> "downvote"
+      let actionValue = actionType;
+      if (actionValue === "report") actionValue = "report_spam";
+
       const payload = {
         comment_ids,
         user_ids,
         number_of_accounts: numAccounts,
+        name: "ACTION_TYPE",
+        value: actionValue,
       };
 
-      commentsReportBtn.disabled = true;
-      commentsReportBtn.innerHTML = `<span class="spinner"></span><span>Reporting ${comment_ids.length} item(s)...</span>`;
+      let actionTitle = "Report";
+      let actionProgress = "Reporting";
+      let newDbStatus = "reported";
+      let activeBtn = commentsReportBtn;
+
+      if (actionValue === "upvote") {
+        actionTitle = "Upvote";
+        actionProgress = "Upvoting";
+        newDbStatus = "upvoted";
+        activeBtn = commentsUpvoteBtn;
+      } else if (actionValue === "downvote") {
+        actionTitle = "Downvote";
+        actionProgress = "Downvoting";
+        newDbStatus = "downvoted";
+        activeBtn = commentsDownvoteBtn;
+      }
+
+      // Disable all action buttons during operation
+      if (commentsReportBtn) commentsReportBtn.disabled = true;
+      if (commentsUpvoteBtn) commentsUpvoteBtn.disabled = true;
+      if (commentsDownvoteBtn) commentsDownvoteBtn.disabled = true;
+
+      if (activeBtn) {
+        activeBtn.innerHTML = `<span class="spinner"></span><span>${actionProgress} ${comment_ids.length} item(s)...</span>`;
+      }
 
       let processingId = null;
       try {
@@ -4462,7 +5405,7 @@
               (lambdaJson && (lambdaJson.upstream_status === 504 || (lambdaJson.error && String(lambdaJson.error).toLowerCase().includes("timed out"))));
             if (!isTimeout) {
               const lambdaErrMsg = (lambdaJson && (lambdaJson.message || lambdaJson.error)) || lambdaText || `HTTP ${lambdaResponse.status}`;
-              throw new Error(`Reporting API returned HTTP ${lambdaResponse.status}: ${lambdaErrMsg}`);
+              throw new Error(`API returned HTTP ${lambdaResponse.status}: ${lambdaErrMsg}`);
             }
           }
         } catch (lambdaErr) {
@@ -4476,26 +5419,45 @@
           await authFetch(COMMENTS_STATUS_API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ids: db_ids, comment_ids: comment_ids, status: "reported" }),
+            body: JSON.stringify({ ids: db_ids, comment_ids: comment_ids, status: newDbStatus }),
           });
         } catch (_) { }
 
         currentCommentsList.forEach(c => {
           if (db_ids.includes(c.id)) {
-            c.status = "reported";
+            c.status = newDbStatus;
           }
         });
 
         selectedComments.clear();
         updateSelectionUI();
 
+        if (actionValue === "report_spam") {
+          user_ids.forEach(uid => {
+            const cleanUid = String(uid).trim();
+            const info = getUserLimitInfo(cleanUid, "");
+            info.reported_today = (info.reported_today || 0) + 1;
+            info.remaining_today = Math.max(0, (info.max_daily_comments || 3) - info.reported_today);
+            commentsUserLimits[cleanUid] = info;
+            if (info.user_name) {
+              commentsUserLimits[info.user_name.toLowerCase()] = info;
+            }
+          });
+          updateCommentsLimitBanner();
+          renderCommentsTable(currentCommentsList, commentsSearchInput ? commentsSearchInput.value.trim() : "");
+        }
+
         commentIdsInput.value = comment_ids.join("\n");
         userIdsInput.value = user_ids.join("\n");
         accountCountInput.value = numAccounts;
+        if (dashboardActionTypeSelect) {
+          dashboardActionTypeSelect.value = actionValue;
+          updateRunButtonLabel();
+        }
         updateCounts();
 
         switchTab("dashboard");
-        showStatus(`Report job submitted successfully for ${comment_ids.length} comment(s) using ${numAccounts} account(s)!
+        showStatus(`${actionTitle} job submitted successfully for ${comment_ids.length} comment(s) using ${numAccounts} account(s)!
 Processing ID: ${processingId}
 Live execution batch logs are updating below...`, "success");
 
@@ -4506,12 +5468,31 @@ Live execution batch logs are updating below...`, "success");
         setTimeout(() => loadLogs(true), 20000);
       } catch (err) {
         const requestRef = processingId !== null ? ` Processing ID: ${processingId}.` : "";
-        alert(`Error reporting comments: ${err.message}${requestRef}`);
+        alert(`Error executing ${actionTitle.toLowerCase()}: ${err.message}${requestRef}`);
       } finally {
-        commentsReportBtn.disabled = selectedComments.size === 0;
-        commentsReportBtn.innerHTML = `<span>Report Selected (<span id="selected-count-btn">${selectedComments.size}</span>)</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`;
+        const count = selectedComments.size;
+        if (commentsReportBtn) {
+          commentsReportBtn.innerHTML = `<span>Report Selected (<span id="selected-count-btn">${count}</span>)</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`;
+        }
+        if (commentsUpvoteBtn) {
+          commentsUpvoteBtn.innerHTML = `<span>Upvote (<span id="upvote-count-btn">${count}</span>)</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>`;
+        }
+        if (commentsDownvoteBtn) {
+          commentsDownvoteBtn.innerHTML = `<span>Downvote (<span id="downvote-count-btn">${count}</span>)</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/></svg>`;
+        }
+        updateSelectionUI();
       }
-    });
+    }
+
+    if (commentsReportBtn) {
+      commentsReportBtn.addEventListener("click", () => executeCommentBatchAction("report_spam"));
+    }
+    if (commentsUpvoteBtn) {
+      commentsUpvoteBtn.addEventListener("click", () => executeCommentBatchAction("upvote"));
+    }
+    if (commentsDownvoteBtn) {
+      commentsDownvoteBtn.addEventListener("click", () => executeCommentBatchAction("downvote"));
+    }
 
     // ─────────────────────────────────────────────────────────────────
     // 4. USERS VIEW LOGIC
@@ -4733,6 +5714,380 @@ Live execution batch logs are updating below...`, "success");
       usersPaginationControls.innerHTML = buttonsHtml;
     }
 
+
+    // ─────────────────────────────────────────────────────────────────
+    // 4B. USER REPORT LIMITS LOGIC (SUPER ADMIN ONLY)
+    // ─────────────────────────────────────────────────────────────────
+    let allUserLimits = [];
+    let currentLimitsPage = 1;
+    const limitsPageSize = 20;
+    let activeLimitsFilter = "all"; // "all" | "custom" | "reported"
+    let limitsSearchQuery = "";
+    let limitsSearchDebounce = null;
+
+    const limitsTableBody = document.getElementById("limits-table-body");
+    const limitsSearchInput = document.getElementById("limits-search-input");
+    const limitsRefreshBtn = document.getElementById("limits-refresh-btn");
+    const limitsStatsPill = document.getElementById("limits-stats-pill");
+    const countLimitsAll = document.getElementById("count-limits-all");
+    const countLimitsCustom = document.getElementById("count-limits-custom");
+    const countLimitsReported = document.getElementById("count-limits-reported");
+    const limitsPaginationInfo = document.getElementById("limits-pagination-info");
+    const limitsPaginationControls = document.getElementById("limits-pagination-controls");
+
+    function showLimitsToast(message, isSuccess = true) {
+      const existing = document.querySelector(".limits-toast");
+      if (existing) existing.remove();
+
+      const toast = document.createElement("div");
+      toast.className = "limits-toast";
+      if (!isSuccess) {
+        toast.style.borderColor = "rgba(244, 63, 94, 0.4)";
+        toast.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.5), 0 0 16px rgba(244, 63, 94, 0.2)";
+      }
+      toast.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isSuccess ? '#34d399' : '#fda4af'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          ${isSuccess ? '<polyline points="20 6 9 17 4 12"/>' : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'}
+        </svg>
+        <span>${escapeHtml(message)}</span>
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(10px)";
+        setTimeout(() => toast.remove(), 320);
+      }, 3500);
+    }
+
+    async function loadUserLimits(isSilent = false) {
+      if (!isCurrentUserSuperAdmin()) return;
+      if (!isSilent && limitsRefreshBtn) {
+        limitsRefreshBtn.disabled = true;
+      }
+      if (!isSilent && limitsTableBody) {
+        limitsTableBody.innerHTML = `<tr><td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading user report limits from database...</td></tr>`;
+      }
+
+      try {
+        const query = limitsSearchInput ? limitsSearchInput.value.trim() : "";
+        const url = `/api/user-limits${query ? `?search=${encodeURIComponent(query)}` : ""}`;
+        const res = await authFetch(url);
+        if (!res.ok) {
+          if (res.status === 401) return;
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || "Failed to load user limits");
+        }
+
+        allUserLimits = data.users || [];
+        updateLimitsCounts();
+        renderUserLimitsTable();
+      } catch (err) {
+        if (!isSilent && limitsTableBody) {
+          limitsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color: var(--danger);">Error loading limits: ${escapeHtml(err.message)}</td></tr>`;
+        }
+      } finally {
+        if (limitsRefreshBtn) limitsRefreshBtn.disabled = false;
+      }
+    }
+    window.loadUserLimits = loadUserLimits;
+
+    function updateLimitsCounts() {
+      const totalAll = allUserLimits.length;
+      const totalCustom = allUserLimits.filter(u => u.is_custom).length;
+      const totalReported = allUserLimits.filter(u => (u.reported_today || 0) > 0).length;
+
+      if (limitsStatsPill) limitsStatsPill.textContent = `${totalAll} User${totalAll !== 1 ? 's' : ''}`;
+      if (countLimitsAll) countLimitsAll.textContent = totalAll;
+      if (countLimitsCustom) countLimitsCustom.textContent = totalCustom;
+      if (countLimitsReported) countLimitsReported.textContent = totalReported;
+    }
+
+    function filterUserLimits(filterType) {
+      activeLimitsFilter = filterType;
+      document.querySelectorAll("#tab-limits .billing-chip").forEach(c => c.classList.remove("active"));
+      const btn = document.getElementById(`filter-limits-${filterType}`);
+      if (btn) btn.classList.add("active");
+      currentLimitsPage = 1;
+      renderUserLimitsTable();
+    }
+    window.filterUserLimits = filterUserLimits;
+
+    function renderUserLimitsTable() {
+      if (!limitsTableBody) return;
+
+      const q = (limitsSearchInput ? limitsSearchInput.value.trim() : "").toLowerCase();
+      let filtered = allUserLimits.filter(u => {
+        if (q) {
+          const name = (u.user_name || "").toLowerCase();
+          const id = (u.user_id || "").toLowerCase();
+          if (!name.includes(q) && !id.includes(q)) return false;
+        }
+        if (activeLimitsFilter === "custom") return u.is_custom;
+        if (activeLimitsFilter === "reported") return (u.reported_today || 0) > 0;
+        return true;
+      });
+
+      if (!filtered.length) {
+        const msg = q
+          ? "No users found matching your search term."
+          : (activeLimitsFilter === "custom" ? "No custom user limits configured yet. All users currently use the default minimum of 3 comments/day." : "No users found in database.");
+        limitsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state">${escapeHtml(msg)}</td></tr>`;
+        if (limitsPaginationInfo) limitsPaginationInfo.textContent = "Showing 0 users";
+        if (limitsPaginationControls) limitsPaginationControls.innerHTML = "";
+        return;
+      }
+
+      const totalItems = filtered.length;
+      const totalAll = allUserLimits.length;
+
+      limitsTableBody.innerHTML = filtered.map((u, idx) => {
+        const rowNum = idx + 1;
+        const uid = String(u.user_id || u.id || "");
+        const uname = u.user_name || "—";
+        const currentLimit = Number(u.max_daily_comments || 3);
+        const reportedToday = Number(u.reported_today || 0);
+        const isCustom = Boolean(u.is_custom);
+        const firstLetter = (uname !== "—" ? uname.charAt(0) : "U").toUpperCase();
+
+        let pillClass = "safe";
+        if (reportedToday >= currentLimit) {
+          pillClass = "full";
+        } else if (reportedToday > 0 && reportedToday >= currentLimit - 1) {
+          pillClass = "warning";
+        }
+
+        const activeBadgeHtml = isCustom
+          ? `<span class="pill pill-success" style="font-weight: 700;">${currentLimit} / day</span>`
+          : `<span class="pill pill-accounts" style="font-size: 0.76rem;">3 / day (Default)</span>`;
+
+        return `
+          <tr id="limit-row-${uid}">
+            <td style="color: var(--muted);">${rowNum}</td>
+            <td>
+              <code style="font-family: 'JetBrains Mono', monospace; color: var(--accent); font-size: 0.85rem;">${escapeHtml(uid)}</code>
+            </td>
+            <td>
+              <div class="limit-user-card">
+                <div class="limit-user-avatar">${escapeHtml(firstLetter)}</div>
+                <div style="font-weight: 600; color: #f1f5f9;">${highlightText(uname, q)}</div>
+              </div>
+            </td>
+            <td style="text-align: center;">
+              <span class="limit-progress-pill ${pillClass}" title="${reportedToday} of ${currentLimit} comments reported today">
+                ${reportedToday} / ${currentLimit}
+              </span>
+            </td>
+            <td style="text-align: center;">
+              <div class="limit-stepper">
+                <button type="button" class="stepper-btn minus" id="btn-minus-${uid}" onclick="stepUserLimit('${escapeHtml(uid)}', -1)" ${currentLimit <= 3 ? 'disabled' : ''} title="Decrease limit">−</button>
+                <input type="number" id="limit-input-${uid}" class="limit-number-input" min="3" max="999" value="${currentLimit}" data-saved-limit="${currentLimit}" data-user-id="${escapeHtml(uid)}" data-user-name="${escapeHtml(uname)}" oninput="onLimitInputChange('${escapeHtml(uid)}')" />
+                <button type="button" class="stepper-btn plus" id="btn-plus-${uid}" onclick="stepUserLimit('${escapeHtml(uid)}', 1)" title="Increase limit">+</button>
+              </div>
+            </td>
+            <td style="text-align: center;" id="limit-badge-cell-${uid}">
+              ${activeBadgeHtml}
+            </td>
+            <td style="text-align: center;">
+              <button type="button" id="limit-apply-btn-${uid}" class="btn-action-apply" onclick="applyUserLimit('${escapeHtml(uid)}')" title="Apply daily limit for ${escapeHtml(uname)}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span>Apply</span>
+              </button>
+              ${isCustom ? `<button type="button" class="btn-action-reset-limit" onclick="resetUserLimit('${escapeHtml(uid)}')" title="Reset to default 3 comments/day">Reset</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      if (limitsPaginationInfo) {
+        if (totalItems === totalAll) {
+          limitsPaginationInfo.textContent = `Showing all ${totalItems} user${totalItems !== 1 ? 's' : ''}`;
+        } else {
+          limitsPaginationInfo.textContent = `Showing ${totalItems} of ${totalAll} user${totalAll !== 1 ? 's' : ''}`;
+        }
+      }
+      if (limitsPaginationControls) {
+        limitsPaginationControls.innerHTML = "";
+      }
+    }
+
+    function stepUserLimit(uid, delta) {
+      const input = document.getElementById(`limit-input-${uid}`);
+      if (!input) return;
+      let val = parseInt(input.value, 10);
+      if (isNaN(val)) val = 3;
+      val = Math.max(3, val + delta);
+      input.value = val;
+      onLimitInputChange(uid);
+    }
+    window.stepUserLimit = stepUserLimit;
+
+    function onLimitInputChange(uid) {
+      const input = document.getElementById(`limit-input-${uid}`);
+      const btnMinus = document.getElementById(`btn-minus-${uid}`);
+      const applyBtn = document.getElementById(`limit-apply-btn-${uid}`);
+      if (!input || !applyBtn) return;
+
+      let val = parseInt(input.value, 10);
+      if (isNaN(val) || val < 3) {
+        val = 3;
+      }
+
+      if (btnMinus) {
+        btnMinus.disabled = val <= 3;
+      }
+
+      const savedLimit = parseInt(input.getAttribute("data-saved-limit") || "3", 10);
+      if (val !== savedLimit) {
+        applyBtn.classList.add("highlighted");
+        applyBtn.innerHTML = `
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <span>Apply (${val})</span>
+        `;
+      } else {
+        applyBtn.classList.remove("highlighted");
+        applyBtn.innerHTML = `
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <span>Apply</span>
+        `;
+      }
+    }
+    window.onLimitInputChange = onLimitInputChange;
+
+    async function applyUserLimit(uid) {
+      const input = document.getElementById(`limit-input-${uid}`);
+      const applyBtn = document.getElementById(`limit-apply-btn-${uid}`);
+      if (!input || !applyBtn) return;
+
+      let maxComments = parseInt(input.value, 10);
+      if (isNaN(maxComments) || maxComments < 3) {
+        maxComments = 3;
+        input.value = 3;
+      }
+
+      const userName = input.getAttribute("data-user-name") || "";
+      const originalText = applyBtn.innerHTML;
+
+      applyBtn.disabled = true;
+      applyBtn.innerHTML = `<span class="spinner" style="width:11px; height:11px; border-width:2px; vertical-align:middle; margin-right:4px;"></span> Applying...`;
+
+      try {
+        const res = await authFetch("/api/user-limits", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: uid,
+            user_name: userName,
+            max_comments: maxComments,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "Failed to update user limit");
+        }
+
+        input.setAttribute("data-saved-limit", String(maxComments));
+        const userObj = allUserLimits.find(u => String(u.user_id || u.id) === String(uid));
+        if (userObj) {
+          userObj.max_daily_comments = maxComments;
+          userObj.is_custom = (maxComments !== 3);
+        }
+
+        applyBtn.classList.remove("highlighted");
+        applyBtn.classList.add("applied");
+        applyBtn.innerHTML = `<span>✓ Applied!</span>`;
+
+        const badgeCell = document.getElementById(`limit-badge-cell-${uid}`);
+        if (badgeCell) {
+          badgeCell.innerHTML = (maxComments !== 3)
+            ? `<span class="pill pill-success" style="font-weight: 700;">${maxComments} / day</span>`
+            : `<span class="pill pill-accounts" style="font-size: 0.76rem;">3 / day (Default)</span>`;
+        }
+
+        showLimitsToast(`✓ Daily limit for ${userName || `User ${uid}`} set to ${maxComments} comments/day.`, true);
+        updateLimitsCounts();
+
+        setTimeout(() => {
+          applyBtn.disabled = false;
+          applyBtn.classList.remove("applied");
+          applyBtn.innerHTML = `
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>Apply</span>
+          `;
+          renderUserLimitsTable();
+        }, 1600);
+      } catch (err) {
+        applyBtn.disabled = false;
+        applyBtn.innerHTML = originalText;
+        showLimitsToast(`Error: ${err.message}`, false);
+      }
+    }
+    window.applyUserLimit = applyUserLimit;
+
+    async function resetUserLimit(uid) {
+      if (!confirm(`Reset daily limit for this user back to default 3 comments/day?`)) {
+        return;
+      }
+
+      try {
+        const res = await authFetch("/api/user-limits/reset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: uid }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "Failed to reset limit");
+        }
+
+        const userObj = allUserLimits.find(u => String(u.user_id || u.id) === String(uid));
+        if (userObj) {
+          userObj.max_daily_comments = 3;
+          userObj.is_custom = false;
+        }
+
+        showLimitsToast("Daily limit reset to default 3 comments/day.", true);
+        updateLimitsCounts();
+        renderUserLimitsTable();
+      } catch (err) {
+        showLimitsToast(`Error: ${err.message}`, false);
+      }
+    }
+    window.resetUserLimit = resetUserLimit;
+
+    function renderLimitsPagination() {
+      if (limitsPaginationControls) {
+        limitsPaginationControls.innerHTML = "";
+      }
+    }
+
+    if (limitsSearchInput) {
+      limitsSearchInput.addEventListener("input", () => {
+        clearTimeout(limitsSearchDebounce);
+        limitsSearchDebounce = setTimeout(() => {
+          currentLimitsPage = 1;
+          renderUserLimitsTable();
+        }, 220);
+      });
+    }
+
+    if (limitsRefreshBtn) {
+      limitsRefreshBtn.addEventListener("click", () => loadUserLimits(false));
+    }
+
+
     // ─────────────────────────────────────────────────────────────────
     // 5. DASHBOARD FORM & LIVE BATCH LOGS
     // ─────────────────────────────────────────────────────────────────
@@ -4740,10 +6095,23 @@ Live execution batch logs are updating below...`, "success");
     const commentIdsInput = document.getElementById("comment-ids");
     const userIdsInput = document.getElementById("user-ids");
     const accountCountInput = document.getElementById("account-count");
+    const dashboardActionTypeSelect = document.getElementById("dashboard-action-type");
     const runButton = document.getElementById("run-button");
     const status = document.getElementById("status");
     const refreshLogsBtn = document.getElementById("refresh-logs-btn");
     const batchListContainer = document.getElementById("batch-list");
+
+    function updateRunButtonLabel() {
+      if (!runButton) return;
+      const act = (dashboardActionTypeSelect && dashboardActionTypeSelect.value) || "report_spam";
+      let actText = "reporting";
+      if (act === "upvote") actText = "upvote";
+      else if (act === "downvote") actText = "downvote";
+      runButton.innerHTML = `<span>Run ${actText} job</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7" /><polyline points="6 17 11 12 6 7" /></svg>`;
+    }
+    if (dashboardActionTypeSelect) {
+      dashboardActionTypeSelect.addEventListener("change", updateRunButtonLabel);
+    }
 
     function idsFrom(input) {
       return input.value.split(/\r?\n/).map(value => value.trim()).filter(Boolean);
@@ -5234,7 +6602,14 @@ Live execution batch logs are reloading...`, "success");
         return;
       }
 
-      const payload = { comment_ids, user_ids, number_of_accounts };
+      const actionType = (dashboardActionTypeSelect && dashboardActionTypeSelect.value) || "report_spam";
+      const payload = {
+        comment_ids,
+        user_ids,
+        number_of_accounts,
+        name: "ACTION_TYPE",
+        value: actionType,
+      };
       runButton.disabled = true;
       runButton.innerHTML = `<span class="spinner"></span><span>Starting job...</span>`;
       showStatus("Saving the request...", "success");
@@ -5287,7 +6662,8 @@ Live execution batch logs are reloading...`, "success");
           }
         }
 
-        showStatus(`Request saved successfully (Processing ID: ${processingId})\nReporting job submitted successfully (Status: ${lambdaStatus})\nLive execution batch logs are updating below...`, "success");
+        const actionLabel = actionType === "upvote" ? "Upvote" : (actionType === "downvote" ? "Downvote" : "Report");
+        showStatus(`Request saved successfully (Processing ID: ${processingId})\n${actionLabel} job submitted successfully (Status: ${lambdaStatus})\nLive execution batch logs are updating below...`, "success");
 
         await loadLogs(true);
         setTimeout(() => loadLogs(true), 2500);
@@ -5296,10 +6672,11 @@ Live execution batch logs are reloading...`, "success");
         setTimeout(() => loadLogs(true), 20000);
       } catch (error) {
         const requestRef = processingId !== null ? ` Processing ID: ${processingId}.` : "";
-        showStatus(`Could not start the reporting job: ${error.message}${requestRef}`, "error");
+        const actionLabel = actionType === "upvote" ? "upvote" : (actionType === "downvote" ? "downvote" : "reporting");
+        showStatus(`Could not start the ${actionLabel} job: ${error.message}${requestRef}`, "error");
       } finally {
         runButton.disabled = false;
-        runButton.innerHTML = `<span>Run reporting job</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`;
+        updateRunButtonLabel();
       }
     });
 
