@@ -57,6 +57,30 @@ ECS_TRACKER_API_URL = os.getenv(
 ECS_CLEANUP_TOKEN = os.getenv("ECS_CLEANUP_TOKEN", "##ECSDELETE##").strip()
 
 
+def _get_db_connection(timeout: int = 15):
+    """Obtain a pyodbc connection, automatically falling back to available ODBC drivers if needed."""
+    if pyodbc is None:
+        raise RuntimeError("pyodbc is not installed")
+    if not DB_CONNECTION_STRING:
+        raise RuntimeError("DB_CONNECTION_STRING is not configured")
+
+    try:
+        return pyodbc.connect(DB_CONNECTION_STRING, timeout=timeout)
+    except pyodbc.InterfaceError as initial_err:
+        try:
+            installed = pyodbc.drivers()
+            for d in ["ODBC Driver 18 for SQL Server", "ODBC Driver 17 for SQL Server", "SQL Server"]:
+                if d in installed:
+                    new_cs = re.sub(r"Driver=\{[^}]+\}", f"Driver={{{d}}}", DB_CONNECTION_STRING)
+                    if d == "SQL Server":
+                        new_cs = re.sub(r";Encrypt=[^;]+", "", new_cs)
+                        new_cs = re.sub(r";TrustServerCertificate=[^;]+", "", new_cs)
+                        new_cs = re.sub(r";Server=tcp:", ";Server=", new_cs)
+                    return pyodbc.connect(new_cs, timeout=timeout)
+        except Exception:
+            pass
+        raise initial_err
+
 
 # ---------------------------------------------------------------------------
 # Super Admin Authentication (Exclusive access to Billing section)
@@ -501,10 +525,32 @@ def _validate_payload(payload: object) -> dict[str, object]:
     if number_of_accounts < 1:
         raise ValueError("number_of_accounts must be at least 1")
 
+    # Extract action value from "value" or "action" (default: "report_spam")
+    raw_action = payload.get("value") or payload.get("action")
+    if not raw_action:
+        if payload.get("upvote"):
+            raw_action = "upvote"
+        elif payload.get("downvote"):
+            raw_action = "downvote"
+        else:
+            raw_action = "report_spam"
+
+    action_str = str(raw_action).strip().lower()
+    if action_str in ("report", "report_spam", "spam", "reported"):
+        action_value = "report_spam"
+    elif action_str in ("upvote", "upvoted"):
+        action_value = "upvote"
+    elif action_str in ("downvote", "downvoted"):
+        action_value = "downvote"
+    else:
+        action_value = "report_spam"
+
     return {
         "comment_ids": comment_ids,
         "user_ids": user_ids,
         "number_of_accounts": number_of_accounts,
+        "name": "ACTION_TYPE",
+        "value": action_value,
     }
 
 
@@ -515,19 +561,22 @@ def _save_processing_request(payload: dict[str, object]) -> int:
     if not DB_CONNECTION_STRING:
         raise RuntimeError("DB_CONNECTION_STRING is not configured")
 
-    insert_sql = """
-        INSERT INTO dbo.InvestingUIProcessing
-            (NumberOfAccounts, CommentIds, UserIds)
-        OUTPUT INSERTED.Id
-        VALUES (?, ?, ?)
-    """
-    with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
+    with _get_db_connection(timeout=15) as connection:
         cursor = connection.cursor()
-        cursor.execute(
-            insert_sql,
+        cursor.execute("""
+            IF COL_LENGTH('dbo.InvestingUIProcessing', 'ActionType') IS NULL
+                ALTER TABLE dbo.InvestingUIProcessing ADD ActionType NVARCHAR(30) NULL;
+        """)
+        cursor.execute("""
+            INSERT INTO dbo.InvestingUIProcessing
+                (NumberOfAccounts, CommentIds, UserIds, ActionType)
+            OUTPUT INSERTED.Id
+            VALUES (?, ?, ?, ?)
+        """,
             payload["number_of_accounts"],
             json.dumps(payload["comment_ids"], separators=(",", ":")),
             json.dumps(payload["user_ids"], separators=(",", ":")),
+            payload.get("value", "report_spam"),
         )
         row = cursor.fetchone()
         connection.commit()
@@ -547,7 +596,7 @@ def _fetch_batches_from_tracker(days: int = 3):
         WHERE starting_date >= DATEADD(day, -?, sysdatetime())
         ORDER BY starting_date DESC, task_id DESC
     """
-    with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
+    with _get_db_connection(timeout=15) as connection:
         cursor = connection.cursor()
         cursor.execute(query, days)
         rows = cursor.fetchall()
@@ -695,7 +744,7 @@ def _fetch_distinct_comment_users(hours: int = 6) -> list[dict]:
     users_by_id = {}
     users_by_name = {}
 
-    with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
+    with _get_db_connection(timeout=15) as connection:
         cursor = connection.cursor()
 
         # 1. Fetch from dbo.users (configured users table)
@@ -823,7 +872,7 @@ def _fetch_24h_comments(
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """
 
-    with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
+    with _get_db_connection(timeout=15) as connection:
         cursor = connection.cursor()
         cursor.execute(count_query, *params)
         total_count = cursor.fetchone()[0]
@@ -841,7 +890,10 @@ def _fetch_24h_comments(
         comment_text = row[5] or ""
         user_name = row[6] or ""
 
-        fetched_at_str = fetched_at.strftime("%Y-%m-%d %H:%M:%S") if fetched_at else ""
+        if hasattr(fetched_at, "strftime"):
+            fetched_at_str = fetched_at.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            fetched_at_str = str(fetched_at) if fetched_at else ""
         comment_id = _extract_comment_id(url)
 
         comments.append({
@@ -877,7 +929,7 @@ def _update_comments_status(ids: list[int] = None, comment_ids: list[str] = None
         return 0
 
     updated_count = 0
-    with pyodbc.connect(DB_CONNECTION_STRING, timeout=15) as connection:
+    with _get_db_connection(timeout=15) as connection:
         cursor = connection.cursor()
 
         if ids:
@@ -907,7 +959,7 @@ def get_comments():
         page_size = max(1, min(100, int(request.args.get("page_size", 10))))
         hours = max(1, int(request.args.get("hours", 168)))
         status_filter = request.args.get("status", "").strip()
-        
+
         # Support multiple ?user=... params, or comma-separated ?user=A,B, or ?users=...
         user_filters = request.args.getlist("user") or request.args.getlist("users")
         if not user_filters:
@@ -925,7 +977,10 @@ def get_comments():
             user_filter=user_filters,
             search_query=search_query
         )
-        return jsonify({"success": True, **data})
+        uids = [str(c["user_id"]).strip() for c in data.get("comments", []) if c.get("user_id")]
+        user_limits_map = _get_user_limits_map(uids)
+
+        return jsonify({"success": True, **data, "user_limits": user_limits_map})
     except Exception as error:
         app.logger.exception("Could not fetch comments from SQL Server")
         return jsonify({
@@ -1166,15 +1221,550 @@ def delete_user_body_endpoint():
         }), 500
 
 
+# Daily User Comment Report Limits (Super Admin Only)
+# ---------------------------------------------------------------------------
+_USER_LIMITS_FILE = BASE_DIR / ".user_limits.json"
+
+
+def _load_cached_user_limits() -> dict[str, dict]:
+    """Load cached custom user daily limits from disk."""
+    if not _USER_LIMITS_FILE.exists():
+        return {}
+    try:
+        with open(_USER_LIMITS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, dict):
+                return data
+    except Exception:
+        pass
+    return {}
+
+
+def _save_cached_user_limits(limits: dict[str, dict]):
+    """Persist custom user daily limits to disk."""
+    try:
+        with open(_USER_LIMITS_FILE, "w", encoding="utf-8") as f:
+            json.dump(limits, f, indent=2)
+    except Exception:
+        pass
+
+
+def _init_user_limits_table():
+    """Ensure dbo.user_report_limits table exists in SQL Server."""
+    if pyodbc is None or not DB_CONNECTION_STRING:
+        return
+    try:
+        with _get_db_connection(timeout=10) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'user_report_limits')
+                BEGIN
+                    CREATE TABLE dbo.user_report_limits (
+                        user_id BIGINT PRIMARY KEY,
+                        user_name NVARCHAR(255),
+                        max_daily_comments INT NOT NULL DEFAULT 3,
+                        updated_at DATETIME DEFAULT GETDATE(),
+                        updated_by NVARCHAR(255)
+                    );
+                END
+            """)
+            connection.commit()
+    except Exception as e:
+        app.logger.warning(f"Could not initialize dbo.user_report_limits: {e}")
+
+
+def _get_today_reported_counts_by_user() -> dict[str, int]:
+    """Calculate the number of comments reported in the last 24 hours / today per user ID from dbo.InvestingUIProcessing."""
+    counts = {}
+    if pyodbc is None or not DB_CONNECTION_STRING:
+        return counts
+    try:
+        with _get_db_connection(timeout=10) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT UserIds
+                FROM dbo.InvestingUIProcessing
+                WHERE ActionType = 'report_spam'
+                  AND (StartingDate >= DATEADD(hour, -24, sysdatetime()) OR CAST(StartingDate AS DATE) = CAST(GETDATE() AS DATE))
+            """)
+            rows = cursor.fetchall()
+            for r in rows:
+                raw = r[0]
+                if not raw:
+                    continue
+                try:
+                    raw_str = raw.strip()
+                    if raw_str.startswith("["):
+                        uids = json.loads(raw_str)
+                    else:
+                        uids = [x.strip() for x in raw_str.split("\n") if x.strip()]
+                    for u in uids:
+                        uid_clean = str(u).strip()
+                        if uid_clean:
+                            counts[uid_clean] = counts.get(uid_clean, 0) + 1
+                except Exception:
+                    pass
+    except Exception as e:
+        app.logger.warning(f"Could not query today reported counts: {e}")
+    return counts
+
+
+def _get_user_limits_map(user_ids: list[str] = None) -> dict[str, dict]:
+    """Return a fast lookup dictionary of daily limits and reported counts for users."""
+    custom_limits = _load_cached_user_limits()
+    if pyodbc and DB_CONNECTION_STRING:
+        try:
+            with _get_db_connection(timeout=10) as connection:
+                cursor = connection.cursor()
+                cursor.execute("""
+                    SELECT user_id, user_name, max_daily_comments, updated_at, updated_by
+                    FROM dbo.user_report_limits
+                """)
+                for r in cursor.fetchall():
+                    uid = str(r[0]).strip()
+                    uname = r[1] or ""
+                    limit_val = int(r[2]) if r[2] is not None else 3
+                    dt_str = r[3].strftime("%Y-%m-%d %H:%M:%S") if r[3] else ""
+                    up_by = r[4] or "superadmin"
+                    custom_limits[uid] = {
+                        "user_id": uid,
+                        "user_name": uname,
+                        "max_daily_comments": max(3, limit_val),
+                        "updated_at": dt_str,
+                        "updated_by": up_by,
+                        "is_custom": True,
+                    }
+        except Exception as e:
+            app.logger.warning(f"Could not read dbo.user_report_limits in _get_user_limits_map: {e}")
+
+    today_counts = _get_today_reported_counts_by_user()
+    result = {}
+
+    def _add_user_record(uid: str, uname: str = ""):
+        uid_clean = str(uid).strip()
+        if not uid_clean:
+            return
+
+        limit_data = custom_limits.get(uid_clean)
+        if not limit_data and uname:
+            for cl in custom_limits.values():
+                if cl.get("user_name", "").lower() == uname.lower():
+                    limit_data = cl
+                    break
+
+        if limit_data:
+            max_limit = max(3, int(limit_data.get("max_daily_comments", 3)))
+            is_custom = True
+            resolved_name = limit_data.get("user_name") or uname
+        else:
+            max_limit = 3
+            is_custom = False
+            resolved_name = uname
+
+        reported = today_counts.get(uid_clean, 0)
+        remaining = max(0, max_limit - reported)
+
+        rec = {
+            "user_id": uid_clean,
+            "user_name": resolved_name,
+            "max_daily_comments": max_limit,
+            "reported_today": reported,
+            "remaining_today": remaining,
+            "is_custom": is_custom,
+            "reset_hours": 24,
+        }
+        result[uid_clean] = rec
+        if resolved_name:
+            result[resolved_name.lower()] = rec
+
+    if user_ids:
+        for u in user_ids:
+            _add_user_record(str(u))
+
+    for uid, cl in custom_limits.items():
+        _add_user_record(uid, cl.get("user_name") or "")
+
+    for uid in today_counts.keys():
+        if uid not in result:
+            _add_user_record(uid)
+
+    return result
+
+
+def _fetch_user_limits(search: str = "") -> dict:
+    """Fetch all users along with their configured daily reporting limits and today's report count."""
+    _init_user_limits_table()
+
+    # 1. Fetch base users (from dbo.users merged with distinct users from dbo.comment_urls)
+    try:
+        all_users = _fetch_distinct_comment_users(hours=168)
+    except Exception:
+        all_users = []
+
+    # Fallback to dbo.users direct fetch if distinct comment users failed or returned empty
+    if not all_users and pyodbc and DB_CONNECTION_STRING:
+        try:
+            with _get_db_connection(timeout=10) as connection:
+                cursor = connection.cursor()
+                cursor.execute("SELECT id, user_name FROM dbo.users ORDER BY user_name ASC")
+                all_users = [{"user_id": str(r[0]), "user_name": r[1] or ""} for r in cursor.fetchall()]
+        except Exception:
+            all_users = []
+
+    # 2. Fetch custom limits from dbo.user_report_limits
+    custom_limits = _load_cached_user_limits()
+    if pyodbc and DB_CONNECTION_STRING:
+        try:
+            with _get_db_connection(timeout=10) as connection:
+                cursor = connection.cursor()
+                cursor.execute("""
+                    SELECT user_id, user_name, max_daily_comments, updated_at, updated_by
+                    FROM dbo.user_report_limits
+                """)
+                for r in cursor.fetchall():
+                    uid = str(r[0]).strip()
+                    uname = r[1] or ""
+                    limit_val = int(r[2]) if r[2] is not None else 3
+                    dt_str = r[3].strftime("%Y-%m-%d %H:%M:%S") if r[3] else ""
+                    up_by = r[4] or "superadmin"
+                    custom_limits[uid] = {
+                        "user_id": uid,
+                        "user_name": uname,
+                        "max_daily_comments": max(3, limit_val),
+                        "updated_at": dt_str,
+                        "updated_by": up_by,
+                        "is_custom": True,
+                    }
+            _save_cached_user_limits(custom_limits)
+        except Exception as e:
+            app.logger.warning(f"Could not read dbo.user_report_limits: {e}")
+
+    # 3. Fetch today's reported counts
+    today_counts = _get_today_reported_counts_by_user()
+
+    # 4. Merge and build user entries
+    user_map = {}
+    for u in all_users:
+        uid = str(u.get("user_id") or u.get("id") or "").strip()
+        uname = (u.get("user_name") or "").strip()
+        if not uid and not uname:
+            continue
+        key = uid if uid else uname.lower()
+        if key not in user_map:
+            user_map[key] = {
+                "id": uid,
+                "user_id": uid,
+                "user_name": uname,
+            }
+        else:
+            if not user_map[key].get("user_name") and uname:
+                user_map[key]["user_name"] = uname
+            if not user_map[key].get("user_id") and uid:
+                user_map[key]["user_id"] = uid
+                user_map[key]["id"] = uid
+
+    # Include any custom limit entries that might not be in the users table yet
+    for uid, cl in custom_limits.items():
+        if uid not in user_map:
+            user_map[uid] = {
+                "id": uid,
+                "user_id": uid,
+                "user_name": cl.get("user_name") or "",
+            }
+
+    results = []
+    custom_count = 0
+    for key, u in user_map.items():
+        uid = u.get("user_id", "").strip()
+        uname = u.get("user_name", "").strip()
+
+        # Check custom limit by user_id first, then case-insensitive user_name
+        limit_data = custom_limits.get(uid)
+        if not limit_data and uname:
+            for cl in custom_limits.values():
+                if cl.get("user_name", "").lower() == uname.lower():
+                    limit_data = cl
+                    break
+
+        if limit_data:
+            max_limit = max(3, int(limit_data.get("max_daily_comments", 3)))
+            is_custom = True
+            updated_at = limit_data.get("updated_at") or ""
+            updated_by = limit_data.get("updated_by") or ""
+            custom_count += 1
+        else:
+            max_limit = 3
+            is_custom = False
+            updated_at = ""
+            updated_by = ""
+
+        reported_today = today_counts.get(uid, 0)
+        remaining = max(0, max_limit - reported_today)
+
+        results.append({
+            "id": uid,
+            "user_id": uid,
+            "user_name": uname,
+            "max_daily_comments": max_limit,
+            "default_limit": 3,
+            "is_custom": is_custom,
+            "reported_today": reported_today,
+            "remaining_today": remaining,
+            "updated_at": updated_at,
+            "updated_by": updated_by,
+        })
+
+    # Sort: custom limits first, then alphabetical by user_name
+    results.sort(key=lambda x: (not x["is_custom"], (x["user_name"].lower() if x["user_name"] else x["user_id"])))
+
+    # Apply search filter
+    if search:
+        s_lower = search.strip().lower()
+        results = [
+            x for x in results
+            if s_lower in x["user_name"].lower() or s_lower in x["user_id"].lower()
+        ]
+
+    return {
+        "users": results,
+        "total": len(results),
+        "custom_count": custom_count,
+        "default_min": 3,
+    }
+
+
+def _save_user_limit(user_id: int, user_name: str, max_comments: int, updated_by: str = "superadmin") -> tuple[bool, str, dict]:
+    """Save or update the maximum daily comments allowed for a user."""
+    if max_comments < 3:
+        return False, "Minimum allowed daily limit is 3 comments per user.", {}
+
+    _init_user_limits_table()
+
+    saved_user = {
+        "user_id": str(user_id),
+        "user_name": user_name,
+        "max_daily_comments": max_comments,
+        "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "updated_by": updated_by,
+        "is_custom": True,
+    }
+
+    # 1. Update local cache
+    cached = _load_cached_user_limits()
+    cached[str(user_id)] = saved_user
+    _save_cached_user_limits(cached)
+
+    # 2. Update SQL Server dbo.user_report_limits
+    if pyodbc is not None and DB_CONNECTION_STRING:
+        try:
+            with _get_db_connection(timeout=15) as connection:
+                cursor = connection.cursor()
+                cursor.execute("""
+                    MERGE dbo.user_report_limits AS target
+                    USING (SELECT ? AS user_id, ? AS user_name, ? AS max_daily_comments, ? AS updated_by) AS source
+                    ON (target.user_id = source.user_id)
+                    WHEN MATCHED THEN
+                        UPDATE SET target.max_daily_comments = source.max_daily_comments,
+                                   target.user_name = source.user_name,
+                                   target.updated_at = GETDATE(),
+                                   target.updated_by = source.updated_by
+                    WHEN NOT MATCHED THEN
+                        INSERT (user_id, user_name, max_daily_comments, updated_at, updated_by)
+                        VALUES (source.user_id, source.user_name, source.max_daily_comments, GETDATE(), source.updated_by);
+                """, user_id, user_name, max_comments, updated_by)
+                connection.commit()
+        except Exception as e:
+            app.logger.warning(f"Could not persist limit in dbo.user_report_limits (cached locally): {e}")
+
+    return True, f"Daily limit for {user_name or f'ID {user_id}'} set to {max_comments} comments/day.", saved_user
+
+
+def _reset_user_limit(user_id: int) -> tuple[bool, str]:
+    """Reset a user's daily limit back to default 3."""
+    cached = _load_cached_user_limits()
+    cached.pop(str(user_id), None)
+    _save_cached_user_limits(cached)
+
+    if pyodbc is not None and DB_CONNECTION_STRING:
+        try:
+            with _get_db_connection(timeout=10) as connection:
+                cursor = connection.cursor()
+                cursor.execute("DELETE FROM dbo.user_report_limits WHERE user_id = ?", user_id)
+                connection.commit()
+        except Exception as e:
+            app.logger.warning(f"Could not delete from dbo.user_report_limits: {e}")
+
+    return True, "Daily limit reset to default (3 comments/day)."
+
+
+def _check_daily_report_limits(user_ids: list[str]) -> tuple[bool, str]:
+    """Verify that reporting these user_ids does not exceed each user's max daily limit."""
+    if not user_ids:
+        return True, ""
+    try:
+        # Count requested per user_id in this payload
+        requested_counts = {}
+        for uid in user_ids:
+            uid_str = str(uid).strip()
+            if uid_str:
+                requested_counts[uid_str] = requested_counts.get(uid_str, 0) + 1
+
+        limits_map = _get_user_limits_map(list(requested_counts.keys()))
+
+        for uid, req_cnt in requested_counts.items():
+            info = limits_map.get(uid) or {}
+            max_limit = info.get("max_daily_comments", 3)
+            user_name = info.get("user_name", "")
+            already = info.get("reported_today", 0)
+
+            if already + req_cnt > max_limit:
+                name_disp = f"'{user_name}' " if user_name else ""
+                return False, (
+                    f"Daily reporting limit reached for user {name_disp}(ID: {uid}). "
+                    f"Daily limit of {max_limit} is completed. All of its limit is reached. "
+                    f"Already reported today: {already}, requested: {req_cnt}. "
+                    f"Limit will be reset after 24 hours."
+                )
+    except Exception as e:
+        app.logger.warning(f"Error checking daily report limits: {e}")
+    return True, ""
+
+
+@app.get("/api/user-limits/status")
+@require_auth
+def get_user_limits_status():
+    """Fetch user daily reporting limits and today's reported counts (accessible to any authenticated user)."""
+    try:
+        user_ids = request.args.getlist("user_id") or request.args.getlist("user_ids")
+        if not user_ids:
+            single = (request.args.get("user_id") or request.args.get("user_ids") or "").strip()
+            if single:
+                user_ids = [u.strip() for u in single.split(",") if u.strip()]
+        data = _get_user_limits_map(user_ids if user_ids else None)
+        return jsonify({"success": True, "limits": data})
+    except Exception as error:
+        app.logger.exception("Could not fetch user limits status")
+        return jsonify({"success": False, "error": str(error)}), 500
+
+
+@app.get("/api/user-limits")
+@require_super_admin
+def get_user_limits():
+    """Fetch all users and their daily reporting limits (Super Admin only)."""
+    try:
+        search = request.args.get("search", "").strip()
+        data = _fetch_user_limits(search=search)
+        return jsonify({"success": True, **data})
+    except Exception as error:
+        app.logger.exception("Could not fetch user limits")
+        return jsonify({
+            "success": False,
+            "error": f"Error loading user limits: {str(error)}"
+        }), 500
+
+
+@app.post("/api/user-limits")
+@require_super_admin
+def update_user_limit():
+    """Update the maximum comments per day for a user (Super Admin only)."""
+    try:
+        data = request.get_json(silent=True) or {}
+        raw_user_id = str(data.get("user_id") or data.get("id") or "").strip()
+        user_name = str(data.get("user_name") or data.get("name") or "").strip()
+        raw_max = data.get("max_comments") if data.get("max_comments") is not None else data.get("max_daily_comments", data.get("limit"))
+
+        if not raw_user_id or not raw_user_id.isdigit():
+            return jsonify({
+                "success": False,
+                "error": "Valid positive numeric user ID is required."
+            }), 400
+
+        user_id = int(raw_user_id)
+
+        try:
+            max_comments = int(raw_max)
+        except (TypeError, ValueError):
+            return jsonify({
+                "success": False,
+                "error": "Maximum comments count must be a valid integer."
+            }), 400
+
+        if max_comments < 3:
+            return jsonify({
+                "success": False,
+                "error": "Minimum allowed comments count is 3 per day."
+            }), 400
+
+        token = _get_bearer_token()
+        _, session = _is_valid_token(token)
+        updated_by = (session or {}).get("email", "superadmin")
+
+        success, message, saved_user = _save_user_limit(user_id, user_name, max_comments, updated_by=updated_by)
+        if not success:
+            return jsonify({"success": False, "error": message}), 400
+
+        return jsonify({
+            "success": True,
+            "message": message,
+            "user": saved_user,
+        }), 200
+    except Exception as error:
+        app.logger.exception("Could not update user limit")
+        return jsonify({
+            "success": False,
+            "error": f"Error updating user limit: {str(error)}"
+        }), 500
+
+
+@app.post("/api/user-limits/reset")
+@require_super_admin
+def reset_user_limit_endpoint():
+    """Reset a user limit back to default 3 (Super Admin only)."""
+    try:
+        data = request.get_json(silent=True) or {}
+        raw_user_id = str(data.get("user_id") or data.get("id") or "").strip()
+        if not raw_user_id or not raw_user_id.isdigit():
+            return jsonify({
+                "success": False,
+                "error": "Valid numeric user ID is required."
+            }), 400
+        user_id = int(raw_user_id)
+        success, message = _reset_user_limit(user_id)
+        return jsonify({"success": True, "message": message}), 200
+    except Exception as error:
+        app.logger.exception("Could not reset user limit")
+        return jsonify({
+            "success": False,
+            "error": f"Error resetting limit: {str(error)}"
+        }), 500
+
+
+
+
 @app.post("/api/store")
 @require_auth
 def store_processing_request():
     try:
         payload = _validate_payload(request.get_json(silent=True))
+        action_val = payload.get("value", "report_spam")
+        if action_val in ("report_spam", "report"):
+            allowed, limit_err = _check_daily_report_limits(payload.get("user_ids", []))
+            if not allowed:
+                return jsonify({"error": limit_err}), 400
         processing_id = _save_processing_request(payload)
-        # Automatically mark reported comment URLs in dbo.comment_urls
+        # Automatically mark reported / upvoted / downvoted comment URLs in dbo.comment_urls
         try:
-            _update_comments_status(comment_ids=payload.get("comment_ids", []), new_status="reported")
+            status_map = {
+                "report_spam": "reported",
+                "report": "reported",
+                "upvote": "upvoted",
+                "downvote": "downvoted",
+            }
+            new_status = status_map.get(action_val, "reported")
+            _update_comments_status(
+                comment_ids=payload.get("comment_ids", []),
+                new_status=new_status,
+            )
         except Exception:
             app.logger.warning("Could not auto-update comment status in comment_urls table")
     except ValueError as error:
@@ -1198,6 +1788,11 @@ def report_comments():
     """Forward a validated reporting payload server-side to avoid browser CORS failures."""
     try:
         payload = _validate_payload(request.get_json(silent=True))
+        action_val = payload.get("value", "report_spam")
+        if action_val in ("report_spam", "report"):
+            allowed, limit_err = _check_daily_report_limits(payload.get("user_ids", []))
+            if not allowed:
+                return jsonify({"error": limit_err}), 400
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
 
@@ -1400,7 +1995,7 @@ def run_scraper_endpoint():
             print("=" * 70 + "\n", flush=True)
             app.logger.info(f"[SCRAPER] POST users={users}")
 
-            # Build the EXACT clean payload matching Postman format
+            # Build the EXACT clean payload matching Postman forma
             clean_payload = {
                 "users": users,
                 "user_names": resolved_names,
@@ -1422,7 +2017,7 @@ def run_scraper_endpoint():
                         )
                         print(f"Forwarding to: {url}", flush=True)
                         print(f"Payload: {json.dumps(body)}", flush=True)
-                        
+
                         with urllib.request.urlopen(req, timeout=50) as resp:
                             print("\n" + "=" * 70, flush=True)
                             print(">>> [SCRAPER RESPONSE] <<<", flush=True)
