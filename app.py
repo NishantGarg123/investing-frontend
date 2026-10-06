@@ -583,21 +583,97 @@ def _save_processing_request(payload: dict[str, object]) -> int:
     return int(row[0])
 
 
+def _normalize_action_type(raw_val: object) -> str:
+    """Normalize action type to standard keys: report_spam, upvote, or downvote."""
+    if not raw_val:
+        return "report_spam"
+    val = str(raw_val).strip().lower()
+    if "upvote" in val:
+        return "upvote"
+    if "downvote" in val:
+        return "downvote"
+    if "report" in val or "spam" in val:
+        return "report_spam"
+    return "report_spam"
+
+
+def _extract_id_tokens(val: object) -> set[str]:
+    """Extract numeric/string tokens from comma-separated strings or JSON arrays."""
+    if not val:
+        return set()
+    try:
+        parsed = json.loads(str(val))
+        if isinstance(parsed, list):
+            return {str(x).strip() for x in parsed if str(x).strip()}
+    except Exception:
+        pass
+    return {str(x).strip() for x in re.findall(r'\d+', str(val)) if str(x).strip()}
+
+
 def _fetch_batches_from_tracker(days: int = 3):
-    """Fetch rows from BackendProcessingTracker from the last N days (default 3) and group into batches."""
+    """Fetch rows from BackendProcessingTracker from the last N days (default 3) and group into batches with action types."""
     if pyodbc is None:
         raise RuntimeError("pyodbc is not installed")
     if not DB_CONNECTION_STRING:
         raise RuntimeError("DB_CONNECTION_STRING is not configured")
 
-    query = """
-        SELECT task_id, account_email, comment_ids, user_ids, status, is_success, starting_date
-        FROM dbo.BackendProcessingTracker
-        WHERE starting_date >= DATEADD(day, -?, sysdatetime())
-        ORDER BY starting_date DESC, task_id DESC
-    """
     with _get_db_connection(timeout=15) as connection:
         cursor = connection.cursor()
+
+        # Check if an action type column exists on BackendProcessingTracker
+        tracker_action_col = None
+        try:
+            cursor.execute("""
+                SELECT COLUMN_NAME 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_NAME = 'BackendProcessingTracker'
+            """)
+            tracker_cols = [str(r[0]).lower() for r in cursor.fetchall()]
+            for possible in ("action_type", "actiontype", "action", "task_type", "tasktype"):
+                if possible in tracker_cols:
+                    tracker_action_col = possible
+                    break
+        except Exception:
+            tracker_action_col = None
+
+        # Fetch recent UI processing requests for action matching fallback
+        ui_requests = []
+        try:
+            cursor.execute("""
+                SELECT CommentIds, UserIds, ActionType, StartingDate
+                FROM dbo.InvestingUIProcessing
+                WHERE StartingDate >= DATEADD(day, -?, sysdatetime())
+                ORDER BY StartingDate DESC
+            """, days + 1)
+            for urow in cursor.fetchall():
+                c_raw = str(urow[0] or "").strip()
+                u_raw = str(urow[1] or "").strip()
+                act_raw = str(urow[2] or "").strip()
+                s_date = urow[3]
+                ui_requests.append({
+                    "comment_tokens": _extract_id_tokens(c_raw),
+                    "user_tokens": _extract_id_tokens(u_raw),
+                    "action_type": _normalize_action_type(act_raw),
+                    "starting_date": s_date
+                })
+        except Exception:
+            pass
+
+        # Query BackendProcessingTracker
+        if tracker_action_col:
+            query = f"""
+                SELECT task_id, account_email, comment_ids, user_ids, status, is_success, starting_date, {tracker_action_col}
+                FROM dbo.BackendProcessingTracker
+                WHERE starting_date >= DATEADD(day, -?, sysdatetime())
+                ORDER BY starting_date DESC, task_id DESC
+            """
+        else:
+            query = """
+                SELECT task_id, account_email, comment_ids, user_ids, status, is_success, starting_date
+                FROM dbo.BackendProcessingTracker
+                WHERE starting_date >= DATEADD(day, -?, sysdatetime())
+                ORDER BY starting_date DESC, task_id DESC
+            """
         cursor.execute(query, days)
         rows = cursor.fetchall()
 
@@ -613,6 +689,32 @@ def _fetch_batches_from_tracker(days: int = 3):
         is_success = row[5] or ""
         starting_date = row[6]
 
+        row_action_type = None
+        if tracker_action_col and len(row) > 7 and row[7]:
+            row_action_type = _normalize_action_type(row[7])
+
+        if not row_action_type and ui_requests:
+            c_tokens = _extract_id_tokens(comment_ids)
+            u_tokens = _extract_id_tokens(user_ids)
+            best_match = None
+            best_diff = 9999999
+
+            for ureq in ui_requests:
+                c_overlap = bool(c_tokens and ureq["comment_tokens"] and (c_tokens == ureq["comment_tokens"] or c_tokens.intersection(ureq["comment_tokens"])))
+                u_overlap = bool(u_tokens and ureq["user_tokens"] and (u_tokens == ureq["user_tokens"] or u_tokens.intersection(ureq["user_tokens"])))
+                
+                if (c_overlap or u_overlap) and ureq["starting_date"] and starting_date:
+                    diff = abs((ureq["starting_date"] - starting_date).total_seconds())
+                    if diff < best_diff and diff <= 7200:
+                        best_diff = diff
+                        best_match = ureq["action_type"]
+
+            if best_match:
+                row_action_type = best_match
+
+        if not row_action_type:
+            row_action_type = "report_spam"
+
         start_dt_str = starting_date.strftime("%Y-%m-%d %H:%M:%S") if starting_date else ""
 
         is_same = False
@@ -622,7 +724,12 @@ def _fetch_batches_from_tracker(days: int = 3):
                 if (current_batch["_last_date"] and starting_date)
                 else 999999
             )
-            if time_diff <= 60 and current_batch["comment_ids"] == comment_ids and current_batch["user_ids"] == user_ids:
+            if (
+                time_diff <= 60 
+                and current_batch["comment_ids"] == comment_ids 
+                and current_batch["user_ids"] == user_ids
+                and current_batch.get("action_type") == row_action_type
+            ):
                 is_same = True
 
         succ_match = re.search(r"success:\s*(\d+)", is_success, re.IGNORECASE)
@@ -659,6 +766,7 @@ def _fetch_batches_from_tracker(days: int = 3):
             "success_count": s_count,
             "failure_count": f_count,
             "starting_date": start_dt_str,
+            "action_type": row_action_type,
         }
 
         if is_same:
@@ -675,6 +783,7 @@ def _fetch_batches_from_tracker(days: int = 3):
                 "_last_date": starting_date,
                 "comment_ids": comment_ids,
                 "user_ids": user_ids,
+                "action_type": row_action_type,
                 "total_accounts": 1,
                 "total_success": s_count,
                 "total_failure": f_count,

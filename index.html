@@ -1365,6 +1365,24 @@
       gap: 4px;
     }
 
+    .pill-action-report {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .pill-action-upvote {
+      background: rgba(2, 132, 199, 0.18);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+
+    .pill-action-downvote {
+      background: rgba(225, 29, 72, 0.18);
+      color: #fb7185;
+      border: 1px solid rgba(251, 113, 133, 0.35);
+    }
+
     .pill-accounts {
       background: rgba(59, 130, 246, 0.15);
       color: #93c5fd;
@@ -3170,7 +3188,7 @@
               <div class="options">
                 <div>
                   <label for="account-count">Number of accounts to run</label>
-                  <input id="account-count" type="number" value="29" min="1" step="1" inputmode="numeric" required />
+                  <input id="account-count" type="number" value="20" min="1" step="1" inputmode="numeric" required />
                   <p class="field-note">Credentials remain in Lambda; they are never sent from this UI.</p>
                 </div>
                 <div>
@@ -6640,6 +6658,23 @@ Live execution batch logs are updating below...`, "success");
           userDisplay = batch.user_ids;
         }
 
+        const rawAction = String(batch.action_type || (batch.records && batch.records[0] && batch.records[0].action_type) || "report_spam").toLowerCase();
+        let actionLabel = "Report Spam";
+        let actionClass = "pill-action-report";
+        let actionIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`;
+
+        if (rawAction.includes("upvote")) {
+          actionLabel = "Upvote";
+          actionClass = "pill-action-upvote";
+          actionIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px;"><polyline points="18 15 12 9 6 15"/></svg>`;
+        } else if (rawAction.includes("downvote")) {
+          actionLabel = "Downvote";
+          actionClass = "pill-action-downvote";
+          actionIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px;"><polyline points="6 9 12 15 18 9"/></svg>`;
+        }
+
+        const actionPillHtml = `<span class="pill ${actionClass}">${actionIcon}${actionLabel}</span>`;
+
         const rowsHtml = batch.records.map((r, rIdx) => {
           let statusClass = "status-created";
           const stLower = (r.status || "").toLowerCase();
@@ -6693,6 +6728,7 @@ Live execution batch logs are updating below...`, "success");
                 <span class="batch-time">${escapeHtml(batch.starting_date || "Unknown Time")}</span>
               </div>
               <div class="batch-right">
+                ${actionPillHtml}
                 <span class="pill pill-accounts">${batch.total_accounts} Account${batch.total_accounts > 1 ? 's' : ''}</span>
                 ${headerMetricsHtml}
                 <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -6702,6 +6738,7 @@ Live execution batch logs are updating below...`, "success");
             </div>
             <div class="batch-content">
               <div class="payload-meta">
+                <span><strong>Action:</strong> <span class="pill ${actionClass}" style="padding: 2px 8px; font-size: 0.74rem;">${actionIcon}${actionLabel}</span></span>
                 <span><strong>Comment IDs:</strong> <code>${escapeHtml(commentDisplay)}</code></span>
                 <span><strong>User IDs:</strong> <code>${escapeHtml(userDisplay)}</code></span>
               </div>
