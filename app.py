@@ -526,17 +526,21 @@ def _validate_payload(payload: object) -> dict[str, object]:
         raise ValueError("number_of_accounts must be at least 1")
 
     # Extract action value from "value" or "action" (default: "report_spam")
-    raw_action = payload.get("value") or payload.get("action")
+    raw_action = payload.get("value") or payload.get("action") or payload.get("action_type")
     if not raw_action:
         if payload.get("upvote"):
             raw_action = "upvote"
         elif payload.get("downvote"):
             raw_action = "downvote"
+        elif payload.get("post_comment") or payload.get("comment") or payload.get("comments") or payload.get("accounts"):
+            raw_action = "post_comment"
         else:
             raw_action = "report_spam"
 
     action_str = str(raw_action).strip().lower()
-    if action_str in ("report", "report_spam", "spam", "reported"):
+    if action_str in ("post_comment", "postcomment", "post-comment", "post comment", "comment"):
+        action_value = "post_comment"
+    elif action_str in ("report", "report_spam", "spam", "reported"):
         action_value = "report_spam"
     elif action_str in ("upvote", "upvoted"):
         action_value = "upvote"
@@ -584,10 +588,12 @@ def _save_processing_request(payload: dict[str, object]) -> int:
 
 
 def _normalize_action_type(raw_val: object) -> str:
-    """Normalize action type to standard keys: report_spam, upvote, or downvote."""
+    """Normalize action type to standard keys: report_spam, upvote, downvote, or post_comment."""
     if not raw_val:
         return "report_spam"
     val = str(raw_val).strip().lower()
+    if "post_comment" in val or "post comment" in val or "postcomment" in val:
+        return "post_comment"
     if "upvote" in val:
         return "upvote"
     if "downvote" in val:
@@ -598,19 +604,43 @@ def _normalize_action_type(raw_val: object) -> str:
 
 
 def _extract_id_tokens(val: object) -> set[str]:
-    """Extract numeric/string tokens from comma-separated strings or JSON arrays."""
+    """Extract numeric/string/email tokens from JSON arrays or comma/space-separated strings."""
     if not val:
         return set()
+    s = str(val).strip()
+    if not s:
+        return set()
+    tokens = set()
     try:
-        parsed = json.loads(str(val))
+        parsed = json.loads(s)
         if isinstance(parsed, list):
-            return {str(x).strip() for x in parsed if str(x).strip()}
+            for x in parsed:
+                item_s = str(x).strip().lower()
+                if item_s:
+                    tokens.add(item_s)
+            return tokens
+        elif isinstance(parsed, dict):
+            for v in parsed.values():
+                item_s = str(v).strip().lower()
+                if item_s:
+                    tokens.add(item_s)
+            return tokens
     except Exception:
         pass
-    return {str(x).strip() for x in re.findall(r'\d+', str(val)) if str(x).strip()}
+
+    parts = re.split(r'[,;|\n\r]+', s)
+    for p in parts:
+        clean = p.strip().strip('"\'[]{}()').strip().lower()
+        if clean:
+            tokens.add(clean)
+
+    for word in re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+|\w+', s):
+        tokens.add(word.lower())
+
+    return tokens
 
 
-def _fetch_batches_from_tracker(days: int = 3):
+def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
     """Fetch rows from BackendProcessingTracker from the last N days (default 3) and group into batches with action types."""
     if pyodbc is None:
         raise RuntimeError("pyodbc is not installed")
@@ -698,12 +728,14 @@ def _fetch_batches_from_tracker(days: int = 3):
             u_tokens = _extract_id_tokens(user_ids)
             best_match = None
             best_diff = 9999999
+            acc_lower = (account_email or "").strip().lower()
 
             for ureq in ui_requests:
                 c_overlap = bool(c_tokens and ureq["comment_tokens"] and (c_tokens == ureq["comment_tokens"] or c_tokens.intersection(ureq["comment_tokens"])))
                 u_overlap = bool(u_tokens and ureq["user_tokens"] and (u_tokens == ureq["user_tokens"] or u_tokens.intersection(ureq["user_tokens"])))
-                
-                if (c_overlap or u_overlap) and ureq["starting_date"] and starting_date:
+                acc_overlap = bool(acc_lower and (acc_lower in ureq["user_tokens"] or acc_lower in ureq["comment_tokens"]))
+
+                if (c_overlap or u_overlap or acc_overlap) and ureq["starting_date"] and starting_date:
                     diff = abs((ureq["starting_date"] - starting_date).total_seconds())
                     if diff < best_diff and diff <= 7200:
                         best_diff = diff
@@ -713,7 +745,11 @@ def _fetch_batches_from_tracker(days: int = 3):
                 row_action_type = best_match
 
         if not row_action_type:
-            row_action_type = "report_spam"
+            # Heuristic check: If user_ids or comment_ids has an email, or account_email matches user_ids, mark as post_comment
+            if "@" in str(user_ids) or "@" in str(comment_ids) or (account_email and "@" in account_email and account_email in str(user_ids)):
+                row_action_type = "post_comment"
+            else:
+                row_action_type = "report_spam"
 
         start_dt_str = starting_date.strftime("%Y-%m-%d %H:%M:%S") if starting_date else ""
 
@@ -792,6 +828,16 @@ def _fetch_batches_from_tracker(days: int = 3):
             }
             batches.append(current_batch)
 
+    # Filter batches if action_filter is specified
+    if action_filter:
+        act_filt = str(action_filter).strip().lower()
+        if act_filt in ("post_comment", "postcomment", "post-comment", "comment", "comments"):
+            batches = [b for b in batches if b.get("action_type") == "post_comment"]
+        elif act_filt in ("reports", "report", "dashboard", "report_spam", "spam", "votes"):
+            batches = [b for b in batches if b.get("action_type") != "post_comment"]
+        elif act_filt in ("upvote", "downvote"):
+            batches = [b for b in batches if b.get("action_type") == act_filt]
+
     total_batches = len(batches)
     for idx, b in enumerate(batches):
         b["batch_number"] = total_batches - idx
@@ -812,15 +858,41 @@ def get_logs():
         days = request.args.get("days", default=3, type=int)
         if not days or days < 1:
             days = 3
-        batches = _fetch_batches_from_tracker(days=days)
+        action = request.args.get("action") or request.args.get("action_type") or request.args.get("type") or ""
+        batches = _fetch_batches_from_tracker(days=days, action_filter=action)
         return jsonify({
             "success": True,
             "total_batches": len(batches),
             "batches": batches,
             "days": days,
+            "action": action,
         })
     except Exception as error:
         app.logger.exception("Could not fetch logs from SQL Server")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
+@app.get("/api/post-comment/logs")
+@app.get("/api/post-comments/logs")
+@require_auth
+def get_post_comment_logs():
+    try:
+        days = request.args.get("days", default=3, type=int)
+        if not days or days < 1:
+            days = 3
+        batches = _fetch_batches_from_tracker(days=days, action_filter="post_comment")
+        return jsonify({
+            "success": True,
+            "total_batches": len(batches),
+            "batches": batches,
+            "days": days,
+            "action": "post_comment",
+        })
+    except Exception as error:
+        app.logger.exception("Could not fetch post comment logs from SQL Server")
         return jsonify({
             "success": False,
             "error": f"Database error: {str(error)}"
@@ -1845,6 +1917,451 @@ def reset_user_limit_endpoint():
         return jsonify({
             "success": False,
             "error": f"Error resetting limit: {str(error)}"
+        }), 500
+
+
+# ---------------------------------------------------------------------------
+# Email Accounts & Credentials Storage (dbo.investing_accounts)
+# ---------------------------------------------------------------------------
+DEFAULT_COMMENT_URL = "https://www.investing.com/commodities/silver-commentary"
+_ACCOUNTS_FILE = BASE_DIR / ".investing_accounts.json"
+
+
+def _load_cached_investing_accounts() -> list[dict]:
+    """Load cached investing email accounts from disk."""
+    if not _ACCOUNTS_FILE.exists():
+        return []
+    try:
+        with open(_ACCOUNTS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                return data
+    except Exception:
+        pass
+    return []
+
+
+def _save_cached_investing_accounts(accounts: list[dict]):
+    """Persist investing email accounts to disk cache."""
+    try:
+        with open(_ACCOUNTS_FILE, "w", encoding="utf-8") as f:
+            json.dump(accounts, f, indent=2)
+    except Exception:
+        pass
+
+
+def _init_investing_accounts_table():
+    """Ensure dbo.investing_accounts table exists in SQL Server."""
+    if pyodbc is None or not DB_CONNECTION_STRING:
+        return
+    try:
+        with _get_db_connection(timeout=10) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'investing_accounts')
+                BEGIN
+                    CREATE TABLE dbo.investing_accounts (
+                        id INT IDENTITY(1,1) PRIMARY KEY,
+                        username NVARCHAR(255) NOT NULL,
+                        email NVARCHAR(255) NOT NULL,
+                        password NVARCHAR(255) NOT NULL,
+                        created_at DATETIME DEFAULT GETDATE()
+                    );
+                END
+            """)
+            connection.commit()
+    except Exception as e:
+        app.logger.warning(f"Could not initialize dbo.investing_accounts: {e}")
+
+
+def _fetch_investing_accounts(include_passwords: bool = False, search: str = "") -> list[dict]:
+    """Fetch accounts from dbo.investing_accounts table, falling back to local cache."""
+    _init_investing_accounts_table()
+    accounts = []
+    db_success = False
+
+    if pyodbc is not None and DB_CONNECTION_STRING:
+        try:
+            with _get_db_connection(timeout=10) as connection:
+                cursor = connection.cursor()
+                cursor.execute("""
+                    SELECT id, username, email, password, created_at
+                    FROM dbo.investing_accounts
+                    ORDER BY id ASC
+                """)
+                for r in cursor.fetchall():
+                    acc_id = int(r[0])
+                    uname = str(r[1] or "").strip()
+                    email = str(r[2] or "").strip()
+                    pwd = str(r[3] or "")
+                    dt = r[4].strftime("%Y-%m-%d %H:%M:%S") if r[4] else ""
+                    accounts.append({
+                        "id": acc_id,
+                        "username": uname,
+                        "email": email,
+                        "password": pwd,
+                        "created_at": dt,
+                    })
+                db_success = True
+                _save_cached_investing_accounts(accounts)
+        except Exception as e:
+            app.logger.warning(f"Could not query dbo.investing_accounts from DB: {e}")
+
+    if not db_success:
+        accounts = _load_cached_investing_accounts()
+
+    if search:
+        s_lower = search.strip().lower()
+        accounts = [
+            a for a in accounts
+            if s_lower in str(a.get("username", "")).lower() or s_lower in str(a.get("email", "")).lower()
+        ]
+
+    if not include_passwords:
+        sanitized = []
+        for a in accounts:
+            sanitized.append({
+                "id": a.get("id"),
+                "username": a.get("username", ""),
+                "email": a.get("email", ""),
+                "has_password": bool(a.get("password")),
+                "created_at": a.get("created_at", ""),
+            })
+        return sanitized
+
+    return accounts
+
+
+def _add_investing_account(username: str, email: str, password: str) -> tuple[bool, str, dict]:
+    """Add a new investing account into SQL Server (and cache)."""
+    if not username or not email or not password:
+        return False, "Username, email, and password are all required.", {}
+
+    _init_investing_accounts_table()
+    cached = _load_cached_investing_accounts()
+
+    # Check for duplicate email
+    for a in cached:
+        if str(a.get("email", "")).strip().lower() == email.strip().lower():
+            return False, f"An account with email '{email}' already exists.", {}
+
+    new_id = (max([a.get("id", 0) for a in cached], default=0) + 1)
+    dt_str = time.strftime("%Y-%m-%d %H:%M:%S")
+
+    account_data = {
+        "id": new_id,
+        "username": username.strip(),
+        "email": email.strip(),
+        "password": password.strip(),
+        "created_at": dt_str,
+    }
+
+    if pyodbc is not None and DB_CONNECTION_STRING:
+        try:
+            with _get_db_connection(timeout=10) as connection:
+                cursor = connection.cursor()
+                cursor.execute("SELECT COUNT(*) FROM dbo.investing_accounts WHERE LOWER(email) = LOWER(?)", email.strip())
+                if cursor.fetchone()[0] > 0:
+                    return False, f"An account with email '{email}' already exists in database.", {}
+
+                cursor.execute("""
+                    INSERT INTO dbo.investing_accounts (username, email, password)
+                    OUTPUT INSERTED.Id
+                    VALUES (?, ?, ?)
+                """, username.strip(), email.strip(), password.strip())
+                row = cursor.fetchone()
+                if row and row[0]:
+                    account_data["id"] = int(row[0])
+                connection.commit()
+        except Exception as e:
+            app.logger.warning(f"Could not insert into dbo.investing_accounts (using local cache): {e}")
+
+    # Re-fetch or update cache
+    cached = [a for a in cached if a.get("id") != account_data["id"] and a.get("email", "").lower() != email.lower()]
+    cached.append(account_data)
+    _save_cached_investing_accounts(cached)
+
+    sanitized = {
+        "id": account_data["id"],
+        "username": account_data["username"],
+        "email": account_data["email"],
+        "has_password": True,
+        "created_at": account_data["created_at"],
+    }
+    return True, f"Account '{username}' ({email}) added successfully.", sanitized
+
+
+def _delete_investing_account(account_id: int) -> tuple[bool, str]:
+    """Delete an investing account by ID from SQL Server and cache."""
+    _init_investing_accounts_table()
+    cached = _load_cached_investing_accounts()
+    found = any(a.get("id") == account_id for a in cached)
+
+    if pyodbc is not None and DB_CONNECTION_STRING:
+        try:
+            with _get_db_connection(timeout=10) as connection:
+                cursor = connection.cursor()
+                cursor.execute("DELETE FROM dbo.investing_accounts WHERE id = ?", account_id)
+                if cursor.rowcount > 0:
+                    found = True
+                connection.commit()
+        except Exception as e:
+            app.logger.warning(f"Could not delete from dbo.investing_accounts: {e}")
+
+    cached = [a for a in cached if a.get("id") != account_id]
+    _save_cached_investing_accounts(cached)
+
+    if not found:
+        return False, f"Account with ID {account_id} not found."
+
+    return True, f"Account ID {account_id} deleted successfully."
+
+
+def _build_post_comment_payload(req_data: dict) -> tuple[dict | None, str | None]:
+    """Extract non-blank comments and count for Lambda dispatch.
+    
+    Lambda manages account credentials and proxies internally via LAMBDA_ACCOUNTS,
+    so NO emails, passwords, or URLs are sent in the post request payload.
+    """
+    if not isinstance(req_data, dict):
+        return None, "Request body must be a JSON object"
+
+    raw_comments = []
+    if req_data.get("comment"):
+        raw_comments = [req_data["comment"]]
+    elif isinstance(req_data.get("comments"), list):
+        raw_comments = req_data["comments"]
+    elif isinstance(req_data.get("entries"), list):
+        raw_comments = [e.get("comment", "") for e in req_data["entries"] if isinstance(e, dict)]
+    elif isinstance(req_data.get("accounts"), list):
+        raw_comments = [a.get("comment", "") for a in req_data["accounts"] if isinstance(a, dict)]
+
+    non_blank_comments = [str(c).strip() for c in raw_comments if str(c).strip()]
+
+    if not non_blank_comments:
+        return None, "No active comments provided. Please write at least one non-blank comment."
+
+    num_accounts = len(non_blank_comments)
+
+    payload = {
+        "value": "post_comment",
+        "action_type": "post_comment",
+        "number_of_accounts": num_accounts,
+        "comments": non_blank_comments,
+    }
+
+    return payload, None
+
+
+
+# ---------------------------------------------------------------------------
+# Account Endpoints
+# ---------------------------------------------------------------------------
+
+@app.get("/api/accounts")
+@app.get("/api/emails")
+@require_auth
+def get_accounts_endpoint():
+    try:
+        search = request.args.get("search", "").strip()
+        accounts = _fetch_investing_accounts(include_passwords=False, search=search)
+        return jsonify({
+            "success": True,
+            "total": len(accounts),
+            "accounts": accounts,
+        })
+    except Exception as error:
+        app.logger.exception("Could not fetch investing accounts")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
+@app.post("/api/accounts")
+@app.post("/api/emails")
+@require_auth
+def add_account_endpoint():
+    try:
+        data = request.get_json(silent=True) or {}
+        username = str(data.get("username") or data.get("user_name") or data.get("name") or "").strip()
+        email = str(data.get("email") or "").strip()
+        password = str(data.get("password") or data.get("pass") or "").strip()
+
+        if not username:
+            return jsonify({"success": False, "error": "Username is required."}), 400
+        if not email or "@" not in email:
+            return jsonify({"success": False, "error": "Valid email address is required."}), 400
+        if not password:
+            return jsonify({"success": False, "error": "Password is required."}), 400
+
+        success, message, account = _add_investing_account(username, email, password)
+        if not success:
+            return jsonify({"success": False, "error": message}), 409
+
+        return jsonify({
+            "success": True,
+            "message": message,
+            "account": account,
+        }), 201
+    except Exception as error:
+        app.logger.exception("Could not add investing account")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
+@app.delete("/api/accounts/<int:account_id>")
+@app.delete("/api/emails/<int:account_id>")
+@require_auth
+def delete_account_by_id_endpoint(account_id: int):
+    try:
+        success, message = _delete_investing_account(account_id)
+        if not success:
+            return jsonify({"success": False, "error": message}), 404
+        return jsonify({"success": True, "message": message}), 200
+    except Exception as error:
+        app.logger.exception("Could not delete investing account")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
+@app.delete("/api/accounts")
+@app.delete("/api/emails")
+@require_auth
+def delete_account_body_endpoint():
+    try:
+        data = request.get_json(silent=True) or {}
+        raw_id = request.args.get("id") or data.get("id") or data.get("account_id")
+        if not raw_id or not str(raw_id).isdigit():
+            return jsonify({"success": False, "error": "Valid numeric account ID is required."}), 400
+        account_id = int(str(raw_id).strip())
+        success, message = _delete_investing_account(account_id)
+        if not success:
+            return jsonify({"success": False, "error": message}), 404
+        return jsonify({"success": True, "message": message}), 200
+    except Exception as error:
+        app.logger.exception("Could not delete investing account")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
+# ---------------------------------------------------------------------------
+# Post Comment Endpoints
+# ---------------------------------------------------------------------------
+
+@app.post("/run-post-comment")
+@app.post("/api/post-comment")
+def run_post_comment():
+    """Trigger posting comments to investing.com."""
+    try:
+        data = request.get_json(silent=True) or {}
+        payload, err_msg = _build_post_comment_payload(data)
+        if err_msg or not payload:
+            return jsonify({
+                "success": False,
+                "error": err_msg or "Failed to prepare comment payload."
+            }), 400
+
+        num_accounts = payload.get("number_of_accounts", 0)
+
+        # 1. Save request in dbo.InvestingUIProcessing
+        processing_id = None
+        if DB_CONNECTION_STRING and pyodbc:
+            try:
+                processing_id = _save_processing_request({
+                    "number_of_accounts": num_accounts,
+                    "comment_ids": payload.get("comments", []),
+                    "user_ids": [],
+                    "value": "post_comment",
+                })
+            except Exception as e:
+                app.logger.warning(f"Could not save post_comment to dbo.InvestingUIProcessing: {e}")
+
+        # 2. Forward to LAMBDA_API_URL
+        lambda_response = None
+        lambda_error = None
+        upstream_status = 200
+
+        if LAMBDA_API_URL:
+            try:
+                body = json.dumps(payload).encode("utf-8")
+                outbound = urllib.request.Request(
+                    LAMBDA_API_URL,
+                    data=body,
+                    headers={"Content-Type": "application/json", "Accept": "application/json"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(outbound, timeout=35) as response:
+                    resp_body = response.read().decode("utf-8", errors="replace")
+                    try:
+                        lambda_response = json.loads(resp_body) if resp_body else {}
+                    except json.JSONDecodeError:
+                        lambda_response = {"message": resp_body}
+                    upstream_status = response.status
+            except urllib.error.HTTPError as error:
+                resp_body = error.read().decode("utf-8", errors="replace")
+                try:
+                    lambda_response = json.loads(resp_body) if resp_body else {}
+                except json.JSONDecodeError:
+                    lambda_response = {"error": resp_body or str(error)}
+                upstream_status = error.code
+                if error.code == 504:
+                    lambda_response = {
+                        "message": "Comment posting job was submitted to AWS and is executing in the background for all active accounts.",
+                        "status": "running",
+                        "statusCode": 200,
+                        "upstream_status": 504,
+                    }
+                    upstream_status = 200
+            except (urllib.error.URLError, TimeoutError, socket.timeout) as error:
+                reason = getattr(error, "reason", error)
+                reason_str = str(reason).lower()
+                if "timed out" in reason_str or "timeout" in reason_str or "504" in reason_str:
+                    lambda_response = {
+                        "message": "Comment posting job was submitted to AWS and is executing in the background for all active accounts.",
+                        "status": "running",
+                        "statusCode": 200,
+                        "timeout": True,
+                    }
+                    upstream_status = 200
+                else:
+                    lambda_error = str(reason)
+                    upstream_status = 502
+
+        # Return sanitized accounts (passwords omitted from response)
+        sanitized_accounts = [
+            {
+                "email": a.get("email"),
+                "comment": a.get("comment"),
+                "url": a.get("url") or DEFAULT_COMMENT_URL,
+            }
+            for a in payload.get("accounts", [])
+        ]
+
+        return jsonify({
+            "success": True if upstream_status == 200 else False,
+            "message": f"Successfully submitted comment posting for {num_accounts} account(s).",
+            "number_of_accounts": num_accounts,
+            "action_type": "post_comment",
+            "url": payload.get("url", DEFAULT_COMMENT_URL),
+            "accounts": sanitized_accounts,
+            "comments": payload.get("comments", []),
+            "processing_id": processing_id,
+            "lambda_api_url": LAMBDA_API_URL,
+            "lambda_response": lambda_response,
+            "error": lambda_error,
+        }), upstream_status
+    except Exception as error:
+        app.logger.exception("Error in run_post_comment endpoint")
+        return jsonify({
+            "success": False,
+            "error": str(error)
         }), 500
 
 
