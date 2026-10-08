@@ -3902,6 +3902,17 @@
             <span class="nav-label">Dashboard</span>
           </button>
 
+          <button type="button" class="nav-item" id="nav-btn-comments" data-tab="comments">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </span>
+            <span class="nav-label">Comments</span>
+            <span class="nav-badge" id="sidebar-comments-badge">1w</span>
+          </button>
+
           <button type="button" class="nav-item" id="nav-btn-post-comment" data-tab="post-comment">
             <span class="nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -3913,17 +3924,6 @@
             </span>
             <span class="nav-label">Post Comment</span>
             <span class="nav-badge" id="sidebar-post-comment-badge" style="background: rgba(49, 196, 141, 0.15); color: #31c48d; border: 1px solid rgba(49, 196, 141, 0.25);">POST</span>
-          </button>
- 
-          <button type="button" class="nav-item" id="nav-btn-comments" data-tab="comments">
-            <span class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-            </span>
-            <span class="nav-label">Comments</span>
-            <span class="nav-badge" id="sidebar-comments-badge">1w</span>
           </button>
 
           <button type="button" class="nav-item" id="nav-btn-users" data-tab="users">
@@ -4311,6 +4311,101 @@
             </div>
           </div>
 
+          <!-- TAB: POST COMMENT -->
+          <div class="tab-content" id="tab-post-comment">
+            <div class="comments-header-bar" style="margin-bottom: 20px;">
+              <div>
+                <h1>Post Comment to Investing.com</h1>
+              </div>
+            </div>
+
+            <!-- Target URL Card -->
+            <div class="card" style="margin-bottom: 20px; padding: 18px 22px;">
+              <label for="post-comment-target-url" style="margin-bottom: 8px; font-size: 0.82rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700;">Target Investing.com Commentary URL</label>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                  </svg>
+                </span>
+                <input type="text" id="post-comment-target-url" value="https://www.investing.com/commodities/silver-commentary"
+                  style="padding: 11px 14px 11px 40px; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; width: 100%; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--input-border); color: #f8fafc;" />
+              </div>
+            </div>
+
+            <!-- Status Banner -->
+            <div id="post-comment-status" class="status" style="display: none; margin-bottom: 20px;"></div>
+
+            <!-- Comments Section Card -->
+            <div class="card" style="margin-bottom: 24px; padding: 22px;">
+              <div class="post-comment-list-header">
+                <div class="header-col-user">User</div>
+                <div class="header-col-comment">Comment Text</div>
+              </div>
+
+              <!-- Dynamic Accounts Comment Boxes Grid -->
+              <div id="post-comment-accounts-container" class="post-comment-boxes-grid"></div>
+
+              <!-- Clean Single Bottom Action Bar with 1 Add Comment and 1 Post Comment Button -->
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--panel-border);">
+                <button type="button" class="btn-primary" id="post-comment-add-btn" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; font-size: 0.88rem; font-weight: 700;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span>+ Add Comment</span>
+                </button>
+
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <span id="post-comment-summary-text" style="font-size: 0.85rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;">1 comment ready to post</span>
+                  <button type="button" class="btn-action-report" id="post-comment-submit-btn" style="min-width: 180px; height: 44px;">
+                    <span>Post Comment</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- LIVE POST COMMENT EXECUTION BATCH LOGS SECTION -->
+            <section class="logs-section" style="margin-top: 36px;">
+              <div class="logs-header">
+                <div class="logs-title-area">
+                  <h2>Post Comment Execution Logs</h2>
+                  <div class="logs-subtitle"><span class="live-dot" style="background: #a855f7; box-shadow: 0 0 8px #a855f7;"></span> Live records from the last 3 days for comments dispatched to investing.com</div>
+                </div>
+                <div class="logs-actions">
+                  <button type="button" class="btn-clean-action" id="clean-post-comment-logs-btn" title="Stop all running ECS tasks and clean database tracker">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      <line x1="10" y1="11" x2="10" y2="17" />
+                      <line x1="14" y1="11" x2="14" y2="17" />
+                    </svg>
+                    <span>Clean</span>
+                  </button>
+                  <button type="button" class="btn-secondary" id="refresh-post-comment-logs-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                    </svg>
+                    Refresh Logs
+                  </button>
+                </div>
+              </div>
+
+              <div class="card" style="padding: 16px;">
+                <div id="post-comment-batch-list" class="batch-list">
+                  <div class="loading-state">Loading live post comment execution batches from database...</div>
+                </div>
+                <div class="pagination-bar" id="post-comment-logs-pagination-bar">
+                  <div class="pagination-info" id="post-comment-logs-pagination-info">Showing 0 to 0 of 0 batch logs</div>
+                  <div class="pagination-controls" id="post-comment-logs-pagination-controls"></div>
+                </div>
+              </div>
+            </section>
+          </div>
+
           <!-- TAB 3: USERS VIEW (DATABASE USER MANAGEMENT) -->
           <div class="tab-content" id="tab-users">
             <div class="eyebrow">User Profiles &bull; Database</div>
@@ -4405,101 +4500,6 @@
                 <div class="pagination-controls" id="users-pagination-controls"></div>
               </div>
             </div>
-          </div>
-
-          <!-- TAB: POST COMMENT -->
-          <div class="tab-content" id="tab-post-comment">
-            <div class="comments-header-bar" style="margin-bottom: 20px;">
-              <div>
-                <h1>Post Comment to Investing.com</h1>
-              </div>
-            </div>
-
-            <!-- Target URL Card -->
-            <div class="card" style="margin-bottom: 20px; padding: 18px 22px;">
-              <label for="post-comment-target-url" style="margin-bottom: 8px; font-size: 0.82rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700;">Target Investing.com Commentary URL</label>
-              <div class="input-wrapper">
-                <span class="input-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                  </svg>
-                </span>
-                <input type="text" id="post-comment-target-url" value="https://www.investing.com/commodities/silver-commentary"
-                  style="padding: 11px 14px 11px 40px; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; width: 100%; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--input-border); color: #f8fafc;" />
-              </div>
-            </div>
-
-            <!-- Status Banner -->
-            <div id="post-comment-status" class="status" style="display: none; margin-bottom: 20px;"></div>
-
-            <!-- Comments Section Card -->
-            <div class="card" style="margin-bottom: 24px; padding: 22px;">
-              <div class="post-comment-list-header">
-                <div class="header-col-user">User</div>
-                <div class="header-col-comment">Comment Text</div>
-              </div>
-
-              <!-- Dynamic Accounts Comment Boxes Grid -->
-              <div id="post-comment-accounts-container" class="post-comment-boxes-grid"></div>
-
-              <!-- Clean Single Bottom Action Bar with 1 Add Comment and 1 Post Comment Button -->
-              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--panel-border);">
-                <button type="button" class="btn-primary" id="post-comment-add-btn" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; font-size: 0.88rem; font-weight: 700;">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  <span>+ Add Comment</span>
-                </button>
-
-                <div style="display: flex; align-items: center; gap: 14px;">
-                  <span id="post-comment-summary-text" style="font-size: 0.85rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;">1 comment ready to post</span>
-                  <button type="button" class="btn-action-report" id="post-comment-submit-btn" style="min-width: 180px; height: 44px;">
-                    <span>Post Comment</span>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="22" y1="2" x2="11" y2="13"></line>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- LIVE POST COMMENT EXECUTION BATCH LOGS SECTION -->
-            <section class="logs-section" style="margin-top: 36px;">
-              <div class="logs-header">
-                <div class="logs-title-area">
-                  <h2>Post Comment Execution Logs</h2>
-                  <div class="logs-subtitle"><span class="live-dot" style="background: #a855f7; box-shadow: 0 0 8px #a855f7;"></span> Live records from the last 3 days for comments dispatched to investing.com</div>
-                </div>
-                <div class="logs-actions">
-                  <button type="button" class="btn-clean-action" id="clean-post-comment-logs-btn" title="Stop all running ECS tasks and clean database tracker">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      <line x1="10" y1="11" x2="10" y2="17" />
-                      <line x1="14" y1="11" x2="14" y2="17" />
-                    </svg>
-                    <span>Clean</span>
-                  </button>
-                  <button type="button" class="btn-secondary" id="refresh-post-comment-logs-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                      stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-                    </svg>
-                    Refresh Logs
-                  </button>
-                </div>
-              </div>
-
-              <div class="card" style="padding: 16px;">
-                <div id="post-comment-batch-list" class="batch-list">
-                  <div class="loading-state">Loading live post comment execution batches from database...</div>
-                </div>
-                <div class="pagination-bar" id="post-comment-logs-pagination-bar">
-                  <div class="pagination-info" id="post-comment-logs-pagination-info">Showing 0 to 0 of 0 batch logs</div>
-                  <div class="pagination-controls" id="post-comment-logs-pagination-controls"></div>
-                </div>
-              </div>
-            </section>
           </div>
 
           <!-- TAB: USER REPORT LIMITS (SUPER ADMIN ONLY) -->
@@ -5557,6 +5557,10 @@
           postCommentStatus.style.display = "block";
           postCommentStatus.scrollIntoView({ behavior: "smooth", block: "center" });
         }
+
+        // Clear comments from the input box(es) after successful posting
+        postCommentItems = [{ id: nextCommentId++, text: "" }];
+        renderPostCommentRows();
 
         // Refresh batch logs on Post Comment page and Dashboard
         if (typeof loadPostCommentLogs === "function") {
