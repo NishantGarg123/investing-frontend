@@ -1,4 +1,4 @@
-# Use official lightweight Python image based on Debian Bookworm
+## Use official lightweight Python image based on Debian Bookworm
 FROM python:3.11-slim
 
 # Prevent Python from writing .pyc files and enable unbuffered output
