@@ -3940,6 +3940,18 @@
             <span class="nav-badge" id="sidebar-users-badge">DB</span>
           </button>
 
+          <button type="button" class="nav-item" id="nav-btn-emails" data-tab="emails" style="display: none;">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+            </span>
+            <span class="nav-label">Emails</span>
+            <span class="nav-badge" id="sidebar-emails-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25);">0</span>
+          </button>
+
           <button type="button" class="nav-item" id="nav-btn-limits" data-tab="limits" style="display: none;">
             <span class="nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -4029,7 +4041,7 @@
               <div class="options">
                 <div>
                   <label for="account-count">Number of accounts to run</label>
-                  <input id="account-count" type="number" value="20" min="1" step="1" inputmode="numeric" required />
+                  <input id="account-count" type="number" value="19" min="1" step="1" inputmode="numeric" required />
                   <p class="field-note">Credentials remain in Lambda; they are never sent from this UI.</p>
                 </div>
                 <div>
@@ -4107,7 +4119,7 @@
               <div class="comments-actions-group">
                 <div class="account-stepper-box">
                   <span>Accounts:</span>
-                  <input type="number" id="comments-account-count" value="20" min="1" step="1"
+                  <input type="number" id="comments-account-count" value="19" min="1" step="1"
                     title="Number of accounts to run" />
                 </div>
                 <button type="button" id="comments-report-btn" class="btn-action-report" disabled title="Report selected comments">
@@ -4498,6 +4510,120 @@
               <div class="pagination-bar">
                 <div class="pagination-info" id="users-pagination-info">Showing 0 to 0 of 0 users</div>
                 <div class="pagination-controls" id="users-pagination-controls"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: EMAILS VIEW (SUPER ADMIN ONLY - INVESTING ACCOUNTS MANAGEMENT) -->
+          <div class="tab-content" id="tab-emails">
+            <div class="eyebrow">Super Admin Console &bull; Account Management</div>
+            <div class="comments-header-bar">
+              <div>
+                <h1>Investing Email Accounts</h1>
+                <p class="intro" style="margin-bottom:0;">
+                  Manage configured investing.com accounts in <code>InvestingDB.dbo.investing_accounts</code>. Passwords remain encrypted and hidden.
+                </p>
+              </div>
+              <div class="comments-actions-group">
+                <span class="pill pill-accounts" id="accounts-total-pill">0 Accounts</span>
+                <button type="button" class="btn-secondary" id="accounts-refresh-btn" title="Refresh email accounts">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                  </svg>
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- ADD EMAIL FORM CARD -->
+            <form class="card" id="add-account-form" style="margin-bottom: 24px;" novalidate>
+              <h2 class="section-title">Add New Email Account</h2>
+              <p class="hint">Enter the email and its password to insert into <code>InvestingDB.dbo.investing_accounts</code>.</p>
+
+              <div class="pairs" style="grid-template-columns: 1fr 1fr;">
+                <div>
+                  <label for="new-account-email">Email Address</label>
+                  <input type="email" id="new-account-email" placeholder="e.g. user@investing.com" required
+                    style="padding: 12px 14px; font-family: 'JetBrains Mono', monospace;" />
+                  <p class="field-note">Investing account login email</p>
+                </div>
+                <div>
+                  <label for="new-account-password">Password</label>
+                  <div class="input-wrapper">
+                    <input type="password" id="new-account-password" placeholder="Enter account password..." required
+                      style="padding: 12px 42px 12px 14px; width: 100%; font-family: 'JetBrains Mono', monospace;" />
+                    <button type="button" class="password-toggle" id="toggle-new-account-password" title="Show/Hide Password" style="right: 12px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <p class="field-note">Stored securely in database</p>
+                </div>
+              </div>
+
+              <div class="divider" style="margin: 20px 0;"></div>
+
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                <button type="submit" id="add-account-submit-btn">
+                  <span>Add Email to Database</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                </button>
+                <div id="add-account-status" class="status"
+                  style="margin: 0; padding: 10px 16px; font-size: 0.85rem; flex: 1; max-width: 480px;"></div>
+              </div>
+            </form>
+
+            <!-- EXISTING EMAILS LIST CARD -->
+            <div class="card" style="padding: 20px;">
+              <div class="comments-toolbar">
+                <div class="toolbar-left">
+                  <label class="checkbox-label" style="font-weight: 700; color: var(--text);">
+                    <input type="checkbox" id="select-all-accounts-checkbox" />
+                    <span>Select All on Page</span>
+                  </label>
+                  <span class="pill pill-accounts" id="accounts-total-badge">0 Emails</span>
+                  <button type="button" id="accounts-delete-selected-btn" class="btn-action-downvote"
+                    style="display:none; padding: 6px 14px; font-size: 0.82rem; font-weight: 700;"
+                    title="Delete all selected email accounts from database">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    <span>Delete Selected (<span id="accounts-selected-count">0</span>)</span>
+                  </button>
+                </div>
+                <div class="toolbar-right">
+                  <input type="text" id="accounts-search-input" placeholder="Search email address..."
+                    style="padding: 7px 12px; font-size: 0.82rem; min-width: 240px; width: auto;" />
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table id="accounts-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 40px; text-align: center;">Select</th>
+                      <th style="width: 50px;">#</th>
+                      <th>Email Address</th>
+                      <th style="width: 160px; text-align: center;">Password</th>
+                      <th style="width: 170px;">Date Added</th>
+                      <th style="width: 110px; text-align: center;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="accounts-table-body">
+                    <tr>
+                      <td colspan="6" class="loading-state">Loading email accounts from database...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="pagination-bar">
+                <div class="pagination-info" id="accounts-pagination-info">Showing 0 to 0 of 0 emails</div>
+                <div class="pagination-controls" id="accounts-pagination-controls"></div>
               </div>
             </div>
           </div>
@@ -5162,12 +5288,13 @@
     const navUserEmail = document.getElementById("nav-user-email");
     const userAvatarInitial = document.getElementById("user-avatar-initial");
 
-    // Navigation Tabs Switching (Dashboard vs Post Comment vs Accounts vs Comments vs Users vs Limits vs Billing)
+    // Navigation Tabs Switching (Dashboard vs Post Comment vs Accounts/Emails vs Comments vs Users vs Limits vs Billing)
     const navBtnDashboard = document.getElementById("nav-btn-dashboard");
     const navBtnPostComment = document.getElementById("nav-btn-post-comment");
     const navBtnAccounts = document.getElementById("nav-btn-accounts");
     const navBtnComments = document.getElementById("nav-btn-comments");
     const navBtnUsers = document.getElementById("nav-btn-users");
+    const navBtnEmails = document.getElementById("nav-btn-emails");
     const navBtnBilling = document.getElementById("nav-btn-billing");
     const navBtnLimits = document.getElementById("nav-btn-limits");
     const tabDashboard = document.getElementById("tab-dashboard");
@@ -5175,6 +5302,7 @@
     const tabAccounts = document.getElementById("tab-accounts");
     const tabComments = document.getElementById("tab-comments");
     const tabUsers = document.getElementById("tab-users");
+    const tabEmails = document.getElementById("tab-emails");
     const tabBilling = document.getElementById("tab-billing");
     const tabLimits = document.getElementById("tab-limits");
     const dashboardActionTypeSelect = document.getElementById("dashboard-action-type");
@@ -5248,7 +5376,10 @@
 
       const superAdmin = (typeof isSuperAdmin === "boolean") ? isSuperAdmin : isCurrentUserSuperAdmin();
 
-      // Show Billing and Limits sections in navigation ONLY if Super Admin
+      // Show Emails, Limits, and Billing sections in navigation ONLY if Super Admin
+      if (navBtnEmails) {
+        navBtnEmails.style.display = superAdmin ? "flex" : "none";
+      }
       if (navBtnBilling) {
         navBtnBilling.style.display = superAdmin ? "flex" : "none";
       }
@@ -5270,8 +5401,8 @@
         }
       }
 
-      // If user is not super admin but billing or limits tab was active, fallback to dashboard
-      if (!superAdmin && ((tabBilling && tabBilling.classList.contains("active")) || (tabLimits && tabLimits.classList.contains("active")))) {
+      // If user is not super admin but super-admin-only tab was active, fallback to dashboard
+      if (!superAdmin && ((tabBilling && tabBilling.classList.contains("active")) || (tabLimits && tabLimits.classList.contains("active")) || (tabEmails && tabEmails.classList.contains("active")))) {
         switchTab("dashboard");
       }
 
@@ -5280,17 +5411,20 @@
       loadCommentUsers();
       loadComments(1);
       renderPostCommentRows();
+      if (superAdmin && typeof loadAccounts === "function") {
+        loadAccounts(1, true);
+      }
     }
 
     // Navigation Tabs Switching Functions
     function switchTab(tabName) {
-      // Disallow non-superadmin from viewing billing or limits tab
-      if ((tabName === "billing" || tabName === "limits") && !isCurrentUserSuperAdmin()) {
+      // Disallow non-superadmin from viewing billing, limits, or emails tab
+      if ((tabName === "billing" || tabName === "limits" || tabName === "emails") && !isCurrentUserSuperAdmin()) {
         tabName = "dashboard";
       }
 
-      [navBtnDashboard, navBtnPostComment, navBtnComments, navBtnUsers, navBtnLimits, navBtnBilling].forEach(btn => btn && btn.classList.remove("active"));
-      [tabDashboard, tabPostComment, tabComments, tabUsers, tabLimits, tabBilling].forEach(tab => tab && tab.classList.remove("active"));
+      [navBtnDashboard, navBtnPostComment, navBtnComments, navBtnUsers, navBtnEmails, navBtnLimits, navBtnBilling].forEach(btn => btn && btn.classList.remove("active"));
+      [tabDashboard, tabPostComment, tabComments, tabUsers, tabEmails, tabLimits, tabBilling].forEach(tab => tab && tab.classList.remove("active"));
 
       if (tabName === "dashboard") {
         navBtnDashboard.classList.add("active");
@@ -5311,6 +5445,16 @@
         navBtnUsers.classList.add("active");
         tabUsers.classList.add("active");
         loadUsers(currentUsersPage);
+      } else if (tabName === "emails") {
+        if (!isCurrentUserSuperAdmin()) {
+          switchTab("dashboard");
+          return;
+        }
+        if (navBtnEmails) navBtnEmails.classList.add("active");
+        if (tabEmails) tabEmails.classList.add("active");
+        if (typeof loadAccounts === "function") {
+          loadAccounts(currentAccountsPage);
+        }
       } else if (tabName === "limits") {
         if (!isCurrentUserSuperAdmin()) {
           switchTab("dashboard");
@@ -5334,6 +5478,7 @@
     if (navBtnPostComment) navBtnPostComment.addEventListener("click", () => switchTab("post-comment"));
     navBtnComments.addEventListener("click", () => switchTab("comments"));
     navBtnUsers.addEventListener("click", () => switchTab("users"));
+    if (navBtnEmails) navBtnEmails.addEventListener("click", () => switchTab("emails"));
     if (navBtnLimits) navBtnLimits.addEventListener("click", () => switchTab("limits"));
     navBtnBilling.addEventListener("click", () => switchTab("billing"));
 
@@ -7024,7 +7169,7 @@
         }
       }
 
-      const numAccounts = Number(commentsAccountCount.value) || 20;
+      const numAccounts = Number(commentsAccountCount.value) || 19;
       if (!Number.isInteger(numAccounts) || numAccounts < 1) {
         alert("Number of accounts must be at least 1.");
         return;
@@ -7422,6 +7567,432 @@ Live execution batch logs are updating below...`, "success");
       `;
 
       usersPaginationControls.innerHTML = buttonsHtml;
+    }
+
+
+    // ─────────────────────────────────────────────────────────────────
+    // 4A. EMAILS VIEW LOGIC (SUPER ADMIN ONLY - INVESTING ACCOUNTS)
+    // ─────────────────────────────────────────────────────────────────
+    const EMAILS_API_URL = "/api/emails";
+    let allAccountsList = [];
+    let currentAccountsPage = 1;
+    const accountsPageSize = 20;
+    const selectedAccountIds = new Set();
+    let accountsSearchTimeout = null;
+
+    const addAccountForm = document.getElementById("add-account-form");
+    const newAccountEmailInput = document.getElementById("new-account-email");
+    const newAccountPasswordInput = document.getElementById("new-account-password");
+    const toggleNewAccountPasswordBtn = document.getElementById("toggle-new-account-password");
+    const addAccountSubmitBtn = document.getElementById("add-account-submit-btn");
+    const addAccountStatus = document.getElementById("add-account-status");
+    const accountsRefreshBtn = document.getElementById("accounts-refresh-btn");
+    const accountsTotalPill = document.getElementById("accounts-total-pill");
+    const selectAllAccountsCheckbox = document.getElementById("select-all-accounts-checkbox");
+    const accountsTotalBadge = document.getElementById("accounts-total-badge");
+    const accountsDeleteSelectedBtn = document.getElementById("accounts-delete-selected-btn");
+    const accountsSelectedCount = document.getElementById("accounts-selected-count");
+    const accountsSearchInput = document.getElementById("accounts-search-input");
+    const accountsTableBody = document.getElementById("accounts-table-body");
+    const accountsPaginationInfo = document.getElementById("accounts-pagination-info");
+    const accountsPaginationControls = document.getElementById("accounts-pagination-controls");
+    const sidebarEmailsBadge = document.getElementById("sidebar-emails-badge");
+
+    function showAddAccountStatus(message, kind) {
+      if (!addAccountStatus) return;
+      addAccountStatus.textContent = message;
+      addAccountStatus.className = `status show ${kind}`;
+      if (kind === "success") {
+        setTimeout(() => {
+          if (addAccountStatus.classList.contains("success")) {
+            addAccountStatus.className = "status";
+          }
+        }, 5000);
+      }
+    }
+
+    if (toggleNewAccountPasswordBtn && newAccountPasswordInput) {
+      toggleNewAccountPasswordBtn.addEventListener("click", () => {
+        const isPassword = newAccountPasswordInput.type === "password";
+        newAccountPasswordInput.type = isPassword ? "text" : "password";
+        toggleNewAccountPasswordBtn.innerHTML = isPassword
+          ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+          : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+      });
+    }
+
+    if (addAccountForm) {
+      addAccountForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = newAccountEmailInput ? newAccountEmailInput.value.trim() : "";
+        const password = newAccountPasswordInput ? newAccountPasswordInput.value : "";
+
+        if (!email || !email.includes("@")) {
+          showAddAccountStatus("Please enter a valid email address.", "error");
+          if (newAccountEmailInput) newAccountEmailInput.focus();
+          return;
+        }
+        if (!password) {
+          showAddAccountStatus("Please enter a password for this email account.", "error");
+          if (newAccountPasswordInput) newAccountPasswordInput.focus();
+          return;
+        }
+
+        if (addAccountSubmitBtn) {
+          addAccountSubmitBtn.disabled = true;
+          addAccountSubmitBtn.innerHTML = `<span class="spinner"></span><span>Adding to Database...</span>`;
+        }
+
+        try {
+          const res = await authFetch(EMAILS_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || `Failed to add email account (HTTP ${res.status})`);
+          }
+
+          showAddAccountStatus(`✓ ${data.message || `Email "${email}" added successfully!`}`, "success");
+          if (newAccountEmailInput) newAccountEmailInput.value = "";
+          if (newAccountPasswordInput) newAccountPasswordInput.value = "";
+          loadAccounts(1);
+        } catch (err) {
+          showAddAccountStatus(err.message || "Error adding email account.", "error");
+        } finally {
+          if (addAccountSubmitBtn) {
+            addAccountSubmitBtn.disabled = false;
+            addAccountSubmitBtn.innerHTML = `<span>Add Email to Database</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>`;
+          }
+        }
+      });
+    }
+
+    if (accountsSearchInput) {
+      accountsSearchInput.addEventListener("input", () => {
+        clearTimeout(accountsSearchTimeout);
+        accountsSearchTimeout = setTimeout(() => {
+          loadAccounts(1);
+        }, 300);
+      });
+    }
+
+    if (accountsRefreshBtn) {
+      accountsRefreshBtn.addEventListener("click", () => {
+        loadAccounts(currentAccountsPage);
+      });
+    }
+
+    if (selectAllAccountsCheckbox) {
+      selectAllAccountsCheckbox.addEventListener("change", () => {
+        toggleSelectAllAccountsOnPage();
+      });
+    }
+
+    if (accountsDeleteSelectedBtn) {
+      accountsDeleteSelectedBtn.addEventListener("click", () => {
+        deleteSelectedAccounts();
+      });
+    }
+
+    async function loadAccounts(page = 1, isSilent = false) {
+      if (!isCurrentUserSuperAdmin()) return;
+      currentAccountsPage = page;
+
+      if (!isSilent && accountsRefreshBtn) {
+        accountsRefreshBtn.disabled = true;
+      }
+
+      if (!isSilent && accountsTableBody) {
+        accountsTableBody.innerHTML = `<tr><td colspan="6" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading email accounts from database...</td></tr>`;
+      }
+
+      try {
+        const query = accountsSearchInput ? accountsSearchInput.value.trim() : "";
+        let url = `${EMAILS_API_URL}`;
+        if (query) {
+          url += `?search=${encodeURIComponent(query)}`;
+        }
+
+        const res = await authFetch(url);
+        if (!res.ok) {
+          if (res.status === 401) return;
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || "Failed to load email accounts");
+        }
+
+        allAccountsList = Array.isArray(data.accounts) ? data.accounts : [];
+        const totalCount = allAccountsList.length;
+
+        // Clean up any selectedAccountIds that no longer exist
+        const currentIdSet = new Set(allAccountsList.map(a => a.id));
+        for (const id of Array.from(selectedAccountIds)) {
+          if (!currentIdSet.has(id)) {
+            selectedAccountIds.delete(id);
+          }
+        }
+
+        if (accountsTotalPill) {
+          accountsTotalPill.textContent = `${totalCount} Account${totalCount !== 1 ? 's' : ''}`;
+        }
+        if (accountsTotalBadge) {
+          accountsTotalBadge.textContent = `${totalCount} Email${totalCount !== 1 ? 's' : ''}`;
+        }
+        if (sidebarEmailsBadge) {
+          sidebarEmailsBadge.textContent = `${totalCount}`;
+        }
+
+        const totalPages = Math.max(1, Math.ceil(totalCount / accountsPageSize));
+        if (currentAccountsPage > totalPages) {
+          currentAccountsPage = totalPages;
+        }
+
+        const startIndex = (currentAccountsPage - 1) * accountsPageSize;
+        const pageAccounts = allAccountsList.slice(startIndex, startIndex + accountsPageSize);
+
+        renderAccountsTable(pageAccounts);
+        renderAccountsPagination(currentAccountsPage, totalPages, totalCount);
+        updateAccountSelectionUI(pageAccounts);
+      } catch (err) {
+        if (accountsTableBody) {
+          accountsTableBody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color: var(--danger);">Error: ${escapeHtml(err.message)}</td></tr>`;
+        }
+      } finally {
+        if (accountsRefreshBtn) {
+          accountsRefreshBtn.disabled = false;
+        }
+      }
+    }
+    window.loadAccounts = loadAccounts;
+
+    function renderAccountsTable(accounts) {
+      if (!accountsTableBody) return;
+      if (!accounts.length) {
+        accountsTableBody.innerHTML = `<tr><td colspan="6" class="empty-state">No email accounts found in database.</td></tr>`;
+        return;
+      }
+
+      accountsTableBody.innerHTML = accounts.map((acc, index) => {
+        const rowNum = (currentAccountsPage - 1) * accountsPageSize + index + 1;
+        const safeId = acc.id;
+        const safeEmail = escapeHtml(acc.email || "");
+        const escapedEmail = safeEmail.replace(/'/g, "\\'");
+        const isChecked = selectedAccountIds.has(safeId);
+        const dateStr = acc.created_at ? escapeHtml(acc.created_at) : "—";
+
+        return `
+          <tr class="${isChecked ? 'row-selected' : ''}">
+            <td style="text-align: center;">
+              <input
+                type="checkbox"
+                class="account-row-checkbox"
+                data-account-id="${safeId}"
+                ${isChecked ? 'checked' : ''}
+                onchange="toggleAccountSelection(${safeId})"
+              />
+            </td>
+            <td style="color: var(--muted); font-size: 0.85rem;">${rowNum}</td>
+            <td>
+              <span style="font-weight: 600; color: #f8fafc; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem;">${safeEmail}</span>
+            </td>
+            <td style="text-align: center;">
+              <span class="password-hidden-badge" title="Password stored securely in database" style="font-family: 'JetBrains Mono', monospace; letter-spacing: 2.5px; color: #94a3b8; font-size: 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: rgba(15, 23, 42, 0.6); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(148, 163, 184, 0.15);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.75;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span>••••••••••••</span>
+              </span>
+            </td>
+            <td>
+              <span style="color: var(--muted); font-size: 0.82rem; font-family: 'JetBrains Mono', monospace;">${dateStr}</span>
+            </td>
+            <td style="text-align: center;">
+              <button
+                type="button"
+                class="btn-icon-danger"
+                title="Delete email account from database"
+                onclick="deleteAccount(${safeId}, '${escapedEmail}')"
+                style="background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; font-weight: 600; transition: all 0.15s ease;"
+                onmouseover="this.style.background='rgba(239, 68, 68, 0.25)'; this.style.borderColor='rgba(239, 68, 68, 0.5)';"
+                onmouseout="this.style.background='rgba(239, 68, 68, 0.12)'; this.style.borderColor='rgba(239, 68, 68, 0.3)';"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                <span>Delete</span>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    window.toggleAccountSelection = function (accountId) {
+      if (selectedAccountIds.has(accountId)) {
+        selectedAccountIds.delete(accountId);
+      } else {
+        selectedAccountIds.add(accountId);
+      }
+
+      const startIndex = (currentAccountsPage - 1) * accountsPageSize;
+      const pageAccounts = allAccountsList.slice(startIndex, startIndex + accountsPageSize);
+      updateAccountSelectionUI(pageAccounts);
+    };
+
+    function toggleSelectAllAccountsOnPage() {
+      const startIndex = (currentAccountsPage - 1) * accountsPageSize;
+      const pageAccounts = allAccountsList.slice(startIndex, startIndex + accountsPageSize);
+      if (!pageAccounts.length) return;
+
+      const allPageSelected = pageAccounts.every(a => selectedAccountIds.has(a.id));
+      if (allPageSelected) {
+        pageAccounts.forEach(a => selectedAccountIds.delete(a.id));
+      } else {
+        pageAccounts.forEach(a => selectedAccountIds.add(a.id));
+      }
+
+      renderAccountsTable(pageAccounts);
+      updateAccountSelectionUI(pageAccounts);
+    }
+
+    function updateAccountSelectionUI(pageAccounts = []) {
+      const selectedCount = selectedAccountIds.size;
+      if (accountsSelectedCount) {
+        accountsSelectedCount.textContent = String(selectedCount);
+      }
+
+      if (accountsDeleteSelectedBtn) {
+        accountsDeleteSelectedBtn.style.display = selectedCount > 0 ? "inline-flex" : "none";
+      }
+
+      if (selectAllAccountsCheckbox) {
+        if (pageAccounts.length > 0 && pageAccounts.every(a => selectedAccountIds.has(a.id))) {
+          selectAllAccountsCheckbox.checked = true;
+          selectAllAccountsCheckbox.indeterminate = false;
+        } else if (pageAccounts.some(a => selectedAccountIds.has(a.id))) {
+          selectAllAccountsCheckbox.checked = false;
+          selectAllAccountsCheckbox.indeterminate = true;
+        } else {
+          selectAllAccountsCheckbox.checked = false;
+          selectAllAccountsCheckbox.indeterminate = false;
+        }
+      }
+    }
+
+    window.deleteAccount = async function (accountId, email) {
+      const displayLabel = email ? `email "${email}" (ID: ${accountId})` : `account ID ${accountId}`;
+      if (!confirm(`Are you sure you want to delete ${displayLabel} from the database?`)) {
+        return;
+      }
+
+      try {
+        const res = await authFetch(`${EMAILS_API_URL}/${encodeURIComponent(accountId)}`, {
+          method: "DELETE",
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || `Failed to delete account (HTTP ${res.status})`);
+        }
+
+        selectedAccountIds.delete(accountId);
+        showAddAccountStatus(`✓ ${data.message || 'Account deleted successfully!'}`, "success");
+        loadAccounts(currentAccountsPage);
+      } catch (err) {
+        showAddAccountStatus(`Error deleting account: ${err.message}`, "error");
+        alert(`Could not delete email account: ${err.message}`);
+      }
+    };
+
+    async function deleteSelectedAccounts() {
+      const count = selectedAccountIds.size;
+      if (count === 0) return;
+
+      if (!confirm(`Are you sure you want to delete all ${count} selected email account(s) from the database?`)) {
+        return;
+      }
+
+      if (accountsDeleteSelectedBtn) {
+        accountsDeleteSelectedBtn.disabled = true;
+        accountsDeleteSelectedBtn.innerHTML = `<span class="spinner" style="width:12px; height:12px;"></span><span>Deleting ${count}...</span>`;
+      }
+
+      try {
+        const res = await authFetch(EMAILS_API_URL, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: Array.from(selectedAccountIds) }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || `Failed to delete selected accounts (HTTP ${res.status})`);
+        }
+
+        selectedAccountIds.clear();
+        showAddAccountStatus(`✓ ${data.message || `Deleted ${count} email account(s) successfully.`}`, "success");
+        loadAccounts(currentAccountsPage);
+      } catch (err) {
+        showAddAccountStatus(`Error deleting accounts: ${err.message}`, "error");
+        alert(`Could not delete selected email accounts: ${err.message}`);
+      } finally {
+        if (accountsDeleteSelectedBtn) {
+          accountsDeleteSelectedBtn.disabled = false;
+          accountsDeleteSelectedBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Delete Selected (<span id="accounts-selected-count">0</span>)</span>`;
+        }
+      }
+    }
+
+    function renderAccountsPagination(page, totalPages, totalCount) {
+      if (!accountsPaginationInfo || !accountsPaginationControls) return;
+      const start = totalCount === 0 ? 0 : (page - 1) * accountsPageSize + 1;
+      const end = Math.min(page * accountsPageSize, totalCount);
+      accountsPaginationInfo.textContent = `Showing ${start}–${end} of ${totalCount} emails`;
+
+      if (totalPages <= 1) {
+        accountsPaginationControls.innerHTML = "";
+        return;
+      }
+
+      let buttonsHtml = "";
+      buttonsHtml += `
+        <button type="button" class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="loadAccounts(${page - 1})" title="Previous page">&lt;</button>
+      `;
+
+      let pagesToShow = [];
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
+      } else {
+        pagesToShow.push(1);
+        if (page > 3) pagesToShow.push("...");
+        const startP = Math.max(2, page - 1);
+        const endP = Math.min(totalPages - 1, page + 1);
+        for (let i = startP; i <= endP; i++) {
+          if (!pagesToShow.includes(i)) pagesToShow.push(i);
+        }
+        if (page < totalPages - 2) pagesToShow.push("...");
+        if (!pagesToShow.includes(totalPages)) pagesToShow.push(totalPages);
+      }
+
+      pagesToShow.forEach(p => {
+        if (p === "...") {
+          buttonsHtml += `<span style="color: var(--muted); padding: 0 4px;">...</span>`;
+        } else {
+          buttonsHtml += `
+            <button type="button" class="page-btn ${p === page ? 'active' : ''}" onclick="loadAccounts(${p})">${p}</button>
+          `;
+        }
+      });
+
+      buttonsHtml += `
+        <button type="button" class="page-btn" ${page >= totalPages ? 'disabled' : ''} onclick="loadAccounts(${page + 1})" title="Next page">&gt;</button>
+      `;
+
+      accountsPaginationControls.innerHTML = buttonsHtml;
     }
 
 
@@ -8578,7 +9149,7 @@ Live execution batch logs are reloading...`, "success");
       event.preventDefault();
       const comment_ids = idsFrom(commentIdsInput);
       const user_ids = idsFrom(userIdsInput);
-      const number_of_accounts = Number(accountCountInput.value);
+      const number_of_accounts = Number(accountCountInput.value) || 19;
 
       if (!comment_ids.length || !user_ids.length) {
         showStatus("Enter at least one comment ID and one user ID.", "error");

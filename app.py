@@ -669,8 +669,19 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
         # Fetch recent UI processing requests for action matching fallback
         ui_requests = []
         try:
-            cursor.execute("""
-                SELECT Id, CommentIds, UserIds, ActionType, StartingDate
+            has_num_accs = False
+            try:
+                cursor.execute("""
+                    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_NAME = 'InvestingUIProcessing' AND COLUMN_NAME = 'NumberOfAccounts'
+                """)
+                has_num_accs = bool(cursor.fetchone())
+            except Exception:
+                has_num_accs = False
+
+            sel_cols = "Id, CommentIds, UserIds, ActionType, StartingDate" + (", NumberOfAccounts" if has_num_accs else "")
+            cursor.execute(f"""
+                SELECT {sel_cols}
                 FROM dbo.InvestingUIProcessing
                 WHERE StartingDate >= DATEADD(day, -?, sysdatetime())
                 ORDER BY StartingDate DESC
@@ -681,6 +692,7 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
                 u_raw = str(urow[2] or "").strip()
                 act_raw = str(urow[3] or "").strip()
                 s_date = urow[4]
+                n_accs = int(urow[5]) if (has_num_accs and len(urow) > 5 and urow[5] is not None) else None
                 ui_requests.append({
                     "id": proc_id,
                     "comment_ids_raw": c_raw,
@@ -688,7 +700,8 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
                     "comment_tokens": _extract_id_tokens(c_raw),
                     "user_tokens": _extract_id_tokens(u_raw),
                     "action_type": _normalize_action_type(act_raw),
-                    "starting_date": s_date
+                    "starting_date": s_date,
+                    "number_of_accounts": n_accs,
                 })
         except Exception:
             pass
@@ -744,13 +757,22 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
 
                 if ureq["starting_date"] and starting_date:
                     diff = abs((ureq["starting_date"] - starting_date).total_seconds())
-                    if diff <= 7200:
-                        if c_overlap or u_overlap or acc_overlap or act_matches:
-                            score = diff - (1000 if (c_overlap or u_overlap or acc_overlap) else 0)
-                            if score < best_diff:
-                                best_diff = score
-                                best_match = ureq["action_type"]
-                                matched_ui_req = ureq
+                    # Heavily prioritize comment ID and user ID overlap so all comments in a multi-comment request match
+                    if c_overlap and diff <= 86400:
+                        score = diff - 2000000
+                    elif u_overlap and diff <= 86400:
+                        score = diff - 1000000
+                    elif acc_overlap and diff <= 14400:
+                        score = diff - 100000
+                    elif act_matches and diff <= 300:
+                        score = diff + 10000
+                    else:
+                        continue
+
+                    if score < best_diff:
+                        best_diff = score
+                        best_match = ureq["action_type"]
+                        matched_ui_req = ureq
 
             if not row_action_type and best_match:
                 row_action_type = best_match
@@ -775,7 +797,7 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             matched_ui_id = matched_ui_req["id"] if matched_ui_req else None
             same_ui = bool(matched_ui_id and current_batch.get("_ui_id") == matched_ui_id)
 
-            if same_ui and time_diff <= 300:
+            if same_ui and time_diff <= 7200:
                 is_same = True
             elif current_batch.get("action_type") == row_action_type:
                 if row_action_type == "post_comment":
@@ -790,7 +812,10 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
                         (c_tokens and current_batch.get("_c_tokens") and c_tokens.intersection(current_batch["_c_tokens"]))
                         or (u_tokens and current_batch.get("_u_tokens") and u_tokens.intersection(current_batch["_u_tokens"]))
                     )
-                    if time_diff <= 120 and (c_same or token_overlap or time_diff <= 45):
+                    # When comments or users overlap (e.g., all 3 comments reported in same UI job), keep in same batch up to 30 mins
+                    if token_overlap and time_diff <= 1800:
+                        is_same = True
+                    elif time_diff <= 120 and (c_same or time_diff <= 45):
                         is_same = True
 
         succ_match = re.search(r"success:\s*(\d+)", is_success, re.IGNORECASE)
@@ -830,14 +855,34 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             "action_type": row_action_type,
         }
 
+        acc_clean = (account_email or "").strip().lower()
+        has_acc_clean = bool(acc_clean and acc_clean not in ("—", "-", ""))
+
         if is_same:
             current_batch["records"].append(record)
-            current_batch["total_accounts"] += 1
+            if has_acc_clean:
+                current_batch["_accounts_set"].add(acc_clean)
+            current_batch["total_accounts"] = len(current_batch["_accounts_set"]) if current_batch["_accounts_set"] else len(current_batch["records"])
             current_batch["total_success"] += s_count
             current_batch["total_failure"] += f_count
             if not is_completed:
                 current_batch["is_completed"] = False
             current_batch["_last_date"] = starting_date
+
+            # Update batch token sets so future rows match all tokens in this batch
+            if current_batch.get("_c_tokens") is not None:
+                current_batch["_c_tokens"].update(c_tokens)
+            if current_batch.get("_u_tokens") is not None:
+                current_batch["_u_tokens"].update(u_tokens)
+            if matched_ui_req:
+                if not current_batch.get("_ui_id"):
+                    current_batch["_ui_id"] = matched_ui_req["id"]
+                    if matched_ui_req.get("comment_ids_raw"):
+                        current_batch["comment_ids"] = matched_ui_req["comment_ids_raw"]
+                    if matched_ui_req.get("user_ids_raw") and matched_ui_req["user_ids_raw"] != "[]":
+                        current_batch["user_ids"] = matched_ui_req["user_ids_raw"]
+                current_batch["_c_tokens"].update(matched_ui_req["comment_tokens"])
+                current_batch["_u_tokens"].update(matched_ui_req["user_tokens"])
 
             # Accumulate distinct comments and users in batch
             if comment_ids and comment_ids not in current_batch["_raw_comments"]:
@@ -858,12 +903,23 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             init_c = matched_ui_req["comment_ids_raw"] if (matched_ui_req and matched_ui_req.get("comment_ids_raw")) else comment_ids
             init_u = matched_ui_req["user_ids_raw"] if (matched_ui_req and matched_ui_req.get("user_ids_raw") and matched_ui_req["user_ids_raw"] != "[]") else (user_ids or account_email)
 
+            batch_c_tokens = set(c_tokens)
+            batch_u_tokens = set(u_tokens)
+            if matched_ui_req:
+                batch_c_tokens.update(matched_ui_req["comment_tokens"])
+                batch_u_tokens.update(matched_ui_req["user_tokens"])
+
+            acc_set = {acc_clean} if has_acc_clean else set()
+            ui_num_accs = matched_ui_req.get("number_of_accounts") if matched_ui_req else None
+
             current_batch = {
                 "starting_date": start_dt_str,
                 "_last_date": starting_date,
                 "_ui_id": matched_ui_req["id"] if matched_ui_req else None,
-                "_c_tokens": c_tokens,
-                "_u_tokens": u_tokens,
+                "_ui_num_accounts": ui_num_accs,
+                "_accounts_set": acc_set,
+                "_c_tokens": batch_c_tokens,
+                "_u_tokens": batch_u_tokens,
                 "_raw_comments": raw_c,
                 "_raw_users": raw_u,
                 "comment_ids": init_c,
@@ -890,6 +946,15 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
     total_batches = len(batches)
     for idx, b in enumerate(batches):
         b["batch_number"] = total_batches - idx
+        # Calculate distinct accounts
+        acc_set = b.pop("_accounts_set", set())
+        if acc_set:
+            b["total_accounts"] = len(acc_set)
+        elif b.get("_ui_num_accounts"):
+            b["total_accounts"] = b["_ui_num_accounts"]
+        else:
+            b["total_accounts"] = len(b.get("records", []))
+        b.pop("_ui_num_accounts", None)
         b.pop("_last_date", None)
         b.pop("_ui_id", None)
         b.pop("_c_tokens", None)
@@ -2088,25 +2153,32 @@ def _fetch_investing_accounts(include_passwords: bool = False, search: str = "")
 
 def _add_investing_account(username: str, email: str, password: str) -> tuple[bool, str, dict]:
     """Add a new investing account into SQL Server (and cache)."""
-    if not username or not email or not password:
-        return False, "Username, email, and password are all required.", {}
+    email_clean = str(email or "").strip()
+    pwd_clean = str(password or "").strip()
+    uname_clean = str(username or "").strip()
+
+    if not uname_clean and email_clean and "@" in email_clean:
+        uname_clean = email_clean.split("@")[0]
+
+    if not email_clean or not pwd_clean:
+        return False, "Email and password are both required.", {}
 
     _init_investing_accounts_table()
     cached = _load_cached_investing_accounts()
 
     # Check for duplicate email
     for a in cached:
-        if str(a.get("email", "")).strip().lower() == email.strip().lower():
-            return False, f"An account with email '{email}' already exists.", {}
+        if str(a.get("email", "")).strip().lower() == email_clean.lower():
+            return False, f"An account with email '{email_clean}' already exists.", {}
 
     new_id = (max([a.get("id", 0) for a in cached], default=0) + 1)
     dt_str = time.strftime("%Y-%m-%d %H:%M:%S")
 
     account_data = {
         "id": new_id,
-        "username": username.strip(),
-        "email": email.strip(),
-        "password": password.strip(),
+        "username": uname_clean,
+        "email": email_clean,
+        "password": pwd_clean,
         "created_at": dt_str,
     }
 
@@ -2114,15 +2186,15 @@ def _add_investing_account(username: str, email: str, password: str) -> tuple[bo
         try:
             with _get_db_connection(timeout=10) as connection:
                 cursor = connection.cursor()
-                cursor.execute("SELECT COUNT(*) FROM dbo.investing_accounts WHERE LOWER(email) = LOWER(?)", email.strip())
+                cursor.execute("SELECT COUNT(*) FROM dbo.investing_accounts WHERE LOWER(email) = LOWER(?)", email_clean)
                 if cursor.fetchone()[0] > 0:
-                    return False, f"An account with email '{email}' already exists in database.", {}
+                    return False, f"An account with email '{email_clean}' already exists in database.", {}
 
                 cursor.execute("""
                     INSERT INTO dbo.investing_accounts (username, email, password)
                     OUTPUT INSERTED.Id
                     VALUES (?, ?, ?)
-                """, username.strip(), email.strip(), password.strip())
+                """, uname_clean, email_clean, pwd_clean)
                 row = cursor.fetchone()
                 if row and row[0]:
                     account_data["id"] = int(row[0])
@@ -2131,7 +2203,7 @@ def _add_investing_account(username: str, email: str, password: str) -> tuple[bo
             app.logger.warning(f"Could not insert into dbo.investing_accounts (using local cache): {e}")
 
     # Re-fetch or update cache
-    cached = [a for a in cached if a.get("id") != account_data["id"] and a.get("email", "").lower() != email.lower()]
+    cached = [a for a in cached if a.get("id") != account_data["id"] and a.get("email", "").lower() != email_clean.lower()]
     cached.append(account_data)
     _save_cached_investing_accounts(cached)
 
@@ -2142,7 +2214,7 @@ def _add_investing_account(username: str, email: str, password: str) -> tuple[bo
         "has_password": True,
         "created_at": account_data["created_at"],
     }
-    return True, f"Account '{username}' ({email}) added successfully.", sanitized
+    return True, f"Email '{email_clean}' added successfully.", sanitized
 
 
 def _delete_investing_account(account_id: int) -> tuple[bool, str]:
@@ -2169,6 +2241,34 @@ def _delete_investing_account(account_id: int) -> tuple[bool, str]:
         return False, f"Account with ID {account_id} not found."
 
     return True, f"Account ID {account_id} deleted successfully."
+
+
+def _delete_investing_accounts_batch(account_ids: list[int]) -> tuple[int, str]:
+    """Delete multiple investing accounts by IDs from SQL Server and cache."""
+    if not account_ids:
+        return 0, "No accounts specified for deletion."
+    _init_investing_accounts_table()
+    deleted_count = 0
+    if pyodbc is not None and DB_CONNECTION_STRING:
+        try:
+            with _get_db_connection(timeout=15) as connection:
+                cursor = connection.cursor()
+                placeholders = ",".join(["?"] * len(account_ids))
+                cursor.execute(f"DELETE FROM dbo.investing_accounts WHERE id IN ({placeholders})", *account_ids)
+                deleted_count = cursor.rowcount
+                connection.commit()
+        except Exception as e:
+            app.logger.warning(f"Could not batch delete from dbo.investing_accounts: {e}")
+
+    cached = _load_cached_investing_accounts()
+    id_set = set(account_ids)
+    before_len = len(cached)
+    cached = [a for a in cached if a.get("id") not in id_set]
+    _save_cached_investing_accounts(cached)
+    if deleted_count == 0:
+        deleted_count = before_len - len(cached)
+
+    return deleted_count, f"Successfully deleted {deleted_count} account(s)."
 
 
 def _build_post_comment_payload(req_data: dict) -> tuple[dict | None, str | None]:
@@ -2242,12 +2342,12 @@ def add_account_endpoint():
         email = str(data.get("email") or "").strip()
         password = str(data.get("password") or data.get("pass") or "").strip()
 
-        if not username:
-            return jsonify({"success": False, "error": "Username is required."}), 400
         if not email or "@" not in email:
             return jsonify({"success": False, "error": "Valid email address is required."}), 400
         if not password:
             return jsonify({"success": False, "error": "Password is required."}), 400
+        if not username:
+            username = email.split("@")[0]
 
         success, message, account = _add_investing_account(username, email, password)
         if not success:
@@ -2289,6 +2389,14 @@ def delete_account_by_id_endpoint(account_id: int):
 def delete_account_body_endpoint():
     try:
         data = request.get_json(silent=True) or {}
+        raw_ids = data.get("ids") or data.get("account_ids") or []
+        if isinstance(raw_ids, list) and len(raw_ids) > 0:
+            int_ids = [int(x) for x in raw_ids if str(x).isdigit()]
+            if not int_ids:
+                return jsonify({"success": False, "error": "No valid numeric account IDs provided."}), 400
+            count, message = _delete_investing_accounts_batch(int_ids)
+            return jsonify({"success": True, "message": message, "deleted_count": count}), 200
+
         raw_id = request.args.get("id") or data.get("id") or data.get("account_id")
         if not raw_id or not str(raw_id).isdigit():
             return jsonify({"success": False, "error": "Valid numeric account ID is required."}), 400
