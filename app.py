@@ -14,6 +14,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 try:
     import pyodbc
@@ -640,8 +641,26 @@ def _extract_id_tokens(val: object) -> set[str]:
     return tokens
 
 
+def _parse_tracker_datetime(val):
+    if isinstance(val, datetime):
+        return val
+    if not val:
+        return None
+    s = str(val).strip()
+    try:
+        return datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except Exception:
+        pass
+    for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(s[:19], fmt)
+        except Exception:
+            pass
+    return None
+
+
 def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
-    """Fetch rows from BackendProcessingTracker from the last N days (default 3) and group into batches with action types."""
+    """Fetch execution runs and group into isolated batches anchored on exact run submission comments and tasks."""
     if pyodbc is None:
         raise RuntimeError("pyodbc is not installed")
     if not DB_CONNECTION_STRING:
@@ -666,7 +685,7 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
         except Exception:
             tracker_action_col = None
 
-        # Fetch recent UI processing requests for action matching fallback
+        # 1. Fetch all UI processing requests within window (each is an authoritative batch run)
         ui_requests = []
         try:
             has_num_accs = False
@@ -684,7 +703,7 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
                 SELECT {sel_cols}
                 FROM dbo.InvestingUIProcessing
                 WHERE StartingDate >= DATEADD(day, -?, sysdatetime())
-                ORDER BY StartingDate DESC
+                ORDER BY StartingDate DESC, Id DESC
             """, days + 1)
             for urow in cursor.fetchall():
                 proc_id = urow[0]
@@ -703,10 +722,10 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
                     "starting_date": s_date,
                     "number_of_accounts": n_accs,
                 })
-        except Exception:
-            pass
+        except Exception as e:
+            app.logger.warning(f"Could not read InvestingUIProcessing: {e}")
 
-        # Query BackendProcessingTracker
+        # 2. Query BackendProcessingTracker
         if tracker_action_col:
             query = f"""
                 SELECT task_id, account_email, comment_ids, user_ids, status, is_success, starting_date, {tracker_action_col}
@@ -724,8 +743,33 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
         cursor.execute(query, days)
         rows = cursor.fetchall()
 
-    batches = []
-    current_batch = None
+    # Initialize batch buckets for each UI request
+    ui_batches = {}
+    for ureq in ui_requests:
+        uid = ureq["id"]
+        s_dt = _parse_tracker_datetime(ureq["starting_date"])
+        dt_str = s_dt.strftime("%Y-%m-%d %H:%M:%S") if s_dt else ""
+        ui_batches[uid] = {
+            "ui_id": uid,
+            "starting_date": dt_str,
+            "_dt": s_dt,
+            "comment_ids": ureq["comment_ids_raw"],
+            "user_ids": ureq["user_ids_raw"],
+            "action_type": ureq["action_type"],
+            "total_accounts": ureq["number_of_accounts"] or 19,
+            "total_success": 0,
+            "total_failure": 0,
+            "is_completed": True,
+            "records": [],
+            "_accounts_set": set(),
+            "_c_tokens": ureq["comment_tokens"],
+            "_u_tokens": ureq["user_tokens"],
+            "_has_records": False,
+            "_any_in_progress": False,
+        }
+
+    # Match tracker tasks to the corresponding UI batch
+    unmatched_records = []
 
     for row in rows:
         task_id = row[0]
@@ -740,97 +784,24 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
         if tracker_action_col and len(row) > 7 and row[7]:
             row_action_type = _normalize_action_type(row[7])
 
-        c_tokens = _extract_id_tokens(comment_ids)
-        u_tokens = _extract_id_tokens(user_ids)
-        matched_ui_req = None
-
-        if ui_requests:
-            best_match = None
-            best_diff = 9999999
-            acc_lower = (account_email or "").strip().lower()
-
-            for ureq in ui_requests:
-                c_overlap = bool(c_tokens and ureq["comment_tokens"] and (c_tokens == ureq["comment_tokens"] or c_tokens.intersection(ureq["comment_tokens"])))
-                u_overlap = bool(u_tokens and ureq["user_tokens"] and (u_tokens == ureq["user_tokens"] or u_tokens.intersection(ureq["user_tokens"])))
-                acc_overlap = bool(acc_lower and (acc_lower in ureq["user_tokens"] or acc_lower in ureq["comment_tokens"]))
-                act_matches = bool(row_action_type and ureq["action_type"] == row_action_type)
-
-                if ureq["starting_date"] and starting_date:
-                    diff = abs((ureq["starting_date"] - starting_date).total_seconds())
-                    # Heavily prioritize comment ID and user ID overlap so all comments in a multi-comment request match
-                    if c_overlap and diff <= 86400:
-                        score = diff - 2000000
-                    elif u_overlap and diff <= 86400:
-                        score = diff - 1000000
-                    elif acc_overlap and diff <= 14400:
-                        score = diff - 100000
-                    elif act_matches and diff <= 300:
-                        score = diff + 10000
-                    else:
-                        continue
-
-                    if score < best_diff:
-                        best_diff = score
-                        best_match = ureq["action_type"]
-                        matched_ui_req = ureq
-
-            if not row_action_type and best_match:
-                row_action_type = best_match
-
         if not row_action_type:
-            # Heuristic check: If user_ids or comment_ids has an email, or account_email matches user_ids, mark as post_comment
             if "@" in str(user_ids) or "@" in str(comment_ids) or (account_email and "@" in account_email and account_email in str(user_ids)):
                 row_action_type = "post_comment"
             else:
                 row_action_type = "report_spam"
 
-        start_dt_str = starting_date.strftime("%Y-%m-%d %H:%M:%S") if starting_date else ""
-
-        is_same = False
-        if current_batch is not None:
-            time_diff = (
-                abs((current_batch["_last_date"] - starting_date).total_seconds())
-                if (current_batch["_last_date"] and starting_date)
-                else 999999
-            )
-
-            matched_ui_id = matched_ui_req["id"] if matched_ui_req else None
-            same_ui = bool(matched_ui_id and current_batch.get("_ui_id") == matched_ui_id)
-
-            if same_ui and time_diff <= 7200:
-                is_same = True
-            elif current_batch.get("action_type") == row_action_type:
-                if row_action_type == "post_comment":
-                    # For post_comment runs, all tasks launched together in the same execution run (<= 120s window) belong to 1 batch
-                    if time_diff <= 120:
-                        is_same = True
-                else:
-                    # For reports/upvotes/downvotes
-                    c_same = (current_batch["comment_ids"] == comment_ids)
-                    u_same = (current_batch["user_ids"] == user_ids)
-                    token_overlap = bool(
-                        (c_tokens and current_batch.get("_c_tokens") and c_tokens.intersection(current_batch["_c_tokens"]))
-                        or (u_tokens and current_batch.get("_u_tokens") and u_tokens.intersection(current_batch["_u_tokens"]))
-                    )
-                    # When comments or users overlap (e.g., all 3 comments reported in same UI job), keep in same batch up to 30 mins
-                    if token_overlap and time_diff <= 1800:
-                        is_same = True
-                    elif time_diff <= 120 and (c_same or time_diff <= 45):
-                        is_same = True
-
         succ_match = re.search(r"success:\s*(\d+)", is_success, re.IGNORECASE)
         fail_match = re.search(r"failure:\s*(\d+)", is_success, re.IGNORECASE)
-
         status_lower = status.lower()
+
         is_completed = False
         s_count = 0
         f_count = 0
-
         if succ_match or fail_match:
             is_completed = True
             s_count = int(succ_match.group(1)) if succ_match else 0
             f_count = int(fail_match.group(1)) if fail_match else 0
-        elif status_lower == "completed":
+        elif status_lower in ("completed", "success"):
             is_completed = True
             s_count = 1
             f_count = 0
@@ -843,6 +814,9 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             s_count = 0
             f_count = 0
 
+        row_dt = _parse_tracker_datetime(starting_date)
+        start_dt_str = row_dt.strftime("%Y-%m-%d %H:%M:%S") if row_dt else ""
+
         record = {
             "task_id": task_id,
             "account_email": account_email,
@@ -853,87 +827,172 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             "failure_count": f_count,
             "starting_date": start_dt_str,
             "action_type": row_action_type,
+            "_dt": row_dt,
+            "comment_ids": comment_ids,
+            "user_ids": user_ids,
         }
 
+        row_c_tokens = _extract_id_tokens(comment_ids)
+        row_u_tokens = _extract_id_tokens(user_ids)
         acc_clean = (account_email or "").strip().lower()
         has_acc_clean = bool(acc_clean and acc_clean not in ("—", "-", ""))
 
-        if is_same:
-            current_batch["records"].append(record)
+        best_match_id = None
+        best_score = -999999999
+
+        for ureq in ui_requests:
+            uid = ureq["id"]
+            u_batch = ui_batches[uid]
+            u_dt = u_batch["_dt"]
+            u_action = ureq["action_type"]
+            u_c_tokens = ureq["comment_tokens"]
+            u_u_tokens = ureq["user_tokens"]
+
+            # Action compatibility filter
+            if u_action == "post_comment" and row_action_type != "post_comment":
+                continue
+            if u_action != "post_comment" and row_action_type == "post_comment":
+                continue
+            if row_action_type and u_action and row_action_type != u_action and u_action in ("upvote", "downvote", "report_spam") and row_action_type in ("upvote", "downvote", "report_spam"):
+                continue
+
+            time_diff = (row_dt - u_dt).total_seconds() if (row_dt and u_dt) else 0
+
+            # A backend task belongs to a UI run submitted before it (allowing up to 300s clock skew)
+            if time_diff < -300:
+                continue
+
+            has_comment_tokens = bool(row_c_tokens and u_c_tokens)
+            if has_comment_tokens:
+                c_overlap = bool(row_c_tokens.intersection(u_c_tokens))
+                if c_overlap:
+                    # Direct match on comment ID tokens!
+                    # Supports backend starting 10 min, 1 hour, or much later
+                    time_penalty = max(0, time_diff)
+                    score = 10000000 - time_penalty
+                else:
+                    # Both have comment tokens, but DO NOT overlap.
+                    # This task ran for DIFFERENT comments — strictly do NOT match this batch!
+                    continue
+            else:
+                # One or both have no comment tokens (e.g., post_comment text or empty comment_ids in tracker)
+                score = 0
+                if row_action_type and row_action_type == u_action:
+                    score += 200000
+
+                if row_u_tokens and u_u_tokens and row_u_tokens.intersection(u_u_tokens):
+                    score += 500000
+                elif acc_clean and acc_clean in u_u_tokens:
+                    score += 400000
+
+                if u_action == "post_comment":
+                    score += 300000
+
+                time_penalty = max(0, time_diff)
+                score -= time_penalty
+
+            if score > best_score:
+                best_score = score
+                best_match_id = uid
+
+        if best_match_id is not None and best_score > 0:
+            target_batch = ui_batches[best_match_id]
+            target_batch["records"].append(record)
+            target_batch["_has_records"] = True
+            target_batch["total_success"] += s_count
+            target_batch["total_failure"] += f_count
             if has_acc_clean:
-                current_batch["_accounts_set"].add(acc_clean)
-            current_batch["total_accounts"] = len(current_batch["_accounts_set"]) if current_batch["_accounts_set"] else len(current_batch["records"])
-            current_batch["total_success"] += s_count
-            current_batch["total_failure"] += f_count
+                target_batch["_accounts_set"].add(acc_clean)
             if not is_completed:
-                current_batch["is_completed"] = False
-            current_batch["_last_date"] = starting_date
-
-            # Update batch token sets so future rows match all tokens in this batch
-            if current_batch.get("_c_tokens") is not None:
-                current_batch["_c_tokens"].update(c_tokens)
-            if current_batch.get("_u_tokens") is not None:
-                current_batch["_u_tokens"].update(u_tokens)
-            if matched_ui_req:
-                if not current_batch.get("_ui_id"):
-                    current_batch["_ui_id"] = matched_ui_req["id"]
-                    if matched_ui_req.get("comment_ids_raw"):
-                        current_batch["comment_ids"] = matched_ui_req["comment_ids_raw"]
-                    if matched_ui_req.get("user_ids_raw") and matched_ui_req["user_ids_raw"] != "[]":
-                        current_batch["user_ids"] = matched_ui_req["user_ids_raw"]
-                current_batch["_c_tokens"].update(matched_ui_req["comment_tokens"])
-                current_batch["_u_tokens"].update(matched_ui_req["user_tokens"])
-
-            # Accumulate distinct comments and users in batch
-            if comment_ids and comment_ids not in current_batch["_raw_comments"]:
-                current_batch["_raw_comments"].append(comment_ids)
-            user_entry = account_email or user_ids
-            if user_entry and user_entry not in current_batch["_raw_users"]:
-                current_batch["_raw_users"].append(user_entry)
-
-            # Format batch header comment_ids / user_ids if not already a UI JSON array
-            if not current_batch.get("_ui_id"):
-                if len(current_batch["_raw_comments"]) > 1:
-                    current_batch["comment_ids"] = json.dumps(current_batch["_raw_comments"])
-                if len(current_batch["_raw_users"]) > 1:
-                    current_batch["user_ids"] = json.dumps(current_batch["_raw_users"])
+                target_batch["_any_in_progress"] = True
         else:
-            raw_c = [comment_ids] if comment_ids else []
-            raw_u = [account_email or user_ids] if (account_email or user_ids) else []
-            init_c = matched_ui_req["comment_ids_raw"] if (matched_ui_req and matched_ui_req.get("comment_ids_raw")) else comment_ids
-            init_u = matched_ui_req["user_ids_raw"] if (matched_ui_req and matched_ui_req.get("user_ids_raw") and matched_ui_req["user_ids_raw"] != "[]") else (user_ids or account_email)
+            unmatched_records.append(record)
 
-            batch_c_tokens = set(c_tokens)
-            batch_u_tokens = set(u_tokens)
-            if matched_ui_req:
-                batch_c_tokens.update(matched_ui_req["comment_tokens"])
-                batch_u_tokens.update(matched_ui_req["user_tokens"])
+    # 3. Group any unmatched records into standalone fallback batches
+    fallback_batches = []
+    if unmatched_records:
+        curr_fb = None
+        for r in unmatched_records:
+            r_c_tokens = _extract_id_tokens(r["comment_ids"])
+            r_u_tokens = _extract_id_tokens(r["user_ids"])
+            r_acc = (r["account_email"] or "").strip().lower()
 
-            acc_set = {acc_clean} if has_acc_clean else set()
-            ui_num_accs = matched_ui_req.get("number_of_accounts") if matched_ui_req else None
+            is_same = False
+            if curr_fb is not None:
+                t_diff = abs((curr_fb["_dt"] - r["_dt"]).total_seconds()) if (curr_fb["_dt"] and r["_dt"]) else 999999
+                same_action = (curr_fb["action_type"] == r["action_type"])
+                token_overlap = bool(
+                    (r_c_tokens and curr_fb["_c_tokens"] and r_c_tokens.intersection(curr_fb["_c_tokens"]))
+                    or (r_u_tokens and curr_fb["_u_tokens"] and r_u_tokens.intersection(curr_fb["_u_tokens"]))
+                )
+                if same_action and (token_overlap and t_diff <= 1800 or t_diff <= 120):
+                    is_same = True
 
-            current_batch = {
-                "starting_date": start_dt_str,
-                "_last_date": starting_date,
-                "_ui_id": matched_ui_req["id"] if matched_ui_req else None,
-                "_ui_num_accounts": ui_num_accs,
-                "_accounts_set": acc_set,
-                "_c_tokens": batch_c_tokens,
-                "_u_tokens": batch_u_tokens,
-                "_raw_comments": raw_c,
-                "_raw_users": raw_u,
-                "comment_ids": init_c,
-                "user_ids": init_u,
-                "action_type": row_action_type,
-                "total_accounts": 1,
-                "total_success": s_count,
-                "total_failure": f_count,
-                "is_completed": is_completed,
-                "records": [record],
-            }
-            batches.append(current_batch)
+            if is_same:
+                curr_fb["records"].append(r)
+                if r_acc and r_acc not in ("—", "-", ""):
+                    curr_fb["_accounts_set"].add(r_acc)
+                curr_fb["total_success"] += r["success_count"]
+                curr_fb["total_failure"] += r["failure_count"]
+                if not r["is_completed"]:
+                    curr_fb["_any_in_progress"] = True
+                curr_fb["_c_tokens"].update(r_c_tokens)
+                curr_fb["_u_tokens"].update(r_u_tokens)
+                if r["comment_ids"] and r["comment_ids"] not in curr_fb["_raw_comments"]:
+                    curr_fb["_raw_comments"].append(r["comment_ids"])
+            else:
+                acc_set = {r_acc} if (r_acc and r_acc not in ("—", "-", "")) else set()
+                curr_fb = {
+                    "starting_date": r["starting_date"],
+                    "_dt": r["_dt"],
+                    "comment_ids": r["comment_ids"],
+                    "user_ids": r["user_ids"] or r["account_email"],
+                    "action_type": r["action_type"],
+                    "total_accounts": 1,
+                    "total_success": r["success_count"],
+                    "total_failure": r["failure_count"],
+                    "is_completed": r["is_completed"],
+                    "records": [r],
+                    "_accounts_set": acc_set,
+                    "_c_tokens": set(r_c_tokens),
+                    "_u_tokens": set(r_u_tokens),
+                    "_raw_comments": [r["comment_ids"]] if r["comment_ids"] else [],
+                    "_any_in_progress": not r["is_completed"],
+                }
+                fallback_batches.append(curr_fb)
 
-    # Filter batches if action_filter is specified
+    # 4. Finalize UI batches and fallback batches
+    batches = []
+
+    for b in ui_batches.values():
+        if b["_has_records"]:
+            if b["_accounts_set"]:
+                b["total_accounts"] = len(b["_accounts_set"])
+            elif not b.get("total_accounts"):
+                b["total_accounts"] = len(b["records"])
+
+            b["is_completed"] = not b["_any_in_progress"]
+            batches.append(b)
+        else:
+            # UI run preserved in batch logs regardless of how much later backend starts
+            b["is_completed"] = False
+            batches.append(b)
+
+    for fb in fallback_batches:
+        if fb["_accounts_set"]:
+            fb["total_accounts"] = len(fb["_accounts_set"])
+        else:
+            fb["total_accounts"] = len(fb["records"])
+        fb["is_completed"] = not fb["_any_in_progress"]
+        if len(fb.get("_raw_comments", [])) > 1:
+            fb["comment_ids"] = json.dumps(fb["_raw_comments"])
+        batches.append(fb)
+
+    # Sort all batches descending by run date (newest first)
+    epoch = datetime(1970, 1, 1)
+    batches.sort(key=lambda x: (x.get("_dt") or epoch), reverse=True)
+
+    # 5. Apply action_filter if specified
     if action_filter:
         act_filt = str(action_filter).strip().lower()
         if act_filt in ("post_comment", "postcomment", "post-comment", "comment", "comments"):
@@ -946,21 +1005,14 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
     total_batches = len(batches)
     for idx, b in enumerate(batches):
         b["batch_number"] = total_batches - idx
-        # Calculate distinct accounts
-        acc_set = b.pop("_accounts_set", set())
-        if acc_set:
-            b["total_accounts"] = len(acc_set)
-        elif b.get("_ui_num_accounts"):
-            b["total_accounts"] = b["_ui_num_accounts"]
-        else:
-            b["total_accounts"] = len(b.get("records", []))
-        b.pop("_ui_num_accounts", None)
-        b.pop("_last_date", None)
-        b.pop("_ui_id", None)
+        b.pop("_dt", None)
+        b.pop("_accounts_set", None)
         b.pop("_c_tokens", None)
         b.pop("_u_tokens", None)
+        b.pop("_has_records", None)
+        b.pop("_any_in_progress", None)
         b.pop("_raw_comments", None)
-        b.pop("_raw_users", None)
+        b.pop("ui_id", None)
 
     return batches
 

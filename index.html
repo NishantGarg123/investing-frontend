@@ -8431,17 +8431,25 @@ Live execution batch logs are updating below...`, "success");
 
         let commentDisplay = "";
         let userDisplay = "";
-        try {
-          const cArr = JSON.parse(batch.comment_ids);
-          commentDisplay = Array.isArray(cArr) ? cArr.join(", ") : batch.comment_ids;
-        } catch (_) {
-          commentDisplay = batch.comment_ids;
+        if (Array.isArray(batch.comment_ids)) {
+          commentDisplay = batch.comment_ids.join(", ");
+        } else {
+          try {
+            const cArr = JSON.parse(batch.comment_ids);
+            commentDisplay = Array.isArray(cArr) ? cArr.join(", ") : String(batch.comment_ids || "—");
+          } catch (_) {
+            commentDisplay = String(batch.comment_ids || "—");
+          }
         }
-        try {
-          const uArr = JSON.parse(batch.user_ids);
-          userDisplay = Array.isArray(uArr) ? uArr.join(", ") : batch.user_ids;
-        } catch (_) {
-          userDisplay = batch.user_ids;
+        if (Array.isArray(batch.user_ids)) {
+          userDisplay = batch.user_ids.join(", ");
+        } else {
+          try {
+            const uArr = JSON.parse(batch.user_ids);
+            userDisplay = Array.isArray(uArr) ? uArr.join(", ") : String(batch.user_ids || "—");
+          } catch (_) {
+            userDisplay = String(batch.user_ids || "—");
+          }
         }
 
         const rawAction = String(batch.action_type || (batch.records && batch.records[0] && batch.records[0].action_type) || "report_spam").toLowerCase();
@@ -8465,35 +8473,47 @@ Live execution batch logs are updating below...`, "success");
 
         const actionPillHtml = `<span class="pill ${actionClass}">${actionIcon}${actionLabel}</span>`;
 
-        const rowsHtml = batch.records.map((r, rIdx) => {
-          let statusClass = "status-created";
-          const stLower = (r.status || "").toLowerCase();
-          if (stLower.includes("completed") || stLower.includes("success")) {
-            statusClass = "status-completed";
-          } else if (stLower.includes("fail") || stLower.includes("error")) {
-            statusClass = "status-failed";
-          }
-
-          let resultHtml = "";
-          if (r.is_completed) {
-            const hasFail = r.failure_count > 0;
-            const resColor = hasFail ? 'var(--danger)' : 'var(--accent)';
-            const textVal = r.is_success && r.is_success !== '-' ? r.is_success : (hasFail ? 'Failed' : 'Success');
-            resultHtml = `<span style="font-family: monospace; font-size: 0.82rem; color: ${resColor};">${escapeHtml(textVal)}</span>`;
-          } else {
-            resultHtml = `<span style="color: var(--muted); font-size: 0.82rem;">—</span>`;
-          }
-
-          return `
+        let rowsHtml = "";
+        if (!batch.records || batch.records.length === 0) {
+          rowsHtml = `
             <tr>
-              <td style="color: var(--muted);">${rIdx + 1}</td>
-              <td><code>${escapeHtml(r.account_email || "—")}</code></td>
-              <td><span class="status-tag ${statusClass}">${escapeHtml(r.status || "Unknown")}</span></td>
-              <td>${resultHtml}</td>
-              <td style="color: var(--muted); font-size: 0.8rem;">${escapeHtml(r.starting_date || "—")}</td>
+              <td colspan="5" class="empty-state" style="padding: 16px; text-align: center; color: #94a3b8;">
+                <span class="live-dot" style="width: 7px; height: 7px; background: #fde047; box-shadow: 0 0 8px #fde047; margin-right: 6px;"></span>
+                Run submitted &bull; Background execution scheduled across accounts (awaiting backend tracker records)...
+              </td>
             </tr>
           `;
-        }).join("");
+        } else {
+          rowsHtml = batch.records.map((r, rIdx) => {
+            let statusClass = "status-created";
+            const stLower = (r.status || "").toLowerCase();
+            if (stLower.includes("completed") || stLower.includes("success")) {
+              statusClass = "status-completed";
+            } else if (stLower.includes("fail") || stLower.includes("error")) {
+              statusClass = "status-failed";
+            }
+
+            let resultHtml = "";
+            if (r.is_completed) {
+              const hasFail = r.failure_count > 0;
+              const resColor = hasFail ? 'var(--danger)' : 'var(--accent)';
+              const textVal = r.is_success && r.is_success !== '-' ? r.is_success : (hasFail ? 'Failed' : 'Success');
+              resultHtml = `<span style="font-family: monospace; font-size: 0.82rem; color: ${resColor};">${escapeHtml(textVal)}</span>`;
+            } else {
+              resultHtml = `<span style="color: var(--muted); font-size: 0.82rem;">—</span>`;
+            }
+
+            return `
+              <tr>
+                <td style="color: var(--muted);">${rIdx + 1}</td>
+                <td><code>${escapeHtml(r.account_email || "—")}</code></td>
+                <td><span class="status-tag ${statusClass}">${escapeHtml(r.status || "Unknown")}</span></td>
+                <td>${resultHtml}</td>
+                <td style="color: var(--muted); font-size: 0.8rem;">${escapeHtml(r.starting_date || "—")}</td>
+              </tr>
+            `;
+          }).join("");
+        }
 
         let headerMetricsHtml = "";
         if (batch.is_completed) {
@@ -8702,17 +8722,25 @@ Live execution batch logs are updating below...`, "success");
 
         let commentDisplay = "";
         let userDisplay = "";
-        try {
-          const cArr = JSON.parse(batch.comment_ids);
-          commentDisplay = Array.isArray(cArr) ? cArr.join(" | ") : batch.comment_ids;
-        } catch (_) {
-          commentDisplay = batch.comment_ids;
+        if (Array.isArray(batch.comment_ids)) {
+          commentDisplay = batch.comment_ids.join(" | ");
+        } else {
+          try {
+            const cArr = JSON.parse(batch.comment_ids);
+            commentDisplay = Array.isArray(cArr) ? cArr.join(" | ") : String(batch.comment_ids || "—");
+          } catch (_) {
+            commentDisplay = String(batch.comment_ids || "—");
+          }
         }
-        try {
-          const uArr = JSON.parse(batch.user_ids);
-          userDisplay = Array.isArray(uArr) ? uArr.join(", ") : batch.user_ids;
-        } catch (_) {
-          userDisplay = batch.user_ids;
+        if (Array.isArray(batch.user_ids)) {
+          userDisplay = batch.user_ids.join(", ");
+        } else {
+          try {
+            const uArr = JSON.parse(batch.user_ids);
+            userDisplay = Array.isArray(uArr) ? uArr.join(", ") : String(batch.user_ids || "—");
+          } catch (_) {
+            userDisplay = String(batch.user_ids || "—");
+          }
         }
 
         const actionLabel = "Post Comment";
@@ -8721,35 +8749,47 @@ Live execution batch logs are updating below...`, "success");
 
         const actionPillHtml = `<span class="pill ${actionClass}">${actionIcon}${actionLabel}</span>`;
 
-        const rowsHtml = batch.records.map((r, rIdx) => {
-          let statusClass = "status-created";
-          const stLower = (r.status || "").toLowerCase();
-          if (stLower.includes("completed") || stLower.includes("success")) {
-            statusClass = "status-completed";
-          } else if (stLower.includes("fail") || stLower.includes("error")) {
-            statusClass = "status-failed";
-          }
-
-          let resultHtml = "";
-          if (r.is_completed) {
-            const hasFail = r.failure_count > 0;
-            const resColor = hasFail ? 'var(--danger)' : 'var(--accent)';
-            const textVal = r.is_success && r.is_success !== '-' ? r.is_success : (hasFail ? 'Failed' : 'Success');
-            resultHtml = `<span style="font-family: monospace; font-size: 0.82rem; color: ${resColor};">${escapeHtml(textVal)}</span>`;
-          } else {
-            resultHtml = `<span style="color: var(--muted); font-size: 0.82rem;">—</span>`;
-          }
-
-          return `
+        let rowsHtml = "";
+        if (!batch.records || batch.records.length === 0) {
+          rowsHtml = `
             <tr>
-              <td style="color: var(--muted);">${rIdx + 1}</td>
-              <td><code>${escapeHtml(r.account_email || "—")}</code></td>
-              <td><span class="status-tag ${statusClass}">${escapeHtml(r.status || "Unknown")}</span></td>
-              <td>${resultHtml}</td>
-              <td style="color: var(--muted); font-size: 0.8rem;">${escapeHtml(r.starting_date || "—")}</td>
+              <td colspan="5" class="empty-state" style="padding: 16px; text-align: center; color: #94a3b8;">
+                <span class="live-dot" style="width: 7px; height: 7px; background: #a855f7; box-shadow: 0 0 8px #a855f7; margin-right: 6px;"></span>
+                Post comment job submitted &bull; Background execution scheduled across accounts (awaiting backend tracker records)...
+              </td>
             </tr>
           `;
-        }).join("");
+        } else {
+          rowsHtml = batch.records.map((r, rIdx) => {
+            let statusClass = "status-created";
+            const stLower = (r.status || "").toLowerCase();
+            if (stLower.includes("completed") || stLower.includes("success")) {
+              statusClass = "status-completed";
+            } else if (stLower.includes("fail") || stLower.includes("error")) {
+              statusClass = "status-failed";
+            }
+
+            let resultHtml = "";
+            if (r.is_completed) {
+              const hasFail = r.failure_count > 0;
+              const resColor = hasFail ? 'var(--danger)' : 'var(--accent)';
+              const textVal = r.is_success && r.is_success !== '-' ? r.is_success : (hasFail ? 'Failed' : 'Success');
+              resultHtml = `<span style="font-family: monospace; font-size: 0.82rem; color: ${resColor};">${escapeHtml(textVal)}</span>`;
+            } else {
+              resultHtml = `<span style="color: var(--muted); font-size: 0.82rem;">—</span>`;
+            }
+
+            return `
+              <tr>
+                <td style="color: var(--muted);">${rIdx + 1}</td>
+                <td><code>${escapeHtml(r.account_email || "—")}</code></td>
+                <td><span class="status-tag ${statusClass}">${escapeHtml(r.status || "Unknown")}</span></td>
+                <td>${resultHtml}</td>
+                <td style="color: var(--muted); font-size: 0.8rem;">${escapeHtml(r.starting_date || "—")}</td>
+              </tr>
+            `;
+          }).join("");
+        }
 
         let headerMetricsHtml = "";
         if (batch.is_completed) {
