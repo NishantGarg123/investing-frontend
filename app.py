@@ -588,10 +588,10 @@ def _save_processing_request(payload: dict[str, object]) -> int:
     return int(row[0])
 
 
-def _normalize_action_type(raw_val: object) -> str:
+def _normalize_action_type(raw_val: object, default: str = "report_spam") -> str:
     """Normalize action type to standard keys: report_spam, upvote, downvote, or post_comment."""
     if not raw_val:
-        return "report_spam"
+        return default
     val = str(raw_val).strip().lower()
     if "post_comment" in val or "post comment" in val or "postcomment" in val:
         return "post_comment"
@@ -601,7 +601,7 @@ def _normalize_action_type(raw_val: object) -> str:
         return "downvote"
     if "report" in val or "spam" in val:
         return "report_spam"
-    return "report_spam"
+    return default
 
 
 def _extract_id_tokens(val: object) -> set[str]:
@@ -669,7 +669,7 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
     with _get_db_connection(timeout=15) as connection:
         cursor = connection.cursor()
 
-        # Check if an action type column exists on BackendProcessingTracker
+        # Check if an action type column exists on BackendProcessingTracker; safely add ActionType column if missing
         tracker_action_col = None
         try:
             cursor.execute("""
@@ -682,6 +682,16 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
                 if possible in tracker_cols:
                     tracker_action_col = possible
                     break
+            if not tracker_action_col:
+                try:
+                    cursor.execute("""
+                        IF COL_LENGTH('dbo.BackendProcessingTracker', 'ActionType') IS NULL
+                            ALTER TABLE dbo.BackendProcessingTracker ADD ActionType NVARCHAR(30) NULL;
+                    """)
+                    connection.commit()
+                    tracker_action_col = "ActionType"
+                except Exception as alter_err:
+                    app.logger.warning(f"Could not add ActionType column to BackendProcessingTracker: {alter_err}")
         except Exception:
             tracker_action_col = None
 
@@ -770,6 +780,7 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
 
     # Match tracker tasks to the corresponding UI batch
     unmatched_records = []
+    tasks_to_update_action = []
 
     for row in rows:
         task_id = row[0]
@@ -780,15 +791,18 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
         is_success = row[5] or ""
         starting_date = row[6]
 
-        row_action_type = None
+        explicit_row_action = None
         if tracker_action_col and len(row) > 7 and row[7]:
-            row_action_type = _normalize_action_type(row[7])
+            raw_act_cell = str(row[7]).strip()
+            if raw_act_cell:
+                explicit_row_action = _normalize_action_type(raw_act_cell, default="")
 
-        if not row_action_type:
-            if "@" in str(user_ids) or "@" in str(comment_ids) or (account_email and "@" in account_email and account_email in str(user_ids)):
-                row_action_type = "post_comment"
-            else:
-                row_action_type = "report_spam"
+        is_post_comment_row = bool(
+            explicit_row_action == "post_comment"
+            or "@" in str(user_ids)
+            or "@" in str(comment_ids)
+            or (account_email and "@" in account_email and account_email in str(user_ids))
+        )
 
         succ_match = re.search(r"success:\s*(\d+)", is_success, re.IGNORECASE)
         fail_match = re.search(r"failure:\s*(\d+)", is_success, re.IGNORECASE)
@@ -826,7 +840,7 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             "success_count": s_count,
             "failure_count": f_count,
             "starting_date": start_dt_str,
-            "action_type": row_action_type,
+            "action_type": explicit_row_action or ("post_comment" if is_post_comment_row else None),
             "_dt": row_dt,
             "comment_ids": comment_ids,
             "user_ids": user_ids,
@@ -849,12 +863,24 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             u_u_tokens = ureq["user_tokens"]
 
             # Action compatibility filter
-            if u_action == "post_comment" and row_action_type != "post_comment":
+            # 1. Post comment requests strictly match post comment tasks, and vice versa
+            if u_action == "post_comment" and not is_post_comment_row:
                 continue
-            if u_action != "post_comment" and row_action_type == "post_comment":
+            if u_action != "post_comment" and is_post_comment_row:
                 continue
-            if row_action_type and u_action and row_action_type != u_action and u_action in ("upvote", "downvote", "report_spam") and row_action_type in ("upvote", "downvote", "report_spam"):
+
+            # 2. Strict voting conflict filter: if tracker specifically specified 'upvote',
+            # it cannot match a 'downvote' UI run (and vice versa)
+            if explicit_row_action in ("upvote", "downvote") and u_action in ("upvote", "downvote") and explicit_row_action != u_action:
                 continue
+
+            # 3. If UI run is report_spam, but tracker record explicitly has a vote action (upvote or downvote)
+            if u_action == "report_spam" and explicit_row_action in ("upvote", "downvote"):
+                continue
+
+            # (Note: If tracker action is 'report_spam' or empty, but UI run is 'upvote' or 'downvote',
+            # it is permitted to match the UI run because the backend worker may log tasks under the generic
+            # tracker table default 'report_spam'. The authoritative action is u_action from InvestingUIProcessing.)
 
             time_diff = (row_dt - u_dt).total_seconds() if (row_dt and u_dt) else 0
 
@@ -867,17 +893,17 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
                 c_overlap = bool(row_c_tokens.intersection(u_c_tokens))
                 if c_overlap:
                     # Direct match on comment ID tokens!
-                    # Supports backend starting 10 min, 1 hour, or much later
                     time_penalty = max(0, time_diff)
                     score = 10000000 - time_penalty
+                    # Exact action match bonus
+                    if explicit_row_action and explicit_row_action == u_action:
+                        score += 500000
                 else:
                     # Both have comment tokens, but DO NOT overlap.
-                    # This task ran for DIFFERENT comments — strictly do NOT match this batch!
                     continue
             else:
-                # One or both have no comment tokens (e.g., post_comment text or empty comment_ids in tracker)
                 score = 0
-                if row_action_type and row_action_type == u_action:
+                if explicit_row_action and explicit_row_action == u_action:
                     score += 200000
 
                 if row_u_tokens and u_u_tokens and row_u_tokens.intersection(u_u_tokens):
@@ -897,6 +923,8 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
 
         if best_match_id is not None and best_score > 0:
             target_batch = ui_batches[best_match_id]
+            matched_action = target_batch["action_type"]
+            record["action_type"] = matched_action
             target_batch["records"].append(record)
             target_batch["_has_records"] = True
             target_batch["total_success"] += s_count
@@ -905,8 +933,30 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
                 target_batch["_accounts_set"].add(acc_clean)
             if not is_completed:
                 target_batch["_any_in_progress"] = True
+
+            # If BackendProcessingTracker has an action column and its stored value is not matched_action
+            # (e.g. was 'report_spam' or NULL for a downvote or upvote job), record task to sync in DB
+            if tracker_action_col and task_id and explicit_row_action != matched_action:
+                tasks_to_update_action.append((matched_action, task_id))
         else:
+            if not record.get("action_type"):
+                record["action_type"] = explicit_row_action or ("post_comment" if is_post_comment_row else "report_spam")
             unmatched_records.append(record)
+
+    # Persist updated action types to BackendProcessingTracker if needed
+    if tracker_action_col and tasks_to_update_action:
+        try:
+            with _get_db_connection(timeout=10) as connection:
+                cursor = connection.cursor()
+                for m_act, t_id in tasks_to_update_action:
+                    cursor.execute(f"""
+                        UPDATE dbo.BackendProcessingTracker
+                        SET {tracker_action_col} = ?
+                        WHERE task_id = ?
+                    """, m_act, t_id)
+                connection.commit()
+        except Exception as sync_err:
+            app.logger.warning(f"Could not sync ActionType to BackendProcessingTracker: {sync_err}")
 
     # 3. Group any unmatched records into standalone fallback batches
     fallback_batches = []
