@@ -16,6 +16,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from functools import wraps
+from zoneinfo import ZoneInfo
 try:
     import pyodbc
 except ImportError:
@@ -56,6 +57,7 @@ ECS_TRACKER_API_URL = os.getenv(
     "https://0ix0sky0j6.execute-api.us-west-2.amazonaws.com/dev/ecs-tracker",
 ).strip()
 ECS_CLEANUP_TOKEN = os.getenv("ECS_CLEANUP_TOKEN", "##ECSDELETE##").strip()
+IST_TIMEZONE = ZoneInfo("Asia/Kolkata")
 
 
 def _get_db_connection(timeout: int = 15):
@@ -688,26 +690,38 @@ def _extract_id_tokens(val: object) -> set[str]:
     return tokens
 
 
-def _parse_tracker_datetime(val):
+def _parse_tracker_datetime(val, assume_utc: bool = False):
+    parsed = None
     if isinstance(val, datetime):
-        return val
+        parsed = val
     if not val:
         return None
-    s = str(val).strip()
-    try:
-        return datetime.fromisoformat(s.replace("Z", "+00:00"))
-    except Exception:
-        pass
-    for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+    if parsed is None:
+        s = str(val).strip()
         try:
-            return datetime.strptime(s[:19], fmt)
+            parsed = datetime.fromisoformat(s.replace("Z", "+00:00"))
         except Exception:
             pass
-    return None
+        if parsed is None:
+            for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+                try:
+                    parsed = datetime.strptime(s[:19], fmt)
+                    break
+                except Exception:
+                    pass
+    if parsed is None:
+        return None
+
+    # UI processing timestamps are UTC, while legacy tracker timestamps are
+    # already stored as IST. Normalize both to an aware IST datetime before
+    # matching, displaying, and sorting.
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc if assume_utc else IST_TIMEZONE)
+    return parsed.astimezone(IST_TIMEZONE)
 
 
 def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
-    """Fetch execution runs and group into isolated batches anchored on exact run submission comments and tasks."""
+    """Fetch dashboard batches from BackendProcessingTracker, matched to their UI requests when available."""
     if pyodbc is None:
         raise RuntimeError("pyodbc is not installed")
     if not DB_CONNECTION_STRING:
@@ -804,7 +818,7 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
     ui_batches = {}
     for ureq in ui_requests:
         uid = ureq["id"]
-        s_dt = _parse_tracker_datetime(ureq["starting_date"])
+        s_dt = _parse_tracker_datetime(ureq["starting_date"], assume_utc=True)
         dt_str = s_dt.strftime("%Y-%m-%d %H:%M:%S") if s_dt else ""
         ui_batches[uid] = {
             "ui_id": uid,
@@ -823,6 +837,7 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             "_u_tokens": ureq["user_tokens"],
             "_has_records": False,
             "_any_in_progress": False,
+            "_tracker_latest_dt": None,
         }
 
     # Match tracker tasks to the corresponding UI batch
@@ -876,7 +891,7 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             f_count = 0
 
         row_dt = _parse_tracker_datetime(starting_date)
-        start_dt_str = row_dt.strftime("%Y-%m-%d %H:%M:%S") if row_dt else ""
+        start_dt_str = row_dt.strftime("%Y-%m-%d %H:%M:%S IST") if row_dt else ""
 
         record = {
             "task_id": task_id,
@@ -974,6 +989,11 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             record["action_type"] = matched_action
             target_batch["records"].append(record)
             target_batch["_has_records"] = True
+            if row_dt and (
+                target_batch["_tracker_latest_dt"] is None
+                or row_dt > target_batch["_tracker_latest_dt"]
+            ):
+                target_batch["_tracker_latest_dt"] = row_dt
             target_batch["total_success"] += s_count
             target_batch["total_failure"] += f_count
             if has_acc_clean:
@@ -1058,7 +1078,10 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
                 }
                 fallback_batches.append(curr_fb)
 
-    # 4. Finalize UI batches and fallback batches
+    # 4. Finalize tracker-backed batches and standalone tracker fallbacks.
+    # A UI submission by itself is not an execution log: showing it before the
+    # worker creates a BackendProcessingTracker row produces misleading empty
+    # "In Progress" cards. Keep the dashboard tracker-driven as before.
     batches = []
 
     for b in ui_batches.values():
@@ -1069,10 +1092,11 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
                 b["total_accounts"] = len(b["records"])
 
             b["is_completed"] = not b["_any_in_progress"]
-            batches.append(b)
-        else:
-            # UI run preserved in batch logs regardless of how much later backend starts
-            b["is_completed"] = False
+            # Tracker activity is the execution log's timestamp and must drive
+            # both the displayed time and the latest-first ordering.
+            if b["_tracker_latest_dt"]:
+                b["_dt"] = b["_tracker_latest_dt"]
+                b["starting_date"] = b["_dt"].strftime("%Y-%m-%d %H:%M:%S IST")
             batches.append(b)
 
     for fb in fallback_batches:
@@ -1086,7 +1110,7 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
         batches.append(fb)
 
     # Sort all batches descending by run date (newest first)
-    epoch = datetime(1970, 1, 1)
+    epoch = datetime(1970, 1, 1, tzinfo=IST_TIMEZONE)
     batches.sort(key=lambda x: (x.get("_dt") or epoch), reverse=True)
 
     # 5. Apply action_filter if specified
@@ -1108,6 +1132,7 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
         b.pop("_u_tokens", None)
         b.pop("_has_records", None)
         b.pop("_any_in_progress", None)
+        b.pop("_tracker_latest_dt", None)
         b.pop("_raw_comments", None)
         b.pop("ui_id", None)
 
