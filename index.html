@@ -1227,6 +1227,12 @@
       color: #fbbf24;
     }
 
+    .user-limit-tag.tag-hourly-limit {
+      background: rgba(249, 115, 22, 0.18);
+      border: 1px solid rgba(249, 115, 22, 0.45);
+      color: #fb923c;
+    }
+
     .status {
       display: none;
       margin-top: 22px;
@@ -3720,7 +3726,8 @@
         min-height: 42px;
       }
 
-      #limit-reached-modal .modal-body > div[style*="grid-template-columns"] {
+      #limit-reached-modal .modal-body > div[style*="grid-template-columns"],
+      #hourly-limit-reached-modal .modal-body > div[style*="grid-template-columns"] {
         gap: 6px !important;
       }
 
@@ -4041,7 +4048,7 @@
               <div class="options">
                 <div>
                   <label for="account-count">Number of accounts to run</label>
-                  <input id="account-count" type="number" value="19" min="1" step="1" inputmode="numeric" required />
+                  <input id="account-count" type="number" value="10" min="1" step="1" inputmode="numeric" required />
                   <p class="field-note">Credentials remain in Lambda; they are never sent from this UI.</p>
                 </div>
                 <div>
@@ -4119,7 +4126,7 @@
               <div class="comments-actions-group">
                 <div class="account-stepper-box">
                   <span>Accounts:</span>
-                  <input type="number" id="comments-account-count" value="19" min="1" step="1"
+                  <input type="number" id="comments-account-count" value="10" min="1" step="1"
                     title="Number of accounts to run" />
                 </div>
                 <button type="button" id="comments-report-btn" class="btn-action-report" disabled title="Report selected comments">
@@ -4630,12 +4637,12 @@
 
           <!-- TAB: USER REPORT LIMITS (SUPER ADMIN ONLY) -->
           <div class="tab-content" id="tab-limits">
-            <div class="eyebrow">Super Admin Console &bull; Daily Governance</div>
+            <div class="eyebrow">Super Admin Console &bull; Governance &amp; Rate Limits</div>
             <div class="comments-header-bar">
               <div>
-                <h1>Daily User Report Limits</h1>
+                <h1>User Report Limits (Daily &amp; Hourly)</h1>
                 <p class="intro" style="margin-bottom:0;">
-                  Configure the maximum number of comments for a particular user that can be reported in a single calendar day. By default, minimum <strong>3 comments per day</strong> are allowed.
+                  Configure maximum comments per user that can be reported daily and hourly. By default, minimum <strong>3 comments per day</strong> and <strong>2 comments per hour</strong> are allowed. Limits can be customized user-wise.
                 </p>
               </div>
               <div class="comments-actions-group">
@@ -4661,7 +4668,7 @@
                   </svg>
                 </div>
                 <div style="font-size: 0.84rem; line-height: 1.45; color: #cbd5e1;">
-                  <strong>How Daily Limits Work:</strong> By default, minimum <strong>3 comments</strong> of any user can be reported in a single day. You can adjust the maximum count for any user (e.g. select <strong>4</strong> for Don wood). The selected count is applied <strong>only after clicking the "Apply" button</strong> in that user's row.
+                  <strong>How Report Limits Work:</strong> Daily default is <strong>3 comments/day</strong>, and hourly default is <strong>2 comments/hour</strong>. When a user reaches their hourly limit, selecting their comments is restricted until the window resets. You can increase or decrease limits for each user and click <strong>Apply</strong> to save changes.
                 </div>
               </div>
             </div>
@@ -4670,11 +4677,12 @@
             <div class="card" style="padding: 20px;">
               <div class="comments-toolbar">
                 <div class="toolbar-left">
-                  <h3 style="font-size: 1.05rem; font-weight: 700;">Configured Users &amp; Daily Quotas</h3>
+                  <h3 style="font-size: 1.05rem; font-weight: 700;">Configured Users &amp; Report Quotas</h3>
                   <div class="billing-filter-chips">
                     <button type="button" class="billing-chip active" id="filter-limits-all" onclick="filterUserLimits('all')">All (<span id="count-limits-all">0</span>)</button>
                     <button type="button" class="billing-chip" id="filter-limits-custom" onclick="filterUserLimits('custom')">Custom Limits (<span id="count-limits-custom">0</span>)</button>
                     <button type="button" class="billing-chip" id="filter-limits-reported" onclick="filterUserLimits('reported')">Reported Today (<span id="count-limits-reported">0</span>)</button>
+                    <button type="button" class="billing-chip" id="filter-limits-hourly" onclick="filterUserLimits('hourly')">Hourly Limit Reached (<span id="count-limits-hourly">0</span>)</button>
                   </div>
                 </div>
                 <div class="toolbar-right">
@@ -4687,18 +4695,20 @@
                 <table id="limits-table">
                   <thead>
                     <tr>
-                      <th style="width: 50px;">#</th>
-                      <th style="width: 150px;">User ID</th>
+                      <th style="width: 45px;">#</th>
+                      <th style="width: 140px;">User ID</th>
                       <th>User Name</th>
-                      <th style="width: 140px; text-align: center;">Reported Today</th>
-                      <th style="width: 200px; text-align: center;">Max Comments / Day (Min 3)</th>
-                      <th style="width: 140px; text-align: center;">Active Limit</th>
-                      <th style="width: 140px; text-align: center;">Action</th>
+                      <th style="width: 130px; text-align: center;">Reported Today</th>
+                      <th style="width: 130px; text-align: center;">Reported (1h)</th>
+                      <th style="width: 170px; text-align: center;">Daily Limit (Min 3)</th>
+                      <th style="width: 170px; text-align: center;">Hourly Limit (Default 2)</th>
+                      <th style="width: 150px; text-align: center;">Active Limits</th>
+                      <th style="width: 130px; text-align: center;">Action</th>
                     </tr>
                   </thead>
                   <tbody id="limits-table-body">
                     <tr>
-                      <td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading user report limits...</td>
+                      <td colspan="9" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading user report limits...</td>
                     </tr>
                   </tbody>
                 </table>
@@ -5204,6 +5214,109 @@
 
       <div class="modal-footer" style="border-top: 1px solid rgba(245, 158, 11, 0.15);">
         <button type="button" class="btn-primary" id="limit-modal-ok-btn" onclick="closeLimitReachedModal()" style="min-width: 120px; background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #f59e0b; color: #ffffff; font-weight: 700;">
+          Understood
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOURLY REPORTING LIMIT REACHED MODAL -->
+  <div id="hourly-limit-reached-modal" class="modal-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="hourly-modal-title">
+    <div class="modal-dialog limit-modal-dialog">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(249, 115, 22, 0.3);">
+        <div class="modal-title-wrap">
+          <div class="modal-warning-badge" style="background: rgba(249, 115, 22, 0.18); border-color: rgba(249, 115, 22, 0.45); color: #fb923c;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <div>
+            <h3 id="hourly-modal-title" class="modal-title" style="color: #fb923c;">Hourly Limit Reached</h3>
+            <div class="modal-subtitle" style="color: #94a3b8;">Hourly comment reporting quota completed for this user</div>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" id="hourly-modal-close-btn" aria-label="Close modal" onclick="closeHourlyLimitReachedModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body" style="gap: 18px;">
+        <!-- User Identity Card -->
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 12px; padding: 12px 16px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div id="hourly-modal-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 14px rgba(249, 115, 22, 0.35);">
+              U
+            </div>
+            <div>
+              <div id="hourly-modal-user-name" style="font-size: 1.05rem; font-weight: 700; color: #ffffff;">User Name</div>
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                <span style="font-size: 0.75rem; color: #94a3b8;">User ID:</span>
+                <code id="hourly-modal-user-id" style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px;">—</code>
+              </div>
+            </div>
+          </div>
+          <span style="background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.35); color: #fb923c; font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em;">
+            Hourly Quota Reached
+          </span>
+        </div>
+
+        <!-- Main Alert Box with Remaining Time -->
+        <div style="background: rgba(249, 115, 22, 0.09); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 12px; padding: 16px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <div style="flex: 1;">
+              <div style="font-size: 0.95rem; font-weight: 700; color: #fb923c; margin-bottom: 4px;">Please Wait: Hourly Limit Reached</div>
+              <div id="hourly-modal-message" style="font-size: 0.9rem; color: #e2e8f0; line-height: 1.5;">
+                Please wait, hourly limit reached. Try again after <strong id="hourly-modal-time-highlight" style="color: #fb923c;">—</strong>.
+              </div>
+              <div style="margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; background: rgba(249, 115, 22, 0.18); border: 1px solid rgba(249, 115, 22, 0.35); border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 600; color: #fed7aa;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Try again after <span id="hourly-modal-countdown">—</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Limit Breakdown Metric Grid -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.12); border-radius: 10px; padding: 12px; text-align: center;">
+            <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em;">Hourly Limit</div>
+            <div id="hourly-modal-max-limit" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">2</div>
+            <div style="font-size: 0.7rem; color: var(--muted); margin-top: 2px;">comments / hour</div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.12); border-radius: 10px; padding: 12px; text-align: center;">
+            <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em;">Reported (1h)</div>
+            <div id="hourly-modal-reported-count" style="font-size: 1.35rem; font-weight: 800; color: #fb923c; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">2</div>
+            <div style="font-size: 0.7rem; color: var(--muted); margin-top: 2px;">comments</div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: 10px; padding: 12px; text-align: center;">
+            <div style="font-size: 0.72rem; color: #fda4af; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em;">Available Now</div>
+            <div id="hourly-modal-remaining" style="font-size: 1.35rem; font-weight: 800; color: #f43f5e; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">0</div>
+            <div style="font-size: 0.7rem; color: #f87171; margin-top: 2px;">quota left</div>
+          </div>
+        </div>
+
+        <!-- Super Admin Quick Action Notice -->
+        <div id="hourly-modal-superadmin-box" style="display: none; align-items: center; justify-content: space-between; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 10px 14px; font-size: 0.82rem; color: #bae6fd;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>You have Super Admin access to adjust limits.</span>
+          </div>
+          <button type="button" class="btn-text" id="hourly-modal-admin-btn" style="color: #38bdf8; font-size: 0.8rem; text-decoration: underline; font-weight: 700; cursor: pointer;">
+            Adjust in Report Limits &rarr;
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="border-top: 1px solid rgba(249, 115, 22, 0.15);">
+        <button type="button" class="btn-primary" id="hourly-modal-ok-btn" onclick="closeHourlyLimitReachedModal()" style="min-width: 120px; background: linear-gradient(135deg, #f97316, #ea580c); border-color: #f97316; color: #ffffff; font-weight: 700;">
           Understood
         </button>
       </div>
@@ -6407,21 +6520,124 @@
     // ─────────────────────────────────────────────────────────────────
     const commentsUserLimits = {};
 
+    function cacheCommentUserLimits(limits) {
+      if (!limits || typeof limits !== "object") return;
+
+      Object.values(limits).forEach(rawInfo => {
+        if (!rawInfo || typeof rawInfo !== "object") return;
+
+        const info = {
+          ...rawInfo,
+          user_id: rawInfo.user_id ? String(rawInfo.user_id).trim() : "",
+          user_name: rawInfo.user_name ? String(rawInfo.user_name).trim() : "",
+          max_daily_comments: Number(rawInfo.max_daily_comments !== undefined ? rawInfo.max_daily_comments : 3),
+          max_hourly_comments: Number(rawInfo.max_hourly_comments !== undefined ? rawInfo.max_hourly_comments : 2),
+          reported_today: Number(rawInfo.reported_today || 0),
+          remaining_today: Number(rawInfo.remaining_today !== undefined ? rawInfo.remaining_today : 0),
+          reported_hourly: Number(rawInfo.reported_hourly || 0),
+          remaining_hourly: Number(rawInfo.remaining_hourly !== undefined ? rawInfo.remaining_hourly : 0),
+          hourly_reset_seconds: Number(rawInfo.hourly_reset_seconds || 0),
+          hourly_reset_text: rawInfo.hourly_reset_text || "",
+          is_custom: Boolean(rawInfo.is_custom),
+          reset_hours: Number(rawInfo.reset_hours || 24)
+        };
+
+        if (info.user_id) commentsUserLimits[info.user_id] = info;
+        if (info.user_name) commentsUserLimits[info.user_name.toLowerCase()] = info;
+      });
+    }
+
+    async function refreshCommentUserLimits(commentItems) {
+      const userIds = [...new Set((commentItems || [])
+        .map(item => String(item && item.user_id ? item.user_id : "").trim())
+        .filter(Boolean))];
+      if (!userIds.length) return;
+
+      const query = new URLSearchParams();
+      userIds.forEach(userId => query.append("user_id", userId));
+
+      try {
+        const res = await authFetch(`/api/user-limits/status?${query.toString()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.success) cacheCommentUserLimits(data.limits);
+      } catch (err) {
+        // Reporting is still protected on the server. Do not block loading comments
+        // if the informational limit-status request is temporarily unavailable.
+        console.warn("Could not refresh comment report limits:", err);
+      }
+    }
+
     function getUserLimitInfo(uid, uname) {
       const cleanUid = uid ? String(uid).trim() : "";
       const cleanUname = uname ? String(uname).trim() : "";
+      const cleanUnameLower = cleanUname ? cleanUname.toLowerCase() : "";
 
       let info = (cleanUid && commentsUserLimits[cleanUid]) ||
-                 (cleanUname && commentsUserLimits[cleanUname.toLowerCase()]) ||
+                 (cleanUnameLower && commentsUserLimits[cleanUnameLower]) ||
                  null;
+
+      // Always cross-reference with allUserLimits if available to pick up custom limits set in SuperAdmin
+      if (Array.isArray(allUserLimits) && allUserLimits.length > 0) {
+        const found = allUserLimits.find(u =>
+          (cleanUid && String(u.user_id || u.id || "").trim() === cleanUid) ||
+          (cleanUnameLower && (u.user_name || "").trim().toLowerCase() === cleanUnameLower)
+        );
+        if (found) {
+          if (!info) {
+            info = {
+              user_id: String(found.user_id || found.id || cleanUid),
+              user_name: found.user_name || cleanUname,
+              max_daily_comments: found.max_daily_comments !== undefined ? Number(found.max_daily_comments) : 3,
+              max_hourly_comments: found.max_hourly_comments !== undefined ? Number(found.max_hourly_comments) : 2,
+              reported_today: Number(found.reported_today || 0),
+              remaining_today: Number(found.remaining_today !== undefined ? found.remaining_today : 3),
+              reported_hourly: Number(found.reported_hourly || 0),
+              remaining_hourly: Number(found.remaining_hourly !== undefined ? found.remaining_hourly : 2),
+              hourly_reset_seconds: found.hourly_reset_seconds || 0,
+              hourly_reset_text: found.hourly_reset_text || "",
+              is_custom: Boolean(found.is_custom),
+              reset_hours: 24
+            };
+          } else {
+            // Keep max limits and reported counts in sync with allUserLimits
+            if (found.max_hourly_comments !== undefined) {
+              info.max_hourly_comments = Number(found.max_hourly_comments);
+            }
+            if (found.max_daily_comments !== undefined) {
+              info.max_daily_comments = Number(found.max_daily_comments);
+            }
+            if (found.reported_hourly !== undefined && Number(found.reported_hourly) > Number(info.reported_hourly || 0)) {
+              info.reported_hourly = Number(found.reported_hourly);
+            }
+            if (found.reported_today !== undefined && Number(found.reported_today) > Number(info.reported_today || 0)) {
+              info.reported_today = Number(found.reported_today);
+            }
+            if (found.hourly_reset_text && !info.hourly_reset_text) {
+              info.hourly_reset_text = found.hourly_reset_text;
+            }
+            if (found.hourly_reset_seconds && !info.hourly_reset_seconds) {
+              info.hourly_reset_seconds = found.hourly_reset_seconds;
+            }
+          }
+          if (cleanUid) commentsUserLimits[cleanUid] = info;
+          if (cleanUnameLower) commentsUserLimits[cleanUnameLower] = info;
+          return info;
+        }
+      }
 
       if (!info) {
         return {
           user_id: cleanUid,
           user_name: cleanUname,
           max_daily_comments: 3,
+          max_hourly_comments: 2,
           reported_today: 0,
           remaining_today: 3,
+          reported_hourly: 0,
+          remaining_hourly: 2,
+          hourly_reset_seconds: 0,
+          hourly_reset_text: "",
           is_custom: false,
           reset_hours: 24
         };
@@ -6528,6 +6744,156 @@
       limitReachedModal.addEventListener("click", (e) => {
         if (e.target === limitReachedModal) {
           closeLimitReachedModal();
+        }
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // HOURLY LIMIT REACHED MODAL & TOAST
+    // ─────────────────────────────────────────────────────────────────
+    const hourlyLimitReachedModal = document.getElementById("hourly-limit-reached-modal");
+    let hourlyModalCountdownTimer = null;
+
+    function showHourlyLimitToast(message) {
+      const existing = document.querySelectorAll(".hourly-limit-toast");
+      existing.forEach(el => el.remove());
+
+      const toast = document.createElement("div");
+      toast.className = "hourly-limit-toast";
+      toast.style.cssText = "position: fixed; top: 24px; right: 24px; z-index: 10002; background: linear-gradient(135deg, rgba(234, 88, 12, 0.96), rgba(194, 65, 12, 0.96)); color: #ffffff; padding: 13px 20px; border-radius: 12px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(249, 115, 22, 0.35); display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255, 255, 255, 0.25); pointer-events: auto; max-width: 440px; line-height: 1.45;";
+      toast.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span>${escapeHtml(message)}</span>
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(-10px)";
+        toast.style.transition = "all 0.3s ease";
+        setTimeout(() => toast.remove(), 320);
+      }, 5000);
+    }
+    window.showHourlyLimitToast = showHourlyLimitToast;
+
+    function openHourlyLimitReachedModal({ userName, userId, maxHourly, reportedHourly, currentlySelected, remainingTime, remainingSeconds }) {
+      if (!hourlyLimitReachedModal) return;
+
+      const nameDisp = userName || (userId ? `User ID ${userId}` : "Unknown User");
+      const idDisp = userId ? `ID: ${userId}` : "N/A";
+      const limitVal = maxHourly !== undefined ? maxHourly : 2;
+      const reportedVal = reportedHourly !== undefined ? reportedHourly : 2;
+
+      const avatarEl = document.getElementById("hourly-modal-avatar");
+      if (avatarEl) {
+        avatarEl.textContent = (nameDisp.charAt(0) || "U").toUpperCase();
+      }
+
+      const nameEl = document.getElementById("hourly-modal-user-name");
+      if (nameEl) nameEl.textContent = nameDisp;
+
+      const idEl = document.getElementById("hourly-modal-user-id");
+      if (idEl) idEl.textContent = idDisp;
+
+      const maxLimitEl = document.getElementById("hourly-modal-max-limit");
+      if (maxLimitEl) maxLimitEl.textContent = limitVal;
+
+      const reportedCountEl = document.getElementById("hourly-modal-reported-count");
+      if (reportedCountEl) reportedCountEl.textContent = reportedVal;
+
+      const remainingEl = document.getElementById("hourly-modal-remaining");
+      if (remainingEl) remainingEl.textContent = "0";
+
+      let timeText = remainingTime || "a few minutes";
+      let secLeft = remainingSeconds && remainingSeconds > 0 ? remainingSeconds : 3600;
+
+      const highlightEl = document.getElementById("hourly-modal-time-highlight");
+      const countdownBadge = document.getElementById("hourly-modal-countdown");
+
+      function updateCountdownDisplay() {
+        if (secLeft <= 0) {
+          if (highlightEl) highlightEl.textContent = "a few moments";
+          if (countdownBadge) countdownBadge.textContent = "a few moments";
+          return;
+        }
+        const m = Math.floor(secLeft / 60);
+        const s = secLeft % 60;
+        let displayStr = "";
+        if (m > 0) {
+          displayStr = `${m}m ${s < 10 ? '0' : ''}${s}s`;
+        } else {
+          displayStr = `${s}s`;
+        }
+        if (highlightEl) highlightEl.textContent = displayStr;
+        if (countdownBadge) countdownBadge.textContent = displayStr;
+      }
+
+      if (hourlyModalCountdownTimer) {
+        clearInterval(hourlyModalCountdownTimer);
+        hourlyModalCountdownTimer = null;
+      }
+
+      updateCountdownDisplay();
+      hourlyModalCountdownTimer = setInterval(() => {
+        secLeft--;
+        if (secLeft <= 0) {
+          clearInterval(hourlyModalCountdownTimer);
+          hourlyModalCountdownTimer = null;
+        }
+        updateCountdownDisplay();
+      }, 1000);
+
+      const superAdminBox = document.getElementById("hourly-modal-superadmin-box");
+      const superAdminBtn = document.getElementById("hourly-modal-admin-btn");
+      if (superAdminBox) {
+        const isSuper = isCurrentUserSuperAdmin();
+        superAdminBox.style.display = isSuper ? "flex" : "none";
+        if (superAdminBtn) {
+          superAdminBtn.onclick = () => {
+            closeHourlyLimitReachedModal();
+            switchTab("limits");
+            const limitsSearch = document.getElementById("limits-search-input");
+            if (limitsSearch) {
+              limitsSearch.value = nameDisp || userId;
+              loadUserLimits();
+            }
+          };
+        }
+      }
+
+      hourlyLimitReachedModal.style.display = "flex";
+      void hourlyLimitReachedModal.offsetWidth;
+      hourlyLimitReachedModal.classList.add("open");
+    }
+    window.openHourlyLimitReachedModal = openHourlyLimitReachedModal;
+
+    function closeHourlyLimitReachedModal() {
+      if (hourlyModalCountdownTimer) {
+        clearInterval(hourlyModalCountdownTimer);
+        hourlyModalCountdownTimer = null;
+      }
+      if (!hourlyLimitReachedModal) return;
+      hourlyLimitReachedModal.classList.remove("open");
+      setTimeout(() => {
+        if (!hourlyLimitReachedModal.classList.contains("open")) {
+          hourlyLimitReachedModal.style.display = "none";
+        }
+      }, 220);
+    }
+    window.closeHourlyLimitReachedModal = closeHourlyLimitReachedModal;
+
+    // Close on Escape or click outside
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && hourlyLimitReachedModal && hourlyLimitReachedModal.classList.contains("open")) {
+        closeHourlyLimitReachedModal();
+      }
+    });
+
+    if (hourlyLimitReachedModal) {
+      hourlyLimitReachedModal.addEventListener("click", (e) => {
+        if (e.target === hourlyLimitReachedModal) {
+          closeHourlyLimitReachedModal();
         }
       });
     }
@@ -6657,7 +7023,26 @@
 
       if (confirmed) {
         if (pendingConfirmComment) {
-          selectedComments.set(pendingConfirmComment.id, pendingConfirmComment);
+          const limitInfo = getUserLimitInfo(pendingConfirmComment.user_id, pendingConfirmComment.user_name);
+          const maxHourly = limitInfo.max_hourly_comments !== undefined ? Number(limitInfo.max_hourly_comments) : 2;
+          const reportedHourly = Number(limitInfo.reported_hourly || 0);
+          const currentSel = getCurrentlySelectedCountForUser(pendingConfirmComment.user_id, pendingConfirmComment.user_name, pendingConfirmComment.id);
+
+          if (reportedHourly + currentSel >= maxHourly) {
+            const remText = limitInfo.hourly_reset_text || "59 minutes";
+            showHourlyLimitToast(`Please wait, hourly limit reached. Try again after ${remText}.`);
+            openHourlyLimitReachedModal({
+              userName: pendingConfirmComment.user_name || limitInfo.user_name,
+              userId: pendingConfirmComment.user_id || limitInfo.user_id,
+              maxHourly: maxHourly,
+              reportedHourly: reportedHourly,
+              currentlySelected: currentSel,
+              remainingTime: remText,
+              remainingSeconds: limitInfo.hourly_reset_seconds || 3600
+            });
+          } else {
+            selectedComments.set(pendingConfirmComment.id, pendingConfirmComment);
+          }
         } else if (pendingBatchComments) {
           pendingBatchComments.forEach(item => selectedComments.set(item.id, item));
         }
@@ -6709,6 +7094,56 @@
         selectedComments.delete(dbId);
         updateSelectionUI();
       } else {
+        // ── 1. HOURLY LIMIT CHECK (AT TIME OF SELECTION) ──
+        const limitInfo = getUserLimitInfo(item.user_id, item.user_name);
+        const maxHourly = limitInfo.max_hourly_comments !== undefined ? Number(limitInfo.max_hourly_comments) : 2;
+        const reportedHourly = Number(limitInfo.reported_hourly || 0);
+        const currentlySelectedForUser = getCurrentlySelectedCountForUser(item.user_id, item.user_name, dbId);
+
+        if (reportedHourly + currentlySelectedForUser >= maxHourly) {
+          // Revert checkbox if user clicked on checkbox directly
+          if (event && event.target && event.target.type === "checkbox") {
+            event.target.checked = false;
+          }
+          const rowCb = document.querySelector(`.comment-row[data-comment-db-id="${dbId}"] .row-select-checkbox`);
+          if (rowCb) rowCb.checked = false;
+
+          const remainingText = limitInfo.hourly_reset_text || "59 minutes";
+          const remainingSeconds = limitInfo.hourly_reset_seconds || 3600;
+
+          showHourlyLimitToast(`Please wait, hourly limit reached. Try again after ${remainingText}.`);
+          openHourlyLimitReachedModal({
+            userName: item.user_name || limitInfo.user_name,
+            userId: item.user_id || limitInfo.user_id,
+            maxHourly: maxHourly,
+            reportedHourly: reportedHourly,
+            currentlySelected: currentlySelectedForUser,
+            remainingTime: remainingText,
+            remainingSeconds: remainingSeconds
+          });
+          return;
+        }
+
+        // ── 2. DAILY LIMIT CHECK ──
+        const maxDaily = limitInfo.max_daily_comments !== undefined ? Number(limitInfo.max_daily_comments) : 3;
+        const reportedToday = Number(limitInfo.reported_today || 0);
+        if (reportedToday + currentlySelectedForUser >= maxDaily) {
+          if (event && event.target && event.target.type === "checkbox") {
+            event.target.checked = false;
+          }
+          const rowCb = document.querySelector(`.comment-row[data-comment-db-id="${dbId}"] .row-select-checkbox`);
+          if (rowCb) rowCb.checked = false;
+
+          openLimitReachedModal({
+            userName: item.user_name || limitInfo.user_name,
+            userId: item.user_id || limitInfo.user_id,
+            maxLimit: maxDaily,
+            reportedToday: reportedToday,
+            currentlySelected: currentlySelectedForUser
+          });
+          return;
+        }
+
         const stLower = (item.status || "").toLowerCase().trim();
         const isProcessed = stLower !== "not processed" && stLower !== "" && (stLower.includes("report") || stLower.includes("upvote") || stLower.includes("downvote") || stLower.includes("run") || stLower.includes("complete") || activeCommentsStatus === "processed");
 
@@ -6732,15 +7167,60 @@
         return;
       }
 
-      const reportedItems = currentCommentsList.filter(item => {
+      const userTally = {};
+      let skippedHourly = 0;
+      let lastSkippedName = "";
+      const eligibleItems = [];
+
+      currentCommentsList.forEach(item => {
+        const uKey = String(item.user_id || item.user_name || "").toLowerCase().trim();
+        if (!uKey) {
+          eligibleItems.push(item);
+          return;
+        }
+
+        // Rows already selected on this or another page still consume the user's
+        // capacity. Do not let Select All silently exceed the same limit that
+        // applies when a row is selected individually.
+        const isAlreadySelected = selectedComments.has(item.id);
+        const limitInfo = getUserLimitInfo(item.user_id, item.user_name);
+        const maxHourly = limitInfo.max_hourly_comments !== undefined ? Number(limitInfo.max_hourly_comments) : 2;
+        const reportedHourly = Number(limitInfo.reported_hourly || 0);
+        const currentTally = userTally[uKey] !== undefined
+          ? userTally[uKey]
+          : getCurrentlySelectedCountForUser(item.user_id, item.user_name);
+
+        if (!isAlreadySelected && reportedHourly + currentTally >= maxHourly) {
+          skippedHourly++;
+          lastSkippedName = item.user_name || item.user_id;
+          return;
+        }
+
+        const maxDaily = limitInfo.max_daily_comments !== undefined ? Number(limitInfo.max_daily_comments) : 3;
+        const reportedToday = Number(limitInfo.reported_today || 0);
+        if (!isAlreadySelected && reportedToday + currentTally >= maxDaily) {
+          return;
+        }
+
+        userTally[uKey] = currentTally + (isAlreadySelected ? 0 : 1);
+        eligibleItems.push(item);
+      });
+
+      if (skippedHourly > 0 && lastSkippedName) {
+        const lInfo = getUserLimitInfo("", lastSkippedName);
+        const remText = lInfo.hourly_reset_text || "59 minutes";
+        showHourlyLimitToast(`Please wait, hourly limit reached for ${lastSkippedName}. Try again after ${remText}. (${skippedHourly} comments omitted)`);
+      }
+
+      const reportedItems = eligibleItems.filter(item => {
         const stLower = (item.status || "").toLowerCase().trim();
         return stLower !== "not processed" && stLower !== "" && (stLower.includes("report") || stLower.includes("upvote") || stLower.includes("downvote") || stLower.includes("run") || stLower.includes("complete") || activeCommentsStatus === "processed");
       });
 
       if (reportedItems.length > 0) {
-        openConfirmBatchReportedModal(currentCommentsList, reportedItems);
+        openConfirmBatchReportedModal(eligibleItems, reportedItems);
       } else {
-        currentCommentsList.forEach(item => selectedComments.set(item.id, item));
+        eligibleItems.forEach(item => selectedComments.set(item.id, item));
         updateSelectionUI();
       }
     });
@@ -6967,6 +7447,11 @@
         totalCommentsPages = data.total_pages || 1;
         pageCommentsCountSpan.textContent = currentCommentsList.length;
 
+        // Load the authoritative server-side limits before rendering selectable rows.
+        // This makes the hourly-limit toast/modal accurate for every authenticated
+        // user, not just after a Superadmin has visited the limits screen.
+        await refreshCommentUserLimits(currentCommentsList);
+
         if (sidebarCommentsBadge) {
           sidebarCommentsBadge.textContent = totalCommentsCount > 0 ? `${totalCommentsCount}` : "1w";
         }
@@ -7010,16 +7495,31 @@
         const userNameDisplay = highlightText(rawUserName || "—", searchQuery);
         const userIdDisplay = highlightText(rawUserId || "—", searchQuery);
 
-        // Daily limit status check for user
+        // Daily and Hourly limit status check for user
         const limitInfo = getUserLimitInfo(rawUserId, rawUserName);
         const maxLimit = limitInfo.max_daily_comments || 3;
         const reportedToday = limitInfo.reported_today || 0;
         const isLimitCompleted = reportedToday >= maxLimit;
-        const limitTag = isLimitCompleted ? `
-          <span class="user-limit-tag tag-completed" title="Daily limit of ${maxLimit} completed (${reportedToday}/${maxLimit} reported today). Limit resets after 24 hours.">
-            Limit Reached (${reportedToday}/${maxLimit})
-          </span>
-        ` : '';
+
+        const maxHourly = limitInfo.max_hourly_comments !== undefined ? Number(limitInfo.max_hourly_comments) : 2;
+        const reportedHourly = Number(limitInfo.reported_hourly || 0);
+        const isHourlyLimitCompleted = reportedHourly >= maxHourly;
+        const hourlyResetText = limitInfo.hourly_reset_text || "59 minutes";
+
+        let limitTag = "";
+        if (isHourlyLimitCompleted) {
+          limitTag = `
+            <span class="user-limit-tag tag-hourly-limit" title="Hourly limit of ${maxHourly} reached (${reportedHourly}/${maxHourly} reported in last 1h). Try again after ${escapeHtml(hourlyResetText)}.">
+              Hourly Limit (${reportedHourly}/${maxHourly})
+            </span>
+          `;
+        } else if (isLimitCompleted) {
+          limitTag = `
+            <span class="user-limit-tag tag-completed" title="Daily limit of ${maxLimit} completed (${reportedToday}/${maxLimit} reported today). Limit resets after 24 hours.">
+              Limit Reached (${reportedToday}/${maxLimit})
+            </span>
+          `;
+        }
 
         const stLower = (c.status || "not processed").toLowerCase();
         let statusTagClass = "status-not-processed";
@@ -7151,6 +7651,28 @@
         for (const key of Object.keys(userSelectedCounts)) {
           const uEntry = userSelectedCounts[key];
           const limitInfo = getUserLimitInfo(uEntry.uid, uEntry.uname);
+
+          // 1. Hourly limit check
+          const maxHourly = limitInfo.max_hourly_comments !== undefined ? Number(limitInfo.max_hourly_comments) : 2;
+          const reportedHourly = Number(limitInfo.reported_hourly || 0);
+          const totalHourlyAfterReport = reportedHourly + uEntry.count;
+
+          if (totalHourlyAfterReport > maxHourly) {
+            const remText = limitInfo.hourly_reset_text || "59 minutes";
+            showHourlyLimitToast(`Please wait, hourly limit reached for ${uEntry.uname || limitInfo.user_name || `User ${uEntry.uid}`}. Try again after ${remText}.`);
+            openHourlyLimitReachedModal({
+              userName: uEntry.uname || limitInfo.user_name,
+              userId: uEntry.uid || limitInfo.user_id,
+              maxHourly: maxHourly,
+              reportedHourly: reportedHourly,
+              currentlySelected: uEntry.count,
+              remainingTime: remText,
+              remainingSeconds: limitInfo.hourly_reset_seconds || 3600
+            });
+            return;
+          }
+
+          // 2. Daily limit check
           const maxLimit = limitInfo.max_daily_comments || 3;
           const reportedToday = limitInfo.reported_today || 0;
           const totalAfterReport = reportedToday + uEntry.count;
@@ -7169,7 +7691,7 @@
         }
       }
 
-      const numAccounts = Number(commentsAccountCount.value) || 19;
+      const numAccounts = Number(commentsAccountCount.value) || 10;
       if (!Number.isInteger(numAccounts) || numAccounts < 1) {
         alert("Number of accounts must be at least 1.");
         return;
@@ -7251,7 +7773,7 @@
           const lambdaResponse = await authFetch("/api/report", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ ...payload, processing_id: processingId }),
           });
 
           const lambdaText = await lambdaResponse.text();
@@ -7286,23 +7808,55 @@
           }
         });
 
-        selectedComments.clear();
-        updateSelectionUI();
-
         if (actionValue === "report_spam") {
           user_ids.forEach(uid => {
             const cleanUid = String(uid).trim();
-            const info = getUserLimitInfo(cleanUid, "");
+            const matchingItem = Array.from(selectedComments.values()).find(c => String(c.user_id || "").trim() === cleanUid);
+            const uname = matchingItem ? matchingItem.user_name : "";
+            const info = getUserLimitInfo(cleanUid, uname);
             info.reported_today = (info.reported_today || 0) + 1;
             info.remaining_today = Math.max(0, (info.max_daily_comments || 3) - info.reported_today);
-            commentsUserLimits[cleanUid] = info;
+            info.reported_hourly = (info.reported_hourly || 0) + 1;
+            info.remaining_hourly = Math.max(0, (info.max_hourly_comments || 2) - info.reported_hourly);
+            if (!info.hourly_reset_seconds || info.hourly_reset_seconds <= 0) {
+              info.hourly_reset_seconds = 3600;
+              info.hourly_reset_text = "59 minutes";
+            }
+            if (cleanUid) commentsUserLimits[cleanUid] = info;
             if (info.user_name) {
               commentsUserLimits[info.user_name.toLowerCase()] = info;
             }
+            if (uname) {
+              commentsUserLimits[uname.toLowerCase()] = info;
+            }
+
+            // Sync with allUserLimits so SuperAdmin limits tab reflects the hourly report immediately
+            if (Array.isArray(allUserLimits) && allUserLimits.length > 0) {
+              const uObj = allUserLimits.find(u =>
+                String(u.user_id || u.id || "").trim() === cleanUid ||
+                (info.user_name && (u.user_name || "").trim().toLowerCase() === info.user_name.toLowerCase()) ||
+                (uname && (u.user_name || "").trim().toLowerCase() === uname.toLowerCase())
+              );
+              if (uObj) {
+                uObj.reported_today = (uObj.reported_today || 0) + 1;
+                uObj.remaining_today = Math.max(0, (uObj.max_daily_comments || 3) - uObj.reported_today);
+                uObj.reported_hourly = (uObj.reported_hourly || 0) + 1;
+                uObj.remaining_hourly = Math.max(0, (uObj.max_hourly_comments || 2) - uObj.reported_hourly);
+                uObj.hourly_reset_seconds = info.hourly_reset_seconds;
+                uObj.hourly_reset_text = info.hourly_reset_text;
+              }
+            }
           });
+          // Re-read the server calculation so the next selection uses the exact
+          // remaining time based on the report timestamps, not a browser estimate.
+          await refreshCommentUserLimits(Array.from(selectedComments.values()));
           updateCommentsLimitBanner();
+          updateLimitsCounts();
           renderCommentsTable(currentCommentsList, commentsSearchInput ? commentsSearchInput.value.trim() : "");
         }
+
+        selectedComments.clear();
+        updateSelectionUI();
 
         commentIdsInput.value = comment_ids.join("\n");
         userIdsInput.value = user_ids.join("\n");
@@ -8003,7 +8557,6 @@ Live execution batch logs are updating below...`, "success");
     let currentLimitsPage = 1;
     const limitsPageSize = 20;
     let activeLimitsFilter = "all"; // "all" | "custom" | "reported"
-    let limitsSearchQuery = "";
     let limitsSearchDebounce = null;
 
     const limitsTableBody = document.getElementById("limits-table-body");
@@ -8047,7 +8600,7 @@ Live execution batch logs are updating below...`, "success");
         limitsRefreshBtn.disabled = true;
       }
       if (!isSilent && limitsTableBody) {
-        limitsTableBody.innerHTML = `<tr><td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading user report limits from database...</td></tr>`;
+        limitsTableBody.innerHTML = `<tr><td colspan="9" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading user report limits from database...</td></tr>`;
       }
 
       try {
@@ -8068,7 +8621,7 @@ Live execution batch logs are updating below...`, "success");
         renderUserLimitsTable();
       } catch (err) {
         if (!isSilent && limitsTableBody) {
-          limitsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color: var(--danger);">Error loading limits: ${escapeHtml(err.message)}</td></tr>`;
+          limitsTableBody.innerHTML = `<tr><td colspan="9" class="empty-state" style="color: var(--danger);">Error loading limits: ${escapeHtml(err.message)}</td></tr>`;
         }
       } finally {
         if (limitsRefreshBtn) limitsRefreshBtn.disabled = false;
@@ -8080,11 +8633,14 @@ Live execution batch logs are updating below...`, "success");
       const totalAll = allUserLimits.length;
       const totalCustom = allUserLimits.filter(u => u.is_custom).length;
       const totalReported = allUserLimits.filter(u => (u.reported_today || 0) > 0).length;
+      const totalHourly = allUserLimits.filter(u => (u.reported_hourly || 0) >= (u.max_hourly_comments || 2)).length;
 
       if (limitsStatsPill) limitsStatsPill.textContent = `${totalAll} User${totalAll !== 1 ? 's' : ''}`;
       if (countLimitsAll) countLimitsAll.textContent = totalAll;
       if (countLimitsCustom) countLimitsCustom.textContent = totalCustom;
       if (countLimitsReported) countLimitsReported.textContent = totalReported;
+      const countLimitsHourly = document.getElementById("count-limits-hourly");
+      if (countLimitsHourly) countLimitsHourly.textContent = totalHourly;
     }
 
     function filterUserLimits(filterType) {
@@ -8109,14 +8665,20 @@ Live execution batch logs are updating below...`, "success");
         }
         if (activeLimitsFilter === "custom") return u.is_custom;
         if (activeLimitsFilter === "reported") return (u.reported_today || 0) > 0;
+        if (activeLimitsFilter === "hourly") return (u.reported_hourly || 0) >= (u.max_hourly_comments || 2);
         return true;
       });
 
       if (!filtered.length) {
-        const msg = q
-          ? "No users found matching your search term."
-          : (activeLimitsFilter === "custom" ? "No custom user limits configured yet. All users currently use the default minimum of 3 comments/day." : "No users found in database.");
-        limitsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state">${escapeHtml(msg)}</td></tr>`;
+        let msg = "No users found in database.";
+        if (q) {
+          msg = "No users found matching your search term.";
+        } else if (activeLimitsFilter === "custom") {
+          msg = "No custom user limits configured yet. All users currently use defaults (3/day, 2/hour).";
+        } else if (activeLimitsFilter === "hourly") {
+          msg = "No users have reached their hourly limit currently.";
+        }
+        limitsTableBody.innerHTML = `<tr><td colspan="9" class="empty-state">${escapeHtml(msg)}</td></tr>`;
         if (limitsPaginationInfo) limitsPaginationInfo.textContent = "Showing 0 users";
         if (limitsPaginationControls) limitsPaginationControls.innerHTML = "";
         return;
@@ -8129,21 +8691,42 @@ Live execution batch logs are updating below...`, "success");
         const rowNum = idx + 1;
         const uid = String(u.user_id || u.id || "");
         const uname = u.user_name || "—";
-        const currentLimit = Number(u.max_daily_comments || 3);
+        const currentDailyLimit = Number(u.max_daily_comments || 3);
+        const currentHourlyLimit = Number(u.max_hourly_comments || 2);
         const reportedToday = Number(u.reported_today || 0);
+        const reportedHourly = Number(u.reported_hourly || 0);
+        const hourlyResetText = u.hourly_reset_text || "";
         const isCustom = Boolean(u.is_custom);
         const firstLetter = (uname !== "—" ? uname.charAt(0) : "U").toUpperCase();
 
-        let pillClass = "safe";
-        if (reportedToday >= currentLimit) {
-          pillClass = "full";
-        } else if (reportedToday > 0 && reportedToday >= currentLimit - 1) {
-          pillClass = "warning";
+        let dailyPillClass = "safe";
+        if (reportedToday >= currentDailyLimit) {
+          dailyPillClass = "full";
+        } else if (reportedToday > 0 && reportedToday >= currentDailyLimit - 1) {
+          dailyPillClass = "warning";
         }
 
-        const activeBadgeHtml = isCustom
-          ? `<span class="pill pill-success" style="font-weight: 700;">${currentLimit} / day</span>`
-          : `<span class="pill pill-accounts" style="font-size: 0.76rem;">3 / day (Default)</span>`;
+        let hourlyPillClass = "safe";
+        if (reportedHourly >= currentHourlyLimit) {
+          hourlyPillClass = "full";
+        } else if (reportedHourly > 0) {
+          hourlyPillClass = "warning";
+        }
+
+        const isDailyCustom = (currentDailyLimit !== 3);
+        const isHourlyCustom = (currentHourlyLimit !== 2);
+
+        const dailyBadgeHtml = isDailyCustom
+          ? `<span class="pill pill-success" style="font-weight: 700; font-size: 0.72rem; padding: 2px 7px;">${currentDailyLimit} / day</span>`
+          : `<span class="pill pill-accounts" style="font-size: 0.72rem; padding: 2px 7px;">3 / day (Def)</span>`;
+
+        const hourlyBadgeHtml = isHourlyCustom
+          ? `<span class="pill pill-success" style="font-weight: 700; font-size: 0.72rem; padding: 2px 7px; background: rgba(249, 115, 22, 0.2); border-color: rgba(249, 115, 22, 0.45); color: #fb923c;">${currentHourlyLimit} / hr</span>`
+          : `<span class="pill pill-accounts" style="font-size: 0.72rem; padding: 2px 7px;">2 / hr (Def)</span>`;
+
+        const hourlyTooltip = hourlyResetText
+          ? `${reportedHourly} of ${currentHourlyLimit} reported in last 1h • Resets in ${hourlyResetText}`
+          : `${reportedHourly} of ${currentHourlyLimit} reported in last 1h`;
 
         return `
           <tr id="limit-row-${uid}">
@@ -8158,28 +8741,43 @@ Live execution batch logs are updating below...`, "success");
               </div>
             </td>
             <td style="text-align: center;">
-              <span class="limit-progress-pill ${pillClass}" title="${reportedToday} of ${currentLimit} comments reported today">
-                ${reportedToday} / ${currentLimit}
+              <span class="limit-progress-pill ${dailyPillClass}" title="${reportedToday} of ${currentDailyLimit} comments reported today">
+                ${reportedToday} / ${currentDailyLimit}
+              </span>
+            </td>
+            <td style="text-align: center;">
+              <span class="limit-progress-pill ${hourlyPillClass}" title="${escapeHtml(hourlyTooltip)}">
+                ${reportedHourly} / ${currentHourlyLimit}
               </span>
             </td>
             <td style="text-align: center;">
               <div class="limit-stepper">
-                <button type="button" class="stepper-btn minus" id="btn-minus-${uid}" onclick="stepUserLimit('${escapeHtml(uid)}', -1)" ${currentLimit <= 3 ? 'disabled' : ''} title="Decrease limit">−</button>
-                <input type="number" id="limit-input-${uid}" class="limit-number-input" min="3" max="999" value="${currentLimit}" data-saved-limit="${currentLimit}" data-user-id="${escapeHtml(uid)}" data-user-name="${escapeHtml(uname)}" oninput="onLimitInputChange('${escapeHtml(uid)}')" />
-                <button type="button" class="stepper-btn plus" id="btn-plus-${uid}" onclick="stepUserLimit('${escapeHtml(uid)}', 1)" title="Increase limit">+</button>
+                <button type="button" class="stepper-btn minus" id="btn-minus-daily-${uid}" onclick="stepUserDailyLimit('${escapeHtml(uid)}', -1)" ${currentDailyLimit <= 3 ? 'disabled' : ''} title="Decrease daily limit (min 3)">−</button>
+                <input type="number" id="limit-daily-input-${uid}" class="limit-number-input" min="3" max="999" value="${currentDailyLimit}" data-saved-limit="${currentDailyLimit}" data-user-id="${escapeHtml(uid)}" data-user-name="${escapeHtml(uname)}" oninput="onLimitsInputChange('${escapeHtml(uid)}')" title="Daily limit (min 3)" />
+                <button type="button" class="stepper-btn plus" id="btn-plus-daily-${uid}" onclick="stepUserDailyLimit('${escapeHtml(uid)}', 1)" title="Increase daily limit">+</button>
+              </div>
+            </td>
+            <td style="text-align: center;">
+              <div class="limit-stepper">
+                <button type="button" class="stepper-btn minus" id="btn-minus-hourly-${uid}" onclick="stepUserHourlyLimit('${escapeHtml(uid)}', -1)" ${currentHourlyLimit <= 1 ? 'disabled' : ''} title="Decrease hourly limit (min 1)">−</button>
+                <input type="number" id="limit-hourly-input-${uid}" class="limit-number-input" min="1" max="999" value="${currentHourlyLimit}" data-saved-limit="${currentHourlyLimit}" data-user-id="${escapeHtml(uid)}" data-user-name="${escapeHtml(uname)}" oninput="onLimitsInputChange('${escapeHtml(uid)}')" title="Hourly limit (default 2, min 1)" />
+                <button type="button" class="stepper-btn plus" id="btn-plus-hourly-${uid}" onclick="stepUserHourlyLimit('${escapeHtml(uid)}', 1)" title="Increase hourly limit">+</button>
               </div>
             </td>
             <td style="text-align: center;" id="limit-badge-cell-${uid}">
-              ${activeBadgeHtml}
+              <div style="display: flex; flex-direction: column; gap: 4px; align-items: center;">
+                ${dailyBadgeHtml}
+                ${hourlyBadgeHtml}
+              </div>
             </td>
             <td style="text-align: center;">
-              <button type="button" id="limit-apply-btn-${uid}" class="btn-action-apply" onclick="applyUserLimit('${escapeHtml(uid)}')" title="Apply daily limit for ${escapeHtml(uname)}">
+              <button type="button" id="limit-apply-btn-${uid}" class="btn-action-apply" onclick="applyUserLimit('${escapeHtml(uid)}')" title="Apply limits for ${escapeHtml(uname)}">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
                 <span>Apply</span>
               </button>
-              ${isCustom ? `<button type="button" class="btn-action-reset-limit" onclick="resetUserLimit('${escapeHtml(uid)}')" title="Reset to default 3 comments/day">Reset</button>` : ''}
+              ${isCustom ? `<button type="button" class="btn-action-reset-limit" onclick="resetUserLimit('${escapeHtml(uid)}')" title="Reset to default (3/day, 2/hr)">Reset</button>` : ''}
             </td>
           </tr>
         `;
@@ -8189,7 +8787,7 @@ Live execution batch logs are updating below...`, "success");
         if (totalItems === totalAll) {
           limitsPaginationInfo.textContent = `Showing all ${totalItems} user${totalItems !== 1 ? 's' : ''}`;
         } else {
-          limitsPaginationInfo.textContent = `Showing ${totalItems} of ${totalAll} user${totalAll !== 1 ? 's' : ''}`;
+          limitsPaginationInfo.textContent = `Showing ${totalItems} of ${totalAll} user${totalItems !== 1 ? 's' : ''}`;
         }
       }
       if (limitsPaginationControls) {
@@ -8197,40 +8795,58 @@ Live execution batch logs are updating below...`, "success");
       }
     }
 
-    function stepUserLimit(uid, delta) {
-      const input = document.getElementById(`limit-input-${uid}`);
+    function stepUserDailyLimit(uid, delta) {
+      const input = document.getElementById(`limit-daily-input-${uid}`);
       if (!input) return;
       let val = parseInt(input.value, 10);
       if (isNaN(val)) val = 3;
       val = Math.max(3, val + delta);
       input.value = val;
-      onLimitInputChange(uid);
+      onLimitsInputChange(uid);
     }
-    window.stepUserLimit = stepUserLimit;
+    window.stepUserDailyLimit = stepUserDailyLimit;
+    window.stepUserLimit = stepUserDailyLimit; // Backwards compatibility
 
-    function onLimitInputChange(uid) {
-      const input = document.getElementById(`limit-input-${uid}`);
-      const btnMinus = document.getElementById(`btn-minus-${uid}`);
-      const applyBtn = document.getElementById(`limit-apply-btn-${uid}`);
-      if (!input || !applyBtn) return;
-
+    function stepUserHourlyLimit(uid, delta) {
+      const input = document.getElementById(`limit-hourly-input-${uid}`);
+      if (!input) return;
       let val = parseInt(input.value, 10);
-      if (isNaN(val) || val < 3) {
-        val = 3;
-      }
+      if (isNaN(val)) val = 2;
+      val = Math.max(1, val + delta);
+      input.value = val;
+      onLimitsInputChange(uid);
+    }
+    window.stepUserHourlyLimit = stepUserHourlyLimit;
 
-      if (btnMinus) {
-        btnMinus.disabled = val <= 3;
-      }
+    function onLimitsInputChange(uid) {
+      const dailyInput = document.getElementById(`limit-daily-input-${uid}`);
+      const hourlyInput = document.getElementById(`limit-hourly-input-${uid}`);
+      const btnMinusDaily = document.getElementById(`btn-minus-daily-${uid}`);
+      const btnMinusHourly = document.getElementById(`btn-minus-hourly-${uid}`);
+      const applyBtn = document.getElementById(`limit-apply-btn-${uid}`);
+      if (!dailyInput || !hourlyInput || !applyBtn) return;
 
-      const savedLimit = parseInt(input.getAttribute("data-saved-limit") || "3", 10);
-      if (val !== savedLimit) {
+      let dailyVal = parseInt(dailyInput.value, 10);
+      if (isNaN(dailyVal) || dailyVal < 3) dailyVal = 3;
+
+      let hourlyVal = parseInt(hourlyInput.value, 10);
+      if (isNaN(hourlyVal) || hourlyVal < 1) hourlyVal = 1;
+
+      if (btnMinusDaily) btnMinusDaily.disabled = dailyVal <= 3;
+      if (btnMinusHourly) btnMinusHourly.disabled = hourlyVal <= 1;
+
+      const savedDaily = parseInt(dailyInput.getAttribute("data-saved-limit") || "3", 10);
+      const savedHourly = parseInt(hourlyInput.getAttribute("data-saved-limit") || "2", 10);
+
+      const hasChanged = (dailyVal !== savedDaily) || (hourlyVal !== savedHourly);
+
+      if (hasChanged) {
         applyBtn.classList.add("highlighted");
         applyBtn.innerHTML = `
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
-          <span>Apply (${val})</span>
+          <span>Apply (${dailyVal}d, ${hourlyVal}h)</span>
         `;
       } else {
         applyBtn.classList.remove("highlighted");
@@ -8242,20 +8858,28 @@ Live execution batch logs are updating below...`, "success");
         `;
       }
     }
-    window.onLimitInputChange = onLimitInputChange;
+    window.onLimitsInputChange = onLimitsInputChange;
+    window.onLimitInputChange = onLimitsInputChange; // Backwards compatibility
 
     async function applyUserLimit(uid) {
-      const input = document.getElementById(`limit-input-${uid}`);
+      const dailyInput = document.getElementById(`limit-daily-input-${uid}`);
+      const hourlyInput = document.getElementById(`limit-hourly-input-${uid}`);
       const applyBtn = document.getElementById(`limit-apply-btn-${uid}`);
-      if (!input || !applyBtn) return;
+      if (!dailyInput || !hourlyInput || !applyBtn) return;
 
-      let maxComments = parseInt(input.value, 10);
-      if (isNaN(maxComments) || maxComments < 3) {
-        maxComments = 3;
-        input.value = 3;
+      let maxDaily = parseInt(dailyInput.value, 10);
+      if (isNaN(maxDaily) || maxDaily < 3) {
+        maxDaily = 3;
+        dailyInput.value = 3;
       }
 
-      const userName = input.getAttribute("data-user-name") || "";
+      let maxHourly = parseInt(hourlyInput.value, 10);
+      if (isNaN(maxHourly) || maxHourly < 1) {
+        maxHourly = 1;
+        hourlyInput.value = 1;
+      }
+
+      const userName = dailyInput.getAttribute("data-user-name") || "";
       const originalText = applyBtn.innerHTML;
 
       applyBtn.disabled = true;
@@ -8268,34 +8892,49 @@ Live execution batch logs are updating below...`, "success");
           body: JSON.stringify({
             user_id: uid,
             user_name: userName,
-            max_comments: maxComments,
+            max_daily_comments: maxDaily,
+            max_hourly_comments: maxHourly,
           }),
         });
 
         const data = await res.json();
         if (!res.ok || !data.success) {
-          throw new Error(data.error || "Failed to update user limit");
+          throw new Error(data.error || "Failed to update user limits");
         }
 
-        input.setAttribute("data-saved-limit", String(maxComments));
+        dailyInput.setAttribute("data-saved-limit", String(maxDaily));
+        hourlyInput.setAttribute("data-saved-limit", String(maxHourly));
+
         const userObj = allUserLimits.find(u => String(u.user_id || u.id) === String(uid));
         if (userObj) {
-          userObj.max_daily_comments = maxComments;
-          userObj.is_custom = (maxComments !== 3);
+          userObj.max_daily_comments = maxDaily;
+          userObj.max_hourly_comments = maxHourly;
+          userObj.is_custom = (maxDaily !== 3 || maxHourly !== 2);
+        }
+
+        // Directly update/set cached limit info for the comments view
+        const existingInfo = commentsUserLimits[String(uid)] || (userName && commentsUserLimits[userName.toLowerCase()]) || {};
+        const updatedInfo = Object.assign(existingInfo, {
+          user_id: String(uid),
+          user_name: userName || (userObj && userObj.user_name) || "",
+          max_daily_comments: maxDaily,
+          max_hourly_comments: maxHourly,
+          reported_today: (userObj && userObj.reported_today) || existingInfo.reported_today || 0,
+          remaining_today: Math.max(0, maxDaily - ((userObj && userObj.reported_today) || existingInfo.reported_today || 0)),
+          reported_hourly: (userObj && userObj.reported_hourly) || existingInfo.reported_hourly || 0,
+          remaining_hourly: Math.max(0, maxHourly - ((userObj && userObj.reported_hourly) || existingInfo.reported_hourly || 0)),
+          is_custom: (maxDaily !== 3 || maxHourly !== 2)
+        });
+        commentsUserLimits[String(uid)] = updatedInfo;
+        if (userName) {
+          commentsUserLimits[userName.toLowerCase()] = updatedInfo;
         }
 
         applyBtn.classList.remove("highlighted");
         applyBtn.classList.add("applied");
         applyBtn.innerHTML = `<span>✓ Applied!</span>`;
 
-        const badgeCell = document.getElementById(`limit-badge-cell-${uid}`);
-        if (badgeCell) {
-          badgeCell.innerHTML = (maxComments !== 3)
-            ? `<span class="pill pill-success" style="font-weight: 700;">${maxComments} / day</span>`
-            : `<span class="pill pill-accounts" style="font-size: 0.76rem;">3 / day (Default)</span>`;
-        }
-
-        showLimitsToast(`✓ Daily limit for ${userName || `User ${uid}`} set to ${maxComments} comments/day.`, true);
+        showLimitsToast(`✓ Limits for ${userName || `User ${uid}`} set to ${maxDaily} comments/day and ${maxHourly} comments/hour.`, true);
         updateLimitsCounts();
 
         setTimeout(() => {
@@ -8308,7 +8947,7 @@ Live execution batch logs are updating below...`, "success");
             <span>Apply</span>
           `;
           renderUserLimitsTable();
-        }, 1600);
+        }, 1500);
       } catch (err) {
         applyBtn.disabled = false;
         applyBtn.innerHTML = originalText;
@@ -8318,7 +8957,7 @@ Live execution batch logs are updating below...`, "success");
     window.applyUserLimit = applyUserLimit;
 
     async function resetUserLimit(uid) {
-      if (!confirm(`Reset daily limit for this user back to default 3 comments/day?`)) {
+      if (!confirm(`Reset reporting limits for this user back to default (3 comments/day, 2 comments/hour)?`)) {
         return;
       }
 
@@ -8336,10 +8975,27 @@ Live execution batch logs are updating below...`, "success");
         const userObj = allUserLimits.find(u => String(u.user_id || u.id) === String(uid));
         if (userObj) {
           userObj.max_daily_comments = 3;
+          userObj.max_hourly_comments = 2;
           userObj.is_custom = false;
         }
 
-        showLimitsToast("Daily limit reset to default 3 comments/day.", true);
+        const resetRec = {
+          user_id: String(uid),
+          user_name: (userObj && userObj.user_name) || "",
+          max_daily_comments: 3,
+          max_hourly_comments: 2,
+          reported_today: (userObj && userObj.reported_today) || 0,
+          remaining_today: Math.max(0, 3 - ((userObj && userObj.reported_today) || 0)),
+          reported_hourly: (userObj && userObj.reported_hourly) || 0,
+          remaining_hourly: Math.max(0, 2 - ((userObj && userObj.reported_hourly) || 0)),
+          is_custom: false
+        };
+        commentsUserLimits[String(uid)] = resetRec;
+        if (userObj && userObj.user_name) {
+          commentsUserLimits[userObj.user_name.toLowerCase()] = resetRec;
+        }
+
+        showLimitsToast("Limits reset to default (3 comments/day, 2 comments/hour).", true);
         updateLimitsCounts();
         renderUserLimitsTable();
       } catch (err) {
@@ -9189,7 +9845,7 @@ Live execution batch logs are reloading...`, "success");
       event.preventDefault();
       const comment_ids = idsFrom(commentIdsInput);
       const user_ids = idsFrom(userIdsInput);
-      const number_of_accounts = Number(accountCountInput.value) || 19;
+      const number_of_accounts = Number(accountCountInput.value) || 10;
 
       if (!comment_ids.length || !user_ids.length) {
         showStatus("Enter at least one comment ID and one user ID.", "error");
@@ -9241,7 +9897,7 @@ Live execution batch logs are reloading...`, "success");
           const lambdaResponse = await authFetch("/api/report", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ ...payload, processing_id: processingId }),
           });
           const lambdaText = await lambdaResponse.text();
           try {
@@ -9262,6 +9918,41 @@ Live execution batch logs are reloading...`, "success");
           if (!errMsgStr.includes("504") && !errMsgStr.includes("timed out") && !errMsgStr.includes("timeout")) {
             throw lambdaErr;
           }
+        }
+
+        if (actionType === "report_spam") {
+          user_ids.forEach(uid => {
+            const cleanUid = String(uid).trim();
+            const info = getUserLimitInfo(cleanUid, "");
+            info.reported_today = (info.reported_today || 0) + 1;
+            info.remaining_today = Math.max(0, (info.max_daily_comments || 3) - info.reported_today);
+            info.reported_hourly = (info.reported_hourly || 0) + 1;
+            info.remaining_hourly = Math.max(0, (info.max_hourly_comments || 2) - info.reported_hourly);
+            if (!info.hourly_reset_seconds || info.hourly_reset_seconds <= 0) {
+              info.hourly_reset_seconds = 3600;
+              info.hourly_reset_text = "59 minutes";
+            }
+            if (cleanUid) commentsUserLimits[cleanUid] = info;
+            if (info.user_name) {
+              commentsUserLimits[info.user_name.toLowerCase()] = info;
+            }
+
+            if (Array.isArray(allUserLimits) && allUserLimits.length > 0) {
+              const uObj = allUserLimits.find(u =>
+                String(u.user_id || u.id || "").trim() === cleanUid ||
+                (info.user_name && (u.user_name || "").trim().toLowerCase() === info.user_name.toLowerCase())
+              );
+              if (uObj) {
+                uObj.reported_today = (uObj.reported_today || 0) + 1;
+                uObj.remaining_today = Math.max(0, (uObj.max_daily_comments || 3) - uObj.reported_today);
+                uObj.reported_hourly = (uObj.reported_hourly || 0) + 1;
+                uObj.remaining_hourly = Math.max(0, (uObj.max_hourly_comments || 2) - uObj.reported_hourly);
+                uObj.hourly_reset_seconds = info.hourly_reset_seconds;
+                uObj.hourly_reset_text = info.hourly_reset_text;
+              }
+            }
+          });
+          updateLimitsCounts();
         }
 
         const actionLabel = actionType === "upvote" ? "Upvote" : (actionType === "downvote" ? "Downvote" : "Report");

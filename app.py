@@ -572,20 +572,67 @@ def _save_processing_request(payload: dict[str, object]) -> int:
             IF COL_LENGTH('dbo.InvestingUIProcessing', 'ActionType') IS NULL
                 ALTER TABLE dbo.InvestingUIProcessing ADD ActionType NVARCHAR(30) NULL;
         """)
-        cursor.execute("""
-            INSERT INTO dbo.InvestingUIProcessing
-                (NumberOfAccounts, CommentIds, UserIds, ActionType)
-            OUTPUT INSERTED.Id
-            VALUES (?, ?, ?, ?)
-        """,
-            payload["number_of_accounts"],
-            json.dumps(payload["comment_ids"], separators=(",", ":")),
-            json.dumps(payload["user_ids"], separators=(",", ":")),
-            payload.get("value", "report_spam"),
-        )
+        has_starting_date = True
+        try:
+            cursor.execute("SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'InvestingUIProcessing' AND COLUMN_NAME = 'StartingDate'")
+            has_starting_date = bool(cursor.fetchone())
+        except Exception:
+            has_starting_date = True
+
+        if has_starting_date:
+            cursor.execute("""
+                INSERT INTO dbo.InvestingUIProcessing
+                    (NumberOfAccounts, CommentIds, UserIds, ActionType, StartingDate)
+                OUTPUT INSERTED.Id
+                VALUES (?, ?, ?, ?, GETDATE())
+            """,
+                payload["number_of_accounts"],
+                json.dumps(payload["comment_ids"], separators=(",", ":")),
+                json.dumps(payload["user_ids"], separators=(",", ":")),
+                payload.get("value", "report_spam"),
+            )
+        else:
+            cursor.execute("""
+                INSERT INTO dbo.InvestingUIProcessing
+                    (NumberOfAccounts, CommentIds, UserIds, ActionType)
+                OUTPUT INSERTED.Id
+                VALUES (?, ?, ?, ?)
+            """,
+                payload["number_of_accounts"],
+                json.dumps(payload["comment_ids"], separators=(",", ":")),
+                json.dumps(payload["user_ids"], separators=(",", ":")),
+                payload.get("value", "report_spam"),
+            )
         row = cursor.fetchone()
         connection.commit()
     return int(row[0])
+
+
+def _record_report_activity(user_ids: list[str], processing_id: int | None = None) -> None:
+    """Record each accepted report with a server timestamp for hourly limiting.
+
+    The processing table remains the source for the existing daily limit.  This
+    separate, append-only activity log avoids inferring the one-hour window from
+    processing records whose timestamps may be legacy or adjusted externally.
+    """
+    cleaned_user_ids = [str(user_id).strip() for user_id in user_ids if str(user_id).strip()]
+    if not cleaned_user_ids or pyodbc is None or not DB_CONNECTION_STRING:
+        return
+
+    _init_user_limits_table()
+    try:
+        with _get_db_connection(timeout=10) as connection:
+            cursor = connection.cursor()
+            for user_id in cleaned_user_ids:
+                cursor.execute("""
+                    INSERT INTO dbo.user_report_activity (user_id, processing_id, reported_at)
+                    VALUES (?, ?, GETDATE())
+                """, user_id, processing_id)
+            connection.commit()
+    except Exception as error:
+        # The existing processing-table calculation remains a safe fallback if
+        # a deployment has not yet created the activity table.
+        app.logger.warning(f"Could not record hourly report activity: {error}")
 
 
 def _normalize_action_type(raw_val: object, default: str = "report_spam") -> str:
@@ -1379,8 +1426,8 @@ def get_comments():
             user_filter=user_filters,
             search_query=search_query
         )
-        uids = [str(c["user_id"]).strip() for c in data.get("comments", []) if c.get("user_id")]
-        user_limits_map = _get_user_limits_map(uids)
+        u_pairs = [(str(c.get("user_id") or "").strip(), str(c.get("user_name") or "").strip()) for c in data.get("comments", [])]
+        user_limits_map = _get_user_limits_map(u_pairs)
 
         return jsonify({"success": True, **data, "user_limits": user_limits_map})
     except Exception as error:
@@ -1652,7 +1699,7 @@ def _save_cached_user_limits(limits: dict[str, dict]):
 
 
 def _init_user_limits_table():
-    """Ensure dbo.user_report_limits table exists in SQL Server."""
+    """Ensure dbo.user_report_limits table exists in SQL Server with both daily and hourly limit columns."""
     if pyodbc is None or not DB_CONNECTION_STRING:
         return
     try:
@@ -1665,73 +1712,257 @@ def _init_user_limits_table():
                         user_id BIGINT PRIMARY KEY,
                         user_name NVARCHAR(255),
                         max_daily_comments INT NOT NULL DEFAULT 3,
+                        max_hourly_comments INT NOT NULL DEFAULT 2,
                         updated_at DATETIME DEFAULT GETDATE(),
                         updated_by NVARCHAR(255)
                     );
                 END
+                ELSE
+                BEGIN
+                    IF COL_LENGTH('dbo.user_report_limits', 'max_hourly_comments') IS NULL
+                        ALTER TABLE dbo.user_report_limits ADD max_hourly_comments INT NOT NULL DEFAULT 2;
+                END
+
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'user_report_activity')
+                BEGIN
+                    CREATE TABLE dbo.user_report_activity (
+                        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+                        user_id NVARCHAR(255) NOT NULL,
+                        processing_id BIGINT NULL,
+                        reported_at DATETIME NOT NULL DEFAULT GETDATE()
+                    );
+                    CREATE INDEX IX_user_report_activity_user_time
+                        ON dbo.user_report_activity (user_id, reported_at DESC);
+                END
             """)
+            try:
+                # Ensure StartingDate on dbo.InvestingUIProcessing has default and backfill any NULLs
+                cursor.execute("""
+                    IF COL_LENGTH('dbo.InvestingUIProcessing', 'StartingDate') IS NOT NULL
+                    BEGIN
+                        UPDATE dbo.InvestingUIProcessing SET StartingDate = GETDATE() WHERE StartingDate IS NULL;
+                    END
+                """)
+            except Exception:
+                pass
             connection.commit()
     except Exception as e:
         app.logger.warning(f"Could not initialize dbo.user_report_limits: {e}")
 
 
-def _get_today_reported_counts_by_user() -> dict[str, int]:
-    """Calculate the number of comments reported in the last 24 hours / today per user ID from dbo.InvestingUIProcessing."""
-    counts = {}
+def _get_user_report_activity_stats() -> tuple[dict[str, int], dict[str, dict]]:
+    """Calculate daily report counts (last 24h) and hourly report stats (last 60m) per user ID and user name from dbo.InvestingUIProcessing."""
+    daily_counts = {}
+    hourly_stats = {}  # key -> {"count": int, "elapsed": list[int]}
     if pyodbc is None or not DB_CONNECTION_STRING:
-        return counts
+        return daily_counts, hourly_stats
     try:
+        # Pre-build lookup map between user_id and user_name across users, comment_urls, and user_report_limits
+        id_to_name = {}
+        name_to_id = {}
         with _get_db_connection(timeout=10) as connection:
             cursor = connection.cursor()
+            try:
+                cursor.execute("SELECT id, user_name FROM dbo.users WHERE user_name IS NOT NULL")
+                for ur in cursor.fetchall():
+                    if ur[0] and ur[1]:
+                        s_id = str(ur[0]).strip()
+                        s_nm = str(ur[1]).strip().lower()
+                        id_to_name[s_id] = s_nm
+                        name_to_id[s_nm] = s_id
+            except Exception:
+                pass
+
+            try:
+                cursor.execute("SELECT DISTINCT user_id, user_name FROM dbo.comment_urls WHERE user_id IS NOT NULL AND user_name IS NOT NULL AND user_id != ''")
+                for ur in cursor.fetchall():
+                    if ur[0] and ur[1]:
+                        s_id = str(ur[0]).strip()
+                        s_nm = str(ur[1]).strip().lower()
+                        if s_id not in id_to_name:
+                            id_to_name[s_id] = s_nm
+                        if s_nm not in name_to_id:
+                            name_to_id[s_nm] = s_id
+            except Exception:
+                pass
+
+            try:
+                cursor.execute("SELECT user_id, user_name FROM dbo.user_report_limits WHERE user_name IS NOT NULL AND user_name != ''")
+                for ur in cursor.fetchall():
+                    if ur[0] and ur[1]:
+                        s_id = str(ur[0]).strip()
+                        s_nm = str(ur[1]).strip().lower()
+                        if s_id not in id_to_name:
+                            id_to_name[s_id] = s_nm
+                        if s_nm not in name_to_id:
+                            name_to_id[s_nm] = s_id
+            except Exception:
+                pass
+
+            def _add_hourly_activity(user_id: str, elapsed_seconds: int) -> None:
+                """Add one hourly activity under its ID and any known user-name alias."""
+                uid_clean = str(user_id).strip()
+                if not uid_clean:
+                    return
+                keys_to_increment = {uid_clean, uid_clean.lower()}
+                if uid_clean in id_to_name:
+                    keys_to_increment.add(id_to_name[uid_clean])
+                if uid_clean.lower() in name_to_id:
+                    keys_to_increment.add(name_to_id[uid_clean.lower()])
+                for key in keys_to_increment:
+                    if key not in hourly_stats:
+                        hourly_stats[key] = {"count": 0, "elapsed": []}
+                    hourly_stats[key]["count"] += 1
+                    hourly_stats[key]["elapsed"].append(max(0, int(elapsed_seconds)))
+
+            # New report submissions are recorded explicitly for the hourly
+            # window. Their matching processing rows are skipped below, while
+            # legacy rows remain a fallback; daily counts retain their existing
+            # processing-table behavior.
+            hourly_activity_available = False
+            recorded_processing_ids = set()
+            try:
+                cursor.execute("""
+                    SELECT user_id, processing_id,
+                           DATEDIFF(second, reported_at, GETDATE()) AS elapsed_seconds
+                    FROM dbo.user_report_activity
+                    WHERE reported_at >= DATEADD(hour, -1, GETDATE())
+                    ORDER BY reported_at ASC
+                """)
+                hourly_activity_available = True
+                for activity_row in cursor.fetchall():
+                    if activity_row[1] is not None:
+                        recorded_processing_ids.add(int(activity_row[1]))
+                    _add_hourly_activity(activity_row[0], activity_row[2] or 0)
+            except Exception:
+                # Older deployments use the processing-table fallback below.
+                hourly_activity_available = False
+
+            # Query UI processing requests for reporting actions across last 24h
+            # Accept ActionType NULL, empty, or variations of report/spam
+            # Treat NULL StartingDate as current date so newly submitted records are never dropped
             cursor.execute("""
-                SELECT UserIds
+                SELECT Id, UserIds,
+                       ISNULL(StartingDate, GETDATE()) AS StartingDate,
+                       DATEDIFF(second, ISNULL(StartingDate, GETDATE()), GETDATE()) AS diff_getdate,
+                       DATEDIFF(second, ISNULL(StartingDate, GETDATE()), SYSDATETIME()) AS diff_sysdatetime,
+                       DATEDIFF(second, ISNULL(StartingDate, GETDATE()), GETUTCDATE()) AS diff_utc
                 FROM dbo.InvestingUIProcessing
-                WHERE ActionType = 'report_spam'
-                  AND (StartingDate >= DATEADD(hour, -24, sysdatetime()) OR CAST(StartingDate AS DATE) = CAST(GETDATE() AS DATE))
+                WHERE (ActionType IS NULL OR ActionType = '' OR LOWER(ActionType) IN ('report_spam', 'report', 'spam', 'reported'))
+                  AND (
+                    StartingDate IS NULL
+                    OR StartingDate >= DATEADD(hour, -24, GETDATE())
+                    OR StartingDate >= DATEADD(hour, -24, SYSDATETIME())
+                    OR StartingDate >= DATEADD(hour, -24, GETUTCDATE())
+                    OR CAST(StartingDate AS DATE) = CAST(GETDATE() AS DATE)
+                    OR CAST(StartingDate AS DATE) = CAST(SYSDATETIME() AS DATE)
+                  )
+                ORDER BY Id ASC
             """)
             rows = cursor.fetchall()
             for r in rows:
-                raw = r[0]
+                processing_id = r[0]
+                raw = r[1]
+                diff_gd = r[3]
+                diff_sys = r[4]
+                diff_utc = r[5]
                 if not raw:
                     continue
+
+                # Determine if this row was within the last 60 minutes (3600 seconds)
+                # Check all diff calculations in range [-300, 3660] seconds to neutralize any clock/timezone differences
+                valid_diffs = [d for d in (diff_gd, diff_sys, diff_utc) if d is not None and -300 <= d <= 3660]
+                is_within_hour = len(valid_diffs) > 0 or diff_gd is None
+                elapsed_sec = max(0, min(valid_diffs)) if valid_diffs else (max(0, diff_gd) if diff_gd is not None else 0)
+
                 try:
-                    raw_str = raw.strip()
-                    if raw_str.startswith("["):
-                        uids = json.loads(raw_str)
-                    else:
-                        uids = [x.strip() for x in raw_str.split("\n") if x.strip()]
+                    raw_str = str(raw or "").strip()
+                    uids = []
+                    if raw_str.startswith("[") or raw_str.startswith("{"):
+                        try:
+                            parsed_json = json.loads(raw_str)
+                            if isinstance(parsed_json, list):
+                                uids = [str(x).strip() for x in parsed_json if str(x).strip()]
+                            elif isinstance(parsed_json, dict):
+                                uids = [str(x).strip() for x in parsed_json.values() if str(x).strip()]
+                        except Exception:
+                            pass
+                    if not uids:
+                        import re
+                        uids = [x.strip().strip('"\'') for x in re.split(r'[\r\n,;]+', raw_str) if x.strip().strip('"\'')]
+
                     for u in uids:
                         uid_clean = str(u).strip()
-                        if uid_clean:
-                            counts[uid_clean] = counts.get(uid_clean, 0) + 1
+                        if not uid_clean:
+                            continue
+
+                        # Register both the raw token (whether numeric ID or name) and its resolved counterpart
+                        keys_to_increment = {uid_clean, uid_clean.lower()}
+                        if uid_clean in id_to_name:
+                            keys_to_increment.add(id_to_name[uid_clean])
+                        if uid_clean.lower() in name_to_id:
+                            keys_to_increment.add(name_to_id[uid_clean.lower()])
+
+                        for k in keys_to_increment:
+                            daily_counts[k] = daily_counts.get(k, 0) + 1
+                            if is_within_hour and (
+                                not hourly_activity_available or processing_id not in recorded_processing_ids
+                            ):
+                                if k not in hourly_stats:
+                                    hourly_stats[k] = {"count": 0, "elapsed": []}
+                                hourly_stats[k]["count"] += 1
+                                hourly_stats[k]["elapsed"].append(int(elapsed_sec))
                 except Exception:
                     pass
     except Exception as e:
-        app.logger.warning(f"Could not query today reported counts: {e}")
-    return counts
+        app.logger.warning(f"Could not query reported activity stats: {e}")
+    return daily_counts, hourly_stats
 
 
-def _get_user_limits_map(user_ids: list[str] = None) -> dict[str, dict]:
-    """Return a fast lookup dictionary of daily limits and reported counts for users."""
+def _get_today_reported_counts_by_user() -> dict[str, int]:
+    """Calculate the number of comments reported in the last 24 hours / today per user ID from dbo.InvestingUIProcessing."""
+    daily_counts, _ = _get_user_report_activity_stats()
+    return daily_counts
+
+
+def _format_remaining_time(remaining_seconds: int) -> str:
+    """Format remaining seconds into friendly human-readable time string (e.g. '28 minutes', '45 seconds')."""
+    if remaining_seconds <= 0:
+        return ""
+    mins = (remaining_seconds + 59) // 60
+    if mins > 1:
+        return f"{mins} minutes"
+    if mins == 1 and remaining_seconds > 60:
+        return "1 minute"
+    return f"{remaining_seconds} seconds"
+
+
+def _get_user_limits_map(user_ids: list = None) -> dict[str, dict]:
+    """Return a fast lookup dictionary of daily limits, hourly limits, reported counts, and remaining time for users."""
+    _init_user_limits_table()
     custom_limits = _load_cached_user_limits()
     if pyodbc and DB_CONNECTION_STRING:
         try:
             with _get_db_connection(timeout=10) as connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                    SELECT user_id, user_name, max_daily_comments, updated_at, updated_by
+                    SELECT user_id, user_name, max_daily_comments,
+                           ISNULL(max_hourly_comments, 2) AS max_hourly_comments,
+                           updated_at, updated_by
                     FROM dbo.user_report_limits
                 """)
                 for r in cursor.fetchall():
                     uid = str(r[0]).strip()
                     uname = r[1] or ""
-                    limit_val = int(r[2]) if r[2] is not None else 3
-                    dt_str = r[3].strftime("%Y-%m-%d %H:%M:%S") if r[3] else ""
-                    up_by = r[4] or "superadmin"
+                    daily_val = int(r[2]) if r[2] is not None else 3
+                    hourly_val = int(r[3]) if r[3] is not None else 2
+                    dt_str = r[4].strftime("%Y-%m-%d %H:%M:%S") if r[4] else ""
+                    up_by = r[5] or "superadmin"
                     custom_limits[uid] = {
                         "user_id": uid,
                         "user_name": uname,
-                        "max_daily_comments": max(3, limit_val),
+                        "max_daily_comments": max(3, daily_val),
+                        "max_hourly_comments": max(1, hourly_val),
                         "updated_at": dt_str,
                         "updated_by": up_by,
                         "is_custom": True,
@@ -1739,62 +1970,101 @@ def _get_user_limits_map(user_ids: list[str] = None) -> dict[str, dict]:
         except Exception as e:
             app.logger.warning(f"Could not read dbo.user_report_limits in _get_user_limits_map: {e}")
 
-    today_counts = _get_today_reported_counts_by_user()
+    today_counts, hourly_stats = _get_user_report_activity_stats()
     result = {}
 
-    def _add_user_record(uid: str, uname: str = ""):
-        uid_clean = str(uid).strip()
-        if not uid_clean:
+    def _add_user_record(uid: str = "", uname: str = ""):
+        uid_clean = str(uid).strip() if uid else ""
+        uname_clean = str(uname).strip() if uname else ""
+        if not uid_clean and not uname_clean:
             return
 
-        limit_data = custom_limits.get(uid_clean)
-        if not limit_data and uname:
+        # Attempt to resolve missing user_id or user_name
+        limit_data = custom_limits.get(uid_clean) if uid_clean else None
+        if not limit_data and uname_clean:
             for cl in custom_limits.values():
-                if cl.get("user_name", "").lower() == uname.lower():
+                if cl.get("user_name", "").lower() == uname_clean.lower():
                     limit_data = cl
                     break
 
         if limit_data:
-            max_limit = max(3, int(limit_data.get("max_daily_comments", 3)))
+            max_daily = max(3, int(limit_data.get("max_daily_comments", 3)))
+            max_hourly = max(1, int(limit_data.get("max_hourly_comments", 2)))
             is_custom = True
-            resolved_name = limit_data.get("user_name") or uname
+            resolved_name = limit_data.get("user_name") or uname_clean
+            if not uid_clean and limit_data.get("user_id"):
+                uid_clean = str(limit_data.get("user_id")).strip()
         else:
-            max_limit = 3
+            max_daily = 3
+            max_hourly = 2
             is_custom = False
-            resolved_name = uname
+            resolved_name = uname_clean
 
-        reported = today_counts.get(uid_clean, 0)
-        remaining = max(0, max_limit - reported)
+        reported_daily = (today_counts.get(uid_clean) if uid_clean else None) or (today_counts.get(resolved_name.lower()) if resolved_name else None) or 0
+        remaining_daily = max(0, max_daily - reported_daily)
+
+        h_info = (hourly_stats.get(uid_clean) if uid_clean else None) or (hourly_stats.get(resolved_name.lower()) if resolved_name else None) or {"count": 0, "elapsed": []}
+        reported_hourly = h_info["count"]
+        remaining_hourly = max(0, max_hourly - reported_hourly)
+
+        # Calculate remaining time if hourly limit reached
+        hourly_reset_seconds = 0
+        hourly_reset_text = ""
+        if reported_hourly >= max_hourly:
+            if h_info.get("elapsed"):
+                elapsed_sorted = sorted(h_info["elapsed"], reverse=True)
+                idx = max(0, len(elapsed_sorted) - max_hourly)
+                oldest_blocking_elapsed = elapsed_sorted[idx]
+                hourly_reset_seconds = max(1, 3600 - oldest_blocking_elapsed)
+                hourly_reset_text = _format_remaining_time(hourly_reset_seconds)
+            if not hourly_reset_text or hourly_reset_seconds <= 0:
+                hourly_reset_seconds = 3600
+                hourly_reset_text = "59 minutes"
 
         rec = {
             "user_id": uid_clean,
             "user_name": resolved_name,
-            "max_daily_comments": max_limit,
-            "reported_today": reported,
-            "remaining_today": remaining,
+            "max_daily_comments": max_daily,
+            "max_hourly_comments": max_hourly,
+            "reported_today": reported_daily,
+            "remaining_today": remaining_daily,
+            "reported_hourly": reported_hourly,
+            "remaining_hourly": remaining_hourly,
+            "hourly_reset_seconds": hourly_reset_seconds,
+            "hourly_reset_text": hourly_reset_text,
             "is_custom": is_custom,
             "reset_hours": 24,
         }
-        result[uid_clean] = rec
+        if uid_clean:
+            result[uid_clean] = rec
         if resolved_name:
             result[resolved_name.lower()] = rec
 
     if user_ids:
         for u in user_ids:
-            _add_user_record(str(u))
+            if isinstance(u, (tuple, list)) and len(u) >= 2:
+                _add_user_record(str(u[0]), str(u[1]))
+            elif isinstance(u, (tuple, list)) and len(u) == 1:
+                _add_user_record(str(u[0]), "")
+            else:
+                _add_user_record(str(u), "")
 
     for uid, cl in custom_limits.items():
         _add_user_record(uid, cl.get("user_name") or "")
 
     for uid in today_counts.keys():
         if uid not in result:
-            _add_user_record(uid)
+            _add_user_record(uid, "")
+
+    for uid in hourly_stats.keys():
+        if uid not in result:
+            _add_user_record(uid, "")
 
     return result
 
 
 def _fetch_user_limits(search: str = "") -> dict:
-    """Fetch all users along with their configured daily reporting limits and today's report count."""
+    """Fetch all users along with their configured daily and hourly reporting limits and activity counts."""
     _init_user_limits_table()
 
     # 1. Fetch base users (from dbo.users merged with distinct users from dbo.comment_urls)
@@ -1820,19 +2090,23 @@ def _fetch_user_limits(search: str = "") -> dict:
             with _get_db_connection(timeout=10) as connection:
                 cursor = connection.cursor()
                 cursor.execute("""
-                    SELECT user_id, user_name, max_daily_comments, updated_at, updated_by
+                    SELECT user_id, user_name, max_daily_comments,
+                           ISNULL(max_hourly_comments, 2) AS max_hourly_comments,
+                           updated_at, updated_by
                     FROM dbo.user_report_limits
                 """)
                 for r in cursor.fetchall():
                     uid = str(r[0]).strip()
                     uname = r[1] or ""
-                    limit_val = int(r[2]) if r[2] is not None else 3
-                    dt_str = r[3].strftime("%Y-%m-%d %H:%M:%S") if r[3] else ""
-                    up_by = r[4] or "superadmin"
+                    daily_val = int(r[2]) if r[2] is not None else 3
+                    hourly_val = int(r[3]) if r[3] is not None else 2
+                    dt_str = r[4].strftime("%Y-%m-%d %H:%M:%S") if r[4] else ""
+                    up_by = r[5] or "superadmin"
                     custom_limits[uid] = {
                         "user_id": uid,
                         "user_name": uname,
-                        "max_daily_comments": max(3, limit_val),
+                        "max_daily_comments": max(3, daily_val),
+                        "max_hourly_comments": max(1, hourly_val),
                         "updated_at": dt_str,
                         "updated_by": up_by,
                         "is_custom": True,
@@ -1841,8 +2115,8 @@ def _fetch_user_limits(search: str = "") -> dict:
         except Exception as e:
             app.logger.warning(f"Could not read dbo.user_report_limits: {e}")
 
-    # 3. Fetch today's reported counts
-    today_counts = _get_today_reported_counts_by_user()
+    # 3. Fetch today's reported counts and hourly stats
+    today_counts, hourly_stats = _get_user_report_activity_stats()
 
     # 4. Merge and build user entries
     user_map = {}
@@ -1889,29 +2163,54 @@ def _fetch_user_limits(search: str = "") -> dict:
                     break
 
         if limit_data:
-            max_limit = max(3, int(limit_data.get("max_daily_comments", 3)))
+            max_daily = max(3, int(limit_data.get("max_daily_comments", 3)))
+            max_hourly = max(1, int(limit_data.get("max_hourly_comments", 2)))
             is_custom = True
             updated_at = limit_data.get("updated_at") or ""
             updated_by = limit_data.get("updated_by") or ""
             custom_count += 1
         else:
-            max_limit = 3
+            max_daily = 3
+            max_hourly = 2
             is_custom = False
             updated_at = ""
             updated_by = ""
 
-        reported_today = today_counts.get(uid, 0)
-        remaining = max(0, max_limit - reported_today)
+        reported_today = today_counts.get(uid) or (today_counts.get(uname.lower()) if uname else None) or 0
+        remaining_today = max(0, max_daily - reported_today)
+
+        h_info = hourly_stats.get(uid) or (hourly_stats.get(uname.lower()) if uname else None) or {"count": 0, "elapsed": []}
+        reported_hourly = h_info["count"]
+        remaining_hourly = max(0, max_hourly - reported_hourly)
+
+        hourly_reset_seconds = 0
+        hourly_reset_text = ""
+        if reported_hourly >= max_hourly:
+            if h_info.get("elapsed"):
+                elapsed_sorted = sorted(h_info["elapsed"], reverse=True)
+                idx = max(0, len(elapsed_sorted) - max_hourly)
+                oldest_blocking_elapsed = elapsed_sorted[idx]
+                hourly_reset_seconds = max(1, 3600 - oldest_blocking_elapsed)
+                hourly_reset_text = _format_remaining_time(hourly_reset_seconds)
+            if not hourly_reset_text or hourly_reset_seconds <= 0:
+                hourly_reset_seconds = 3600
+                hourly_reset_text = "59 minutes"
 
         results.append({
             "id": uid,
             "user_id": uid,
             "user_name": uname,
-            "max_daily_comments": max_limit,
+            "max_daily_comments": max_daily,
+            "max_hourly_comments": max_hourly,
             "default_limit": 3,
+            "default_hourly_limit": 2,
             "is_custom": is_custom,
             "reported_today": reported_today,
-            "remaining_today": remaining,
+            "remaining_today": remaining_today,
+            "reported_hourly": reported_hourly,
+            "remaining_hourly": remaining_hourly,
+            "hourly_reset_seconds": hourly_reset_seconds,
+            "hourly_reset_text": hourly_reset_text,
             "updated_at": updated_at,
             "updated_by": updated_by,
         })
@@ -1932,13 +2231,22 @@ def _fetch_user_limits(search: str = "") -> dict:
         "total": len(results),
         "custom_count": custom_count,
         "default_min": 3,
+        "default_hourly": 2,
     }
 
 
-def _save_user_limit(user_id: int, user_name: str, max_comments: int, updated_by: str = "superadmin") -> tuple[bool, str, dict]:
-    """Save or update the maximum daily comments allowed for a user."""
+def _save_user_limit(
+    user_id: int,
+    user_name: str,
+    max_comments: int = 3,
+    max_hourly_comments: int = 2,
+    updated_by: str = "superadmin"
+) -> tuple[bool, str, dict]:
+    """Save or update the maximum daily and hourly comments allowed for a user."""
     if max_comments < 3:
         return False, "Minimum allowed daily limit is 3 comments per user.", {}
+    if max_hourly_comments < 1:
+        return False, "Minimum allowed hourly limit is 1 comment per user.", {}
 
     _init_user_limits_table()
 
@@ -1946,6 +2254,7 @@ def _save_user_limit(user_id: int, user_name: str, max_comments: int, updated_by
         "user_id": str(user_id),
         "user_name": user_name,
         "max_daily_comments": max_comments,
+        "max_hourly_comments": max_hourly_comments,
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
         "updated_by": updated_by,
         "is_custom": True,
@@ -1963,26 +2272,27 @@ def _save_user_limit(user_id: int, user_name: str, max_comments: int, updated_by
                 cursor = connection.cursor()
                 cursor.execute("""
                     MERGE dbo.user_report_limits AS target
-                    USING (SELECT ? AS user_id, ? AS user_name, ? AS max_daily_comments, ? AS updated_by) AS source
+                    USING (SELECT ? AS user_id, ? AS user_name, ? AS max_daily_comments, ? AS max_hourly_comments, ? AS updated_by) AS source
                     ON (target.user_id = source.user_id)
                     WHEN MATCHED THEN
                         UPDATE SET target.max_daily_comments = source.max_daily_comments,
+                                   target.max_hourly_comments = source.max_hourly_comments,
                                    target.user_name = source.user_name,
                                    target.updated_at = GETDATE(),
                                    target.updated_by = source.updated_by
                     WHEN NOT MATCHED THEN
-                        INSERT (user_id, user_name, max_daily_comments, updated_at, updated_by)
-                        VALUES (source.user_id, source.user_name, source.max_daily_comments, GETDATE(), source.updated_by);
-                """, user_id, user_name, max_comments, updated_by)
+                        INSERT (user_id, user_name, max_daily_comments, max_hourly_comments, updated_at, updated_by)
+                        VALUES (source.user_id, source.user_name, source.max_daily_comments, source.max_hourly_comments, GETDATE(), source.updated_by);
+                """, user_id, user_name, max_comments, max_hourly_comments, updated_by)
                 connection.commit()
         except Exception as e:
             app.logger.warning(f"Could not persist limit in dbo.user_report_limits (cached locally): {e}")
 
-    return True, f"Daily limit for {user_name or f'ID {user_id}'} set to {max_comments} comments/day.", saved_user
+    return True, f"Limits for {user_name or f'ID {user_id}'} set to {max_comments} comments/day and {max_hourly_comments} comments/hour.", saved_user
 
 
 def _reset_user_limit(user_id: int) -> tuple[bool, str]:
-    """Reset a user's daily limit back to default 3."""
+    """Reset a user's daily and hourly limits back to defaults (3 daily, 2 hourly)."""
     cached = _load_cached_user_limits()
     cached.pop(str(user_id), None)
     _save_cached_user_limits(cached)
@@ -1996,11 +2306,11 @@ def _reset_user_limit(user_id: int) -> tuple[bool, str]:
         except Exception as e:
             app.logger.warning(f"Could not delete from dbo.user_report_limits: {e}")
 
-    return True, "Daily limit reset to default (3 comments/day)."
+    return True, "Limits reset to default (3 comments/day, 2 comments/hour)."
 
 
 def _check_daily_report_limits(user_ids: list[str]) -> tuple[bool, str]:
-    """Verify that reporting these user_ids does not exceed each user's max daily limit."""
+    """Verify that reporting these user_ids does not exceed each user's max daily limit or hourly limit."""
     if not user_ids:
         return True, ""
     try:
@@ -2015,20 +2325,33 @@ def _check_daily_report_limits(user_ids: list[str]) -> tuple[bool, str]:
 
         for uid, req_cnt in requested_counts.items():
             info = limits_map.get(uid) or {}
-            max_limit = info.get("max_daily_comments", 3)
+            max_daily = info.get("max_daily_comments", 3)
+            max_hourly = info.get("max_hourly_comments", 2)
             user_name = info.get("user_name", "")
-            already = info.get("reported_today", 0)
+            name_disp = f"'{user_name}' " if user_name else ""
 
-            if already + req_cnt > max_limit:
-                name_disp = f"'{user_name}' " if user_name else ""
+            # 1. Hourly Limit Check
+            already_hourly = info.get("reported_hourly", 0)
+            if already_hourly + req_cnt > max_hourly:
+                remaining_time_str = info.get("hourly_reset_text") or "a few minutes"
+                return False, (
+                    f"Please wait, hourly limit reached for user {name_disp}(ID: {uid}). "
+                    f"Hourly limit of {max_hourly} comment{'s' if max_hourly != 1 else ''} per hour reached. "
+                    f"Already reported this hour: {already_hourly}, requested: {req_cnt}. "
+                    f"Try again after {remaining_time_str}."
+                )
+
+            # 2. Daily Limit Check
+            already_daily = info.get("reported_today", 0)
+            if already_daily + req_cnt > max_daily:
                 return False, (
                     f"Daily reporting limit reached for user {name_disp}(ID: {uid}). "
-                    f"Daily limit of {max_limit} is completed. All of its limit is reached. "
-                    f"Already reported today: {already}, requested: {req_cnt}. "
+                    f"Daily limit of {max_daily} is completed. All of its limit is reached. "
+                    f"Already reported today: {already_daily}, requested: {req_cnt}. "
                     f"Limit will be reset after 24 hours."
                 )
     except Exception as e:
-        app.logger.warning(f"Error checking daily report limits: {e}")
+        app.logger.warning(f"Error checking report limits: {e}")
     return True, ""
 
 
@@ -2068,12 +2391,13 @@ def get_user_limits():
 @app.post("/api/user-limits")
 @require_super_admin
 def update_user_limit():
-    """Update the maximum comments per day for a user (Super Admin only)."""
+    """Update the maximum comments per day and per hour for a user (Super Admin only)."""
     try:
         data = request.get_json(silent=True) or {}
         raw_user_id = str(data.get("user_id") or data.get("id") or "").strip()
         user_name = str(data.get("user_name") or data.get("name") or "").strip()
-        raw_max = data.get("max_comments") if data.get("max_comments") is not None else data.get("max_daily_comments", data.get("limit"))
+        raw_max_daily = data.get("max_comments") if data.get("max_comments") is not None else data.get("max_daily_comments", data.get("limit"))
+        raw_max_hourly = data.get("max_hourly_comments") if data.get("max_hourly_comments") is not None else data.get("hourly_limit")
 
         if not raw_user_id or not raw_user_id.isdigit():
             return jsonify({
@@ -2083,25 +2407,55 @@ def update_user_limit():
 
         user_id = int(raw_user_id)
 
-        try:
-            max_comments = int(raw_max)
-        except (TypeError, ValueError):
-            return jsonify({
-                "success": False,
-                "error": "Maximum comments count must be a valid integer."
-            }), 400
+        # Retrieve existing limits if partially updating
+        custom_limits = _load_cached_user_limits()
+        existing = custom_limits.get(str(user_id), {})
 
-        if max_comments < 3:
-            return jsonify({
-                "success": False,
-                "error": "Minimum allowed comments count is 3 per day."
-            }), 400
+        # Parse daily limit (default 3, min 3)
+        if raw_max_daily is not None:
+            try:
+                max_daily = int(raw_max_daily)
+            except (TypeError, ValueError):
+                return jsonify({
+                    "success": False,
+                    "error": "Daily comments count must be a valid integer."
+                }), 400
+            if max_daily < 3:
+                return jsonify({
+                    "success": False,
+                    "error": "Minimum allowed daily comments count is 3 per day."
+                }), 400
+        else:
+            max_daily = int(existing.get("max_daily_comments", 3))
+
+        # Parse hourly limit (default 2, min 1)
+        if raw_max_hourly is not None:
+            try:
+                max_hourly = int(raw_max_hourly)
+            except (TypeError, ValueError):
+                return jsonify({
+                    "success": False,
+                    "error": "Hourly comments count must be a valid integer."
+                }), 400
+            if max_hourly < 1:
+                return jsonify({
+                    "success": False,
+                    "error": "Minimum allowed hourly comments count is 1 per hour."
+                }), 400
+        else:
+            max_hourly = int(existing.get("max_hourly_comments", 2))
 
         token = _get_bearer_token()
         _, session = _is_valid_token(token)
         updated_by = (session or {}).get("email", "superadmin")
 
-        success, message, saved_user = _save_user_limit(user_id, user_name, max_comments, updated_by=updated_by)
+        success, message, saved_user = _save_user_limit(
+            user_id,
+            user_name,
+            max_comments=max_daily,
+            max_hourly_comments=max_hourly,
+            updated_by=updated_by
+        )
         if not success:
             return jsonify({"success": False, "error": message}), 400
 
@@ -2643,6 +2997,8 @@ def store_processing_request():
             if not allowed:
                 return jsonify({"error": limit_err}), 400
         processing_id = _save_processing_request(payload)
+        if action_val in ("report_spam", "report"):
+            _record_report_activity(payload.get("user_ids", []), processing_id)
         # Automatically mark reported / upvoted / downvoted comment URLs in dbo.comment_urls
         try:
             status_map = {
@@ -2678,15 +3034,19 @@ def store_processing_request():
 def report_comments():
     """Forward a validated reporting payload server-side to avoid browser CORS failures."""
     try:
-        payload = _validate_payload(request.get_json(silent=True))
+        raw_payload = request.get_json(silent=True) or {}
+        payload = _validate_payload(raw_payload)
         action_val = payload.get("value", "report_spam")
-        if action_val in ("report_spam", "report"):
+        if action_val in ("report_spam", "report") and not raw_payload.get("processing_id"):
             allowed, limit_err = _check_daily_report_limits(payload.get("user_ids", []))
             if not allowed:
                 return jsonify({"error": limit_err}), 400
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
 
+    # The normal browser flow sends processing_id after /api/store has performed
+    # the authoritative validation and activity recording. Direct API calls
+    # without that ID continue to receive the existing server-side validation.
     if not LAMBDA_API_URL:
         return jsonify({"error": "Reporting API URL is not configured."}), 503
 
