@@ -1443,6 +1443,105 @@
       transform: rotate(180deg);
     }
 
+    /* ── Email Enable/Disable Action Buttons & Switcher ── */
+    .btn-action-enable {
+      background: linear-gradient(135deg, #059669, #047857);
+      color: #ffffff;
+      border: 1px solid #34d399;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+      font-weight: 700;
+      white-space: nowrap;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .btn-action-enable:hover:not(:disabled) {
+      background: linear-gradient(135deg, #047857, #065f46);
+      border-color: #6ee7b7;
+      transform: translateY(-1px);
+    }
+    .btn-action-disable {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      color: #ffffff;
+      border: 1px solid #fbbf24;
+      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25);
+      font-weight: 700;
+      white-space: nowrap;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .btn-action-disable:hover:not(:disabled) {
+      background: linear-gradient(135deg, #b45309, #92400e);
+      border-color: #fde68a;
+      transform: translateY(-1px);
+    }
+    .btn-row-action {
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+    }
+    .btn-row-disable {
+      background: rgba(245, 158, 11, 0.12);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+    .btn-row-disable:hover {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: rgba(245, 158, 11, 0.5);
+    }
+    .btn-row-enable {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .btn-row-enable:hover {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: rgba(16, 185, 129, 0.5);
+    }
+    .view-switcher-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .view-switcher-pill:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.09);
+    }
+    .view-switcher-pill.active {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+      font-weight: 700;
+    }
+
+
     .batch-content {
       display: none;
       border-top: 1px solid var(--panel-border);
@@ -4533,6 +4632,8 @@
               </div>
               <div class="comments-actions-group">
                 <span class="pill pill-accounts" id="accounts-total-pill">0 Accounts</span>
+                <span class="pill pill-success" id="accounts-enabled-pill" style="font-weight: 700;">0 Enabled</span>
+                <span class="pill pill-fail" id="accounts-disabled-pill" style="background: rgba(245, 158, 11, 0.15); color: #fcd34d; border-color: rgba(245, 158, 11, 0.3); font-weight: 700;">0 Disabled</span>
                 <button type="button" class="btn-secondary" id="accounts-refresh-btn" title="Refresh email accounts">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -4586,8 +4687,159 @@
               </div>
             </form>
 
-            <!-- EXISTING EMAILS LIST CARD -->
-            <div class="card" style="padding: 20px;">
+            <!-- SECTION SWITCHER CONTROLS -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="view-switcher-pill active" id="view-mode-split" onclick="setAccountsViewMode('split')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+                  <span>Two Sections View</span>
+                </button>
+                <button type="button" class="view-switcher-pill" id="view-mode-enabled" onclick="setAccountsViewMode('enabled')">
+                  <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981;"></span>
+                  <span>Enabled Section (<span id="switcher-enabled-count">0</span>)</span>
+                </button>
+                <button type="button" class="view-switcher-pill" id="view-mode-disabled" onclick="setAccountsViewMode('disabled')">
+                  <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b;"></span>
+                  <span>Disabled Section (<span id="switcher-disabled-count">0</span>)</span>
+                </button>
+                <button type="button" class="view-switcher-pill" id="view-mode-all" onclick="setAccountsViewMode('all')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                  <span>All Emails (<span id="switcher-all-count">0</span>)</span>
+                </button>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--muted);">
+                Select one or more emails to mark enabled/disabled or delete
+              </div>
+            </div>
+
+            <!-- SECTION 1: ENABLED EMAILS CARD -->
+            <div class="card" id="card-enabled-accounts" style="padding: 20px; margin-bottom: 24px; border-top: 3px solid #10b981;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);"></span>
+                  <h2 class="section-title" style="margin: 0; font-size: 1.15rem;">Enabled Email Accounts</h2>
+                  <span class="pill pill-success" id="enabled-accounts-badge" style="font-weight: 700;">0 Enabled</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--muted);">Active in <code>InvestingDB.dbo.investing_accounts</code></div>
+              </div>
+
+              <div class="comments-toolbar">
+                <div class="toolbar-left">
+                  <label class="checkbox-label" style="font-weight: 700; color: var(--text);">
+                    <input type="checkbox" id="select-all-enabled-checkbox" />
+                    <span>Select All on Page</span>
+                  </label>
+                  <button type="button" id="enabled-disable-selected-btn" class="btn-action-disable"
+                    style="display:none;"
+                    title="Mark all selected accounts as Disabled in database">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    <span>Mark Disabled (<span id="enabled-selected-count">0</span>)</span>
+                  </button>
+                  <button type="button" id="enabled-delete-selected-btn" class="btn-action-downvote"
+                    style="display:none; padding: 6px 14px; font-size: 0.82rem; font-weight: 700;"
+                    title="Delete all selected enabled email accounts from database">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    <span>Delete Selected</span>
+                  </button>
+                </div>
+                <div class="toolbar-right">
+                  <input type="text" id="enabled-search-input" placeholder="Search enabled email address..."
+                    style="padding: 7px 12px; font-size: 0.82rem; min-width: 240px; width: auto;" />
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table id="enabled-accounts-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 40px; text-align: center;">Select</th>
+                      <th style="width: 50px;">#</th>
+                      <th>Email Address</th>
+                      <th style="width: 120px; text-align: center;">Status</th>
+                      <th style="width: 150px; text-align: center;">Password</th>
+                      <th style="width: 170px;">Date Added</th>
+                      <th style="width: 180px; text-align: center;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="enabled-accounts-table-body">
+                    <tr>
+                      <td colspan="7" class="loading-state">Loading enabled email accounts...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="pagination-bar">
+                <div class="pagination-info" id="enabled-pagination-info">Showing 0 to 0 of 0 enabled emails</div>
+                <div class="pagination-controls" id="enabled-pagination-controls"></div>
+              </div>
+            </div>
+
+            <!-- SECTION 2: DISABLED EMAILS CARD -->
+            <div class="card" id="card-disabled-accounts" style="padding: 20px; margin-bottom: 24px; border-top: 3px solid #f59e0b;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);"></span>
+                  <h2 class="section-title" style="margin: 0; font-size: 1.15rem;">Disabled Email Accounts</h2>
+                  <span class="pill pill-fail" id="disabled-accounts-badge" style="background: rgba(245, 158, 11, 0.15); color: #fcd34d; border-color: rgba(245, 158, 11, 0.3); font-weight: 700;">0 Disabled</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--muted);">Inactive in <code>InvestingDB.dbo.investing_accounts</code></div>
+              </div>
+
+              <div class="comments-toolbar">
+                <div class="toolbar-left">
+                  <label class="checkbox-label" style="font-weight: 700; color: var(--text);">
+                    <input type="checkbox" id="select-all-disabled-checkbox" />
+                    <span>Select All on Page</span>
+                  </label>
+                  <button type="button" id="disabled-enable-selected-btn" class="btn-action-enable"
+                    style="display:none;"
+                    title="Mark all selected accounts as Enabled in database">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Mark Enabled (<span id="disabled-selected-count">0</span>)</span>
+                  </button>
+                  <button type="button" id="disabled-delete-selected-btn" class="btn-action-downvote"
+                    style="display:none; padding: 6px 14px; font-size: 0.82rem; font-weight: 700;"
+                    title="Delete all selected disabled email accounts from database">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    <span>Delete Selected</span>
+                  </button>
+                </div>
+                <div class="toolbar-right">
+                  <input type="text" id="disabled-search-input" placeholder="Search disabled email address..."
+                    style="padding: 7px 12px; font-size: 0.82rem; min-width: 240px; width: auto;" />
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table id="disabled-accounts-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 40px; text-align: center;">Select</th>
+                      <th style="width: 50px;">#</th>
+                      <th>Email Address</th>
+                      <th style="width: 120px; text-align: center;">Status</th>
+                      <th style="width: 150px; text-align: center;">Password</th>
+                      <th style="width: 170px;">Date Added</th>
+                      <th style="width: 180px; text-align: center;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="disabled-accounts-table-body">
+                    <tr>
+                      <td colspan="7" class="loading-state">Loading disabled email accounts...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="pagination-bar">
+                <div class="pagination-info" id="disabled-pagination-info">Showing 0 to 0 of 0 disabled emails</div>
+                <div class="pagination-controls" id="disabled-pagination-controls"></div>
+              </div>
+            </div>
+
+            <!-- UNIFIED ALL EMAILS CARD (Shown in 'all' view mode) -->
+            <div class="card" id="card-all-accounts" style="padding: 20px; display: none;">
               <div class="comments-toolbar">
                 <div class="toolbar-left">
                   <label class="checkbox-label" style="font-weight: 700; color: var(--text);">
@@ -4595,6 +4847,18 @@
                     <span>Select All on Page</span>
                   </label>
                   <span class="pill pill-accounts" id="accounts-total-badge">0 Emails</span>
+                  <button type="button" id="all-enable-selected-btn" class="btn-action-enable"
+                    style="display:none;"
+                    title="Mark selected email accounts as Enabled">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Mark Enabled (<span id="all-selected-enable-count">0</span>)</span>
+                  </button>
+                  <button type="button" id="all-disable-selected-btn" class="btn-action-disable"
+                    style="display:none;"
+                    title="Mark selected email accounts as Disabled">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    <span>Mark Disabled (<span id="all-selected-disable-count">0</span>)</span>
+                  </button>
                   <button type="button" id="accounts-delete-selected-btn" class="btn-action-downvote"
                     style="display:none; padding: 6px 14px; font-size: 0.82rem; font-weight: 700;"
                     title="Delete all selected email accounts from database">
@@ -4615,14 +4879,15 @@
                       <th style="width: 40px; text-align: center;">Select</th>
                       <th style="width: 50px;">#</th>
                       <th>Email Address</th>
-                      <th style="width: 160px; text-align: center;">Password</th>
+                      <th style="width: 120px; text-align: center;">Status</th>
+                      <th style="width: 150px; text-align: center;">Password</th>
                       <th style="width: 170px;">Date Added</th>
-                      <th style="width: 110px; text-align: center;">Action</th>
+                      <th style="width: 180px; text-align: center;">Action</th>
                     </tr>
                   </thead>
                   <tbody id="accounts-table-body">
                     <tr>
-                      <td colspan="6" class="loading-state">Loading email accounts from database...</td>
+                      <td colspan="7" class="loading-state">Loading email accounts from database...</td>
                     </tr>
                   </tbody>
                 </table>
@@ -8129,11 +8394,27 @@ Live execution batch logs are updating below...`, "success");
     // ─────────────────────────────────────────────────────────────────
     const EMAILS_API_URL = "/api/emails";
     let allAccountsList = [];
+    let currentAccountsViewMode = "split"; // "split" | "enabled" | "disabled" | "all"
+
+    // Pagination & Search States for Enabled Accounts
+    let currentEnabledPage = 1;
+    const enabledPageSize = 20;
+    const selectedEnabledAccountIds = new Set();
+    let enabledSearchTimeout = null;
+
+    // Pagination & Search States for Disabled Accounts
+    let currentDisabledPage = 1;
+    const disabledPageSize = 20;
+    const selectedDisabledAccountIds = new Set();
+    let disabledSearchTimeout = null;
+
+    // Pagination & Search States for All Accounts (Unified View)
     let currentAccountsPage = 1;
     const accountsPageSize = 20;
     const selectedAccountIds = new Set();
     let accountsSearchTimeout = null;
 
+    // DOM Elements - Forms & General
     const addAccountForm = document.getElementById("add-account-form");
     const newAccountEmailInput = document.getElementById("new-account-email");
     const newAccountPasswordInput = document.getElementById("new-account-password");
@@ -8142,15 +8423,57 @@ Live execution batch logs are updating below...`, "success");
     const addAccountStatus = document.getElementById("add-account-status");
     const accountsRefreshBtn = document.getElementById("accounts-refresh-btn");
     const accountsTotalPill = document.getElementById("accounts-total-pill");
-    const selectAllAccountsCheckbox = document.getElementById("select-all-accounts-checkbox");
+    const accountsEnabledPill = document.getElementById("accounts-enabled-pill");
+    const accountsDisabledPill = document.getElementById("accounts-disabled-pill");
+    const switcherEnabledCount = document.getElementById("switcher-enabled-count");
+    const switcherDisabledCount = document.getElementById("switcher-disabled-count");
+    const switcherAllCount = document.getElementById("switcher-all-count");
+    const sidebarEmailsBadge = document.getElementById("sidebar-emails-badge");
+
+    // DOM Elements - Cards & View Mode Switcher
+    const cardEnabledAccounts = document.getElementById("card-enabled-accounts");
+    const cardDisabledAccounts = document.getElementById("card-disabled-accounts");
+    const cardAllAccounts = document.getElementById("card-all-accounts");
+    const viewModeSplit = document.getElementById("view-mode-split");
+    const viewModeEnabled = document.getElementById("view-mode-enabled");
+    const viewModeDisabled = document.getElementById("view-mode-disabled");
+    const viewModeAll = document.getElementById("view-mode-all");
+
+    // DOM Elements - Enabled Section
+    const enabledAccountsBadge = document.getElementById("enabled-accounts-badge");
+    const selectAllEnabledCheckbox = document.getElementById("select-all-enabled-checkbox");
+    const enabledDisableSelectedBtn = document.getElementById("enabled-disable-selected-btn");
+    const enabledSelectedCount = document.getElementById("enabled-selected-count");
+    const enabledDeleteSelectedBtn = document.getElementById("enabled-delete-selected-btn");
+    const enabledSearchInput = document.getElementById("enabled-search-input");
+    const enabledAccountsTableBody = document.getElementById("enabled-accounts-table-body");
+    const enabledPaginationInfo = document.getElementById("enabled-pagination-info");
+    const enabledPaginationControls = document.getElementById("enabled-pagination-controls");
+
+    // DOM Elements - Disabled Section
+    const disabledAccountsBadge = document.getElementById("disabled-accounts-badge");
+    const selectAllDisabledCheckbox = document.getElementById("select-all-disabled-checkbox");
+    const disabledEnableSelectedBtn = document.getElementById("disabled-enable-selected-btn");
+    const disabledSelectedCount = document.getElementById("disabled-selected-count");
+    const disabledDeleteSelectedBtn = document.getElementById("disabled-delete-selected-btn");
+    const disabledSearchInput = document.getElementById("disabled-search-input");
+    const disabledAccountsTableBody = document.getElementById("disabled-accounts-table-body");
+    const disabledPaginationInfo = document.getElementById("disabled-pagination-info");
+    const disabledPaginationControls = document.getElementById("disabled-pagination-controls");
+
+    // DOM Elements - All Accounts Section
     const accountsTotalBadge = document.getElementById("accounts-total-badge");
+    const selectAllAccountsCheckbox = document.getElementById("select-all-accounts-checkbox");
+    const allEnableSelectedBtn = document.getElementById("all-enable-selected-btn");
+    const allDisableSelectedBtn = document.getElementById("all-disable-selected-btn");
+    const allSelectedEnableCount = document.getElementById("all-selected-enable-count");
+    const allSelectedDisableCount = document.getElementById("all-selected-disable-count");
     const accountsDeleteSelectedBtn = document.getElementById("accounts-delete-selected-btn");
     const accountsSelectedCount = document.getElementById("accounts-selected-count");
     const accountsSearchInput = document.getElementById("accounts-search-input");
     const accountsTableBody = document.getElementById("accounts-table-body");
     const accountsPaginationInfo = document.getElementById("accounts-pagination-info");
     const accountsPaginationControls = document.getElementById("accounts-pagination-controls");
-    const sidebarEmailsBadge = document.getElementById("sidebar-emails-badge");
 
     function showAddAccountStatus(message, kind) {
       if (!addAccountStatus) return;
@@ -8164,6 +8487,41 @@ Live execution batch logs are updating below...`, "success");
         }, 5000);
       }
     }
+
+    // View Mode Switcher
+    window.setAccountsViewMode = function (mode) {
+      currentAccountsViewMode = mode;
+      const pills = [
+        { el: viewModeSplit, mode: "split" },
+        { el: viewModeEnabled, mode: "enabled" },
+        { el: viewModeDisabled, mode: "disabled" },
+        { el: viewModeAll, mode: "all" },
+      ];
+      pills.forEach(p => {
+        if (p.el) {
+          if (p.mode === mode) p.el.classList.add("active");
+          else p.el.classList.remove("active");
+        }
+      });
+
+      if (mode === "split") {
+        if (cardEnabledAccounts) cardEnabledAccounts.style.display = "block";
+        if (cardDisabledAccounts) cardDisabledAccounts.style.display = "block";
+        if (cardAllAccounts) cardAllAccounts.style.display = "none";
+      } else if (mode === "enabled") {
+        if (cardEnabledAccounts) cardEnabledAccounts.style.display = "block";
+        if (cardDisabledAccounts) cardDisabledAccounts.style.display = "none";
+        if (cardAllAccounts) cardAllAccounts.style.display = "none";
+      } else if (mode === "disabled") {
+        if (cardEnabledAccounts) cardEnabledAccounts.style.display = "none";
+        if (cardDisabledAccounts) cardDisabledAccounts.style.display = "block";
+        if (cardAllAccounts) cardAllAccounts.style.display = "none";
+      } else if (mode === "all") {
+        if (cardEnabledAccounts) cardEnabledAccounts.style.display = "none";
+        if (cardDisabledAccounts) cardDisabledAccounts.style.display = "none";
+        if (cardAllAccounts) cardAllAccounts.style.display = "block";
+      }
+    };
 
     if (toggleNewAccountPasswordBtn && newAccountPasswordInput) {
       toggleNewAccountPasswordBtn.addEventListener("click", () => {
@@ -8201,7 +8559,7 @@ Live execution batch logs are updating below...`, "success");
           const res = await authFetch(EMAILS_API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ email, password, is_enabled: true }),
           });
 
           const data = await res.json().catch(() => ({}));
@@ -8210,7 +8568,7 @@ Live execution batch logs are updating below...`, "success");
             throw new Error(data.error || `Failed to add email account (HTTP ${res.status})`);
           }
 
-          showAddAccountStatus(`✓ ${data.message || `Email "${email}" added successfully!`}`, "success");
+          showAddAccountStatus(`✓ ${data.message || `Email "${email}" added successfully as enabled!`}`, "success");
           if (newAccountEmailInput) newAccountEmailInput.value = "";
           if (newAccountPasswordInput) newAccountPasswordInput.value = "";
           loadAccounts(1);
@@ -8225,11 +8583,33 @@ Live execution batch logs are updating below...`, "success");
       });
     }
 
+    // Search event listeners
+    if (enabledSearchInput) {
+      enabledSearchInput.addEventListener("input", () => {
+        clearTimeout(enabledSearchTimeout);
+        enabledSearchTimeout = setTimeout(() => {
+          currentEnabledPage = 1;
+          renderEnabledSection();
+        }, 300);
+      });
+    }
+
+    if (disabledSearchInput) {
+      disabledSearchInput.addEventListener("input", () => {
+        clearTimeout(disabledSearchTimeout);
+        disabledSearchTimeout = setTimeout(() => {
+          currentDisabledPage = 1;
+          renderDisabledSection();
+        }, 300);
+      });
+    }
+
     if (accountsSearchInput) {
       accountsSearchInput.addEventListener("input", () => {
         clearTimeout(accountsSearchTimeout);
         accountsSearchTimeout = setTimeout(() => {
-          loadAccounts(1);
+          currentAccountsPage = 1;
+          renderAllSection();
         }, 300);
       });
     }
@@ -8240,38 +8620,97 @@ Live execution batch logs are updating below...`, "success");
       });
     }
 
+    // Select All Listeners
+    if (selectAllEnabledCheckbox) {
+      selectAllEnabledCheckbox.addEventListener("change", () => {
+        toggleSelectAllEnabledOnPage();
+      });
+    }
+
+    if (selectAllDisabledCheckbox) {
+      selectAllDisabledCheckbox.addEventListener("change", () => {
+        toggleSelectAllDisabledOnPage();
+      });
+    }
+
     if (selectAllAccountsCheckbox) {
       selectAllAccountsCheckbox.addEventListener("change", () => {
         toggleSelectAllAccountsOnPage();
       });
     }
 
-    if (accountsDeleteSelectedBtn) {
-      accountsDeleteSelectedBtn.addEventListener("click", () => {
-        deleteSelectedAccounts();
+    // Batch Action Button Listeners
+    if (enabledDisableSelectedBtn) {
+      enabledDisableSelectedBtn.addEventListener("click", () => {
+        const ids = Array.from(selectedEnabledAccountIds);
+        markAccountsStatus(ids, false, "Disabled", enabledDisableSelectedBtn);
       });
     }
 
+    if (enabledDeleteSelectedBtn) {
+      enabledDeleteSelectedBtn.addEventListener("click", () => {
+        const ids = Array.from(selectedEnabledAccountIds);
+        deleteBatchAccounts(ids, enabledDeleteSelectedBtn);
+      });
+    }
+
+    if (disabledEnableSelectedBtn) {
+      disabledEnableSelectedBtn.addEventListener("click", () => {
+        const ids = Array.from(selectedDisabledAccountIds);
+        markAccountsStatus(ids, true, "Enabled", disabledEnableSelectedBtn);
+      });
+    }
+
+    if (disabledDeleteSelectedBtn) {
+      disabledDeleteSelectedBtn.addEventListener("click", () => {
+        const ids = Array.from(selectedDisabledAccountIds);
+        deleteBatchAccounts(ids, disabledDeleteSelectedBtn);
+      });
+    }
+
+    if (allEnableSelectedBtn) {
+      allEnableSelectedBtn.addEventListener("click", () => {
+        const ids = Array.from(selectedAccountIds);
+        markAccountsStatus(ids, true, "Enabled", allEnableSelectedBtn);
+      });
+    }
+
+    if (allDisableSelectedBtn) {
+      allDisableSelectedBtn.addEventListener("click", () => {
+        const ids = Array.from(selectedAccountIds);
+        markAccountsStatus(ids, false, "Disabled", allDisableSelectedBtn);
+      });
+    }
+
+    if (accountsDeleteSelectedBtn) {
+      accountsDeleteSelectedBtn.addEventListener("click", () => {
+        const ids = Array.from(selectedAccountIds);
+        deleteBatchAccounts(ids, accountsDeleteSelectedBtn);
+      });
+    }
+
+    // Main Fetch Function
     async function loadAccounts(page = 1, isSilent = false) {
       if (!isCurrentUserSuperAdmin()) return;
-      currentAccountsPage = page;
 
       if (!isSilent && accountsRefreshBtn) {
         accountsRefreshBtn.disabled = true;
       }
 
-      if (!isSilent && accountsTableBody) {
-        accountsTableBody.innerHTML = `<tr><td colspan="6" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading email accounts from database...</td></tr>`;
+      if (!isSilent) {
+        if (enabledAccountsTableBody) {
+          enabledAccountsTableBody.innerHTML = `<tr><td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading enabled email accounts from database...</td></tr>`;
+        }
+        if (disabledAccountsTableBody) {
+          disabledAccountsTableBody.innerHTML = `<tr><td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading disabled email accounts from database...</td></tr>`;
+        }
+        if (accountsTableBody) {
+          accountsTableBody.innerHTML = `<tr><td colspan="7" class="loading-state"><span class="spinner" style="vertical-align:middle; margin-right:8px;"></span> Loading email accounts from database...</td></tr>`;
+        }
       }
 
       try {
-        const query = accountsSearchInput ? accountsSearchInput.value.trim() : "";
-        let url = `${EMAILS_API_URL}`;
-        if (query) {
-          url += `?search=${encodeURIComponent(query)}`;
-        }
-
-        const res = await authFetch(url);
+        const res = await authFetch(EMAILS_API_URL);
         if (!res.ok) {
           if (res.status === 401) return;
           throw new Error(`HTTP ${res.status}`);
@@ -8283,40 +8722,59 @@ Live execution batch logs are updating below...`, "success");
         }
 
         allAccountsList = Array.isArray(data.accounts) ? data.accounts : [];
-        const totalCount = allAccountsList.length;
 
-        // Clean up any selectedAccountIds that no longer exist
-        const currentIdSet = new Set(allAccountsList.map(a => a.id));
-        for (const id of Array.from(selectedAccountIds)) {
-          if (!currentIdSet.has(id)) {
-            selectedAccountIds.delete(id);
+        // Ensure is_enabled flag exists
+        allAccountsList.forEach(a => {
+          if (typeof a.is_enabled === "undefined") {
+            a.is_enabled = a.status !== "disabled";
+          } else {
+            a.is_enabled = Boolean(a.is_enabled);
           }
+        });
+
+        // Prune stale selections
+        const currentIdSet = new Set(allAccountsList.map(a => a.id));
+        for (const id of Array.from(selectedEnabledAccountIds)) {
+          if (!currentIdSet.has(id)) selectedEnabledAccountIds.delete(id);
+        }
+        for (const id of Array.from(selectedDisabledAccountIds)) {
+          if (!currentIdSet.has(id)) selectedDisabledAccountIds.delete(id);
+        }
+        for (const id of Array.from(selectedAccountIds)) {
+          if (!currentIdSet.has(id)) selectedAccountIds.delete(id);
         }
 
-        if (accountsTotalPill) {
-          accountsTotalPill.textContent = `${totalCount} Account${totalCount !== 1 ? 's' : ''}`;
-        }
-        if (accountsTotalBadge) {
-          accountsTotalBadge.textContent = `${totalCount} Email${totalCount !== 1 ? 's' : ''}`;
-        }
-        if (sidebarEmailsBadge) {
-          sidebarEmailsBadge.textContent = `${totalCount}`;
-        }
+        const totalCount = allAccountsList.length;
+        const enabledCount = allAccountsList.filter(a => a.is_enabled).length;
+        const disabledCount = totalCount - enabledCount;
 
-        const totalPages = Math.max(1, Math.ceil(totalCount / accountsPageSize));
-        if (currentAccountsPage > totalPages) {
-          currentAccountsPage = totalPages;
-        }
+        // Update Summary Pills & Badges
+        if (accountsTotalPill) accountsTotalPill.textContent = `${totalCount} Account${totalCount !== 1 ? 's' : ''}`;
+        if (accountsEnabledPill) accountsEnabledPill.textContent = `${enabledCount} Enabled`;
+        if (accountsDisabledPill) accountsDisabledPill.textContent = `${disabledCount} Disabled`;
+        if (switcherEnabledCount) switcherEnabledCount.textContent = `${enabledCount}`;
+        if (switcherDisabledCount) switcherDisabledCount.textContent = `${disabledCount}`;
+        if (switcherAllCount) switcherAllCount.textContent = `${totalCount}`;
+        if (sidebarEmailsBadge) sidebarEmailsBadge.textContent = `${totalCount}`;
+        if (enabledAccountsBadge) enabledAccountsBadge.textContent = `${enabledCount} Enabled`;
+        if (disabledAccountsBadge) disabledAccountsBadge.textContent = `${disabledCount} Disabled`;
+        if (accountsTotalBadge) accountsTotalBadge.textContent = `${totalCount} Email${totalCount !== 1 ? 's' : ''}`;
 
-        const startIndex = (currentAccountsPage - 1) * accountsPageSize;
-        const pageAccounts = allAccountsList.slice(startIndex, startIndex + accountsPageSize);
+        // Render each section
+        renderEnabledSection();
+        renderDisabledSection();
+        renderAllSection();
 
-        renderAccountsTable(pageAccounts);
-        renderAccountsPagination(currentAccountsPage, totalPages, totalCount);
-        updateAccountSelectionUI(pageAccounts);
       } catch (err) {
+        const errMsg = escapeHtml(err.message || "Failed to query database");
+        if (enabledAccountsTableBody) {
+          enabledAccountsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color: var(--danger);">Error: ${errMsg}</td></tr>`;
+        }
+        if (disabledAccountsTableBody) {
+          disabledAccountsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color: var(--danger);">Error: ${errMsg}</td></tr>`;
+        }
         if (accountsTableBody) {
-          accountsTableBody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color: var(--danger);">Error: ${escapeHtml(err.message)}</td></tr>`;
+          accountsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color: var(--danger);">Error: ${errMsg}</td></tr>`;
         }
       } finally {
         if (accountsRefreshBtn) {
@@ -8326,63 +8784,479 @@ Live execution batch logs are updating below...`, "success");
     }
     window.loadAccounts = loadAccounts;
 
-    function renderAccountsTable(accounts) {
-      if (!accountsTableBody) return;
-      if (!accounts.length) {
-        accountsTableBody.innerHTML = `<tr><td colspan="6" class="empty-state">No email accounts found in database.</td></tr>`;
+    // ─────────────────────────────────────────────────────────────────
+    // Enabled Section Rendering & Selection
+    // ─────────────────────────────────────────────────────────────────
+    function getFilteredEnabledAccounts() {
+      const q = enabledSearchInput ? enabledSearchInput.value.trim().lowerCase : "";
+      return allAccountsList.filter(a => {
+        if (!a.is_enabled) return false;
+        if (!q) return true;
+        return (a.email || "").toLowerCase().includes(q) || (a.username || "").toLowerCase().includes(q);
+      });
+    }
+
+    function renderEnabledSection() {
+      const q = enabledSearchInput ? enabledSearchInput.value.trim().toLowerCase() : "";
+      const filtered = allAccountsList.filter(a => {
+        if (!a.is_enabled) return false;
+        if (!q) return true;
+        return (a.email || "").toLowerCase().includes(q) || (a.username || "").toLowerCase().includes(q);
+      });
+
+      const totalCount = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalCount / enabledPageSize));
+      if (currentEnabledPage > totalPages) currentEnabledPage = totalPages;
+
+      const startIndex = (currentEnabledPage - 1) * enabledPageSize;
+      const pageAccounts = filtered.slice(startIndex, startIndex + enabledPageSize);
+
+      if (!enabledAccountsTableBody) return;
+      if (!pageAccounts.length) {
+        enabledAccountsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state">${q ? 'No enabled email accounts match your search.' : 'No enabled email accounts found in database.'}</td></tr>`;
+      } else {
+        enabledAccountsTableBody.innerHTML = pageAccounts.map((acc, index) => {
+          const rowNum = startIndex + index + 1;
+          const safeId = acc.id;
+          const safeEmail = escapeHtml(acc.email || "");
+          const escapedEmail = safeEmail.replace(/'/g, "\\'");
+          const isChecked = selectedEnabledAccountIds.has(safeId);
+          const dateStr = acc.created_at ? escapeHtml(acc.created_at) : "—";
+
+          return `
+            <tr class="${isChecked ? 'row-selected' : ''}">
+              <td style="text-align: center;">
+                <input
+                  type="checkbox"
+                  class="enabled-row-checkbox"
+                  data-account-id="${safeId}"
+                  ${isChecked ? 'checked' : ''}
+                  onchange="toggleEnabledAccountSelection(${safeId})"
+                />
+              </td>
+              <td style="color: var(--muted); font-size: 0.85rem;">${rowNum}</td>
+              <td>
+                <span style="font-weight: 600; color: #f8fafc; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem;">${safeEmail}</span>
+              </td>
+              <td style="text-align: center;">
+                <span class="pill pill-success" style="font-size: 0.74rem; font-weight: 700; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
+                  <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10b981;"></span>
+                  <span>Active</span>
+                </span>
+              </td>
+              <td style="text-align: center;">
+                <span class="password-hidden-badge" title="Password stored securely in database" style="font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; color: #94a3b8; font-size: 0.88rem; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background: rgba(15, 23, 42, 0.6); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(148, 163, 184, 0.15);">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.75;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>••••••••</span>
+                </span>
+              </td>
+              <td>
+                <span style="color: var(--muted); font-size: 0.82rem; font-family: 'JetBrains Mono', monospace;">${dateStr}</span>
+              </td>
+              <td style="text-align: center;">
+                <div style="display: inline-flex; align-items: center; gap: 6px;">
+                  <button
+                    type="button"
+                    class="btn-row-action btn-row-disable"
+                    title="Mark this email as Disabled in database"
+                    onclick="toggleSingleAccountStatus(${safeId}, false, '${escapedEmail}')"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    <span>Disable</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-icon-danger"
+                    title="Delete email account from database"
+                    onclick="deleteAccount(${safeId}, '${escapedEmail}')"
+                    style="background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 600; transition: all 0.15s ease;"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      renderEnabledPagination(currentEnabledPage, totalPages, totalCount);
+      updateEnabledSelectionUI(pageAccounts);
+    }
+
+    function renderEnabledPagination(page, totalPages, totalCount) {
+      if (!enabledPaginationInfo || !enabledPaginationControls) return;
+      const start = totalCount === 0 ? 0 : (page - 1) * enabledPageSize + 1;
+      const end = Math.min(page * enabledPageSize, totalCount);
+      enabledPaginationInfo.textContent = `Showing ${start}–${end} of ${totalCount} enabled emails`;
+
+      if (totalPages <= 1) {
+        enabledPaginationControls.innerHTML = "";
         return;
       }
 
-      accountsTableBody.innerHTML = accounts.map((acc, index) => {
-        const rowNum = (currentAccountsPage - 1) * accountsPageSize + index + 1;
-        const safeId = acc.id;
-        const safeEmail = escapeHtml(acc.email || "");
-        const escapedEmail = safeEmail.replace(/'/g, "\\'");
-        const isChecked = selectedAccountIds.has(safeId);
-        const dateStr = acc.created_at ? escapeHtml(acc.created_at) : "—";
-
-        return `
-          <tr class="${isChecked ? 'row-selected' : ''}">
-            <td style="text-align: center;">
-              <input
-                type="checkbox"
-                class="account-row-checkbox"
-                data-account-id="${safeId}"
-                ${isChecked ? 'checked' : ''}
-                onchange="toggleAccountSelection(${safeId})"
-              />
-            </td>
-            <td style="color: var(--muted); font-size: 0.85rem;">${rowNum}</td>
-            <td>
-              <span style="font-weight: 600; color: #f8fafc; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem;">${safeEmail}</span>
-            </td>
-            <td style="text-align: center;">
-              <span class="password-hidden-badge" title="Password stored securely in database" style="font-family: 'JetBrains Mono', monospace; letter-spacing: 2.5px; color: #94a3b8; font-size: 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: rgba(15, 23, 42, 0.6); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(148, 163, 184, 0.15);">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.75;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <span>••••••••••••</span>
-              </span>
-            </td>
-            <td>
-              <span style="color: var(--muted); font-size: 0.82rem; font-family: 'JetBrains Mono', monospace;">${dateStr}</span>
-            </td>
-            <td style="text-align: center;">
-              <button
-                type="button"
-                class="btn-icon-danger"
-                title="Delete email account from database"
-                onclick="deleteAccount(${safeId}, '${escapedEmail}')"
-                style="background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; font-weight: 600; transition: all 0.15s ease;"
-                onmouseover="this.style.background='rgba(239, 68, 68, 0.25)'; this.style.borderColor='rgba(239, 68, 68, 0.5)';"
-                onmouseout="this.style.background='rgba(239, 68, 68, 0.12)'; this.style.borderColor='rgba(239, 68, 68, 0.3)';"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                <span>Delete</span>
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join("");
+      let html = `<button type="button" class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="goToEnabledPage(${page - 1})" title="Previous">&lt;</button>`;
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
+          html += `<button type="button" class="page-btn ${i === page ? 'active' : ''}" onclick="goToEnabledPage(${i})">${i}</button>`;
+        } else if (i === page - 2 || i === page + 2) {
+          html += `<span style="color: var(--muted); padding: 0 4px;">...</span>`;
+        }
+      }
+      html += `<button type="button" class="page-btn" ${page >= totalPages ? 'disabled' : ''} onclick="goToEnabledPage(${page + 1})" title="Next">&gt;</button>`;
+      enabledPaginationControls.innerHTML = html;
     }
+
+    window.goToEnabledPage = function (page) {
+      currentEnabledPage = page;
+      renderEnabledSection();
+    };
+
+    window.toggleEnabledAccountSelection = function (accountId) {
+      if (selectedEnabledAccountIds.has(accountId)) {
+        selectedEnabledAccountIds.delete(accountId);
+      } else {
+        selectedEnabledAccountIds.add(accountId);
+      }
+      renderEnabledSection();
+    };
+
+    function toggleSelectAllEnabledOnPage() {
+      const q = enabledSearchInput ? enabledSearchInput.value.trim().toLowerCase() : "";
+      const filtered = allAccountsList.filter(a => {
+        if (!a.is_enabled) return false;
+        if (!q) return true;
+        return (a.email || "").toLowerCase().includes(q) || (a.username || "").toLowerCase().includes(q);
+      });
+      const startIndex = (currentEnabledPage - 1) * enabledPageSize;
+      const pageAccounts = filtered.slice(startIndex, startIndex + enabledPageSize);
+      if (!pageAccounts.length) return;
+
+      const allSelected = pageAccounts.every(a => selectedEnabledAccountIds.has(a.id));
+      if (allSelected) {
+        pageAccounts.forEach(a => selectedEnabledAccountIds.delete(a.id));
+      } else {
+        pageAccounts.forEach(a => selectedEnabledAccountIds.add(a.id));
+      }
+      renderEnabledSection();
+    }
+
+    function updateEnabledSelectionUI(pageAccounts = []) {
+      const count = selectedEnabledAccountIds.size;
+      if (enabledSelectedCount) enabledSelectedCount.textContent = String(count);
+
+      if (enabledDisableSelectedBtn) {
+        enabledDisableSelectedBtn.style.display = count > 0 ? "inline-flex" : "none";
+      }
+      if (enabledDeleteSelectedBtn) {
+        enabledDeleteSelectedBtn.style.display = count > 0 ? "inline-flex" : "none";
+      }
+
+      if (selectAllEnabledCheckbox) {
+        if (pageAccounts.length > 0 && pageAccounts.every(a => selectedEnabledAccountIds.has(a.id))) {
+          selectAllEnabledCheckbox.checked = true;
+          selectAllEnabledCheckbox.indeterminate = false;
+        } else if (pageAccounts.some(a => selectedEnabledAccountIds.has(a.id))) {
+          selectAllEnabledCheckbox.checked = false;
+          selectAllEnabledCheckbox.indeterminate = true;
+        } else {
+          selectAllEnabledCheckbox.checked = false;
+          selectAllEnabledCheckbox.indeterminate = false;
+        }
+      }
+    }
+
+
+    // ─────────────────────────────────────────────────────────────────
+    // Disabled Section Rendering & Selection
+    // ─────────────────────────────────────────────────────────────────
+    function renderDisabledSection() {
+      const q = disabledSearchInput ? disabledSearchInput.value.trim().toLowerCase() : "";
+      const filtered = allAccountsList.filter(a => {
+        if (a.is_enabled) return false;
+        if (!q) return true;
+        return (a.email || "").toLowerCase().includes(q) || (a.username || "").toLowerCase().includes(q);
+      });
+
+      const totalCount = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalCount / disabledPageSize));
+      if (currentDisabledPage > totalPages) currentDisabledPage = totalPages;
+
+      const startIndex = (currentDisabledPage - 1) * disabledPageSize;
+      const pageAccounts = filtered.slice(startIndex, startIndex + disabledPageSize);
+
+      if (!disabledAccountsTableBody) return;
+      if (!pageAccounts.length) {
+        disabledAccountsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state">${q ? 'No disabled email accounts match your search.' : 'No disabled email accounts currently.'}</td></tr>`;
+      } else {
+        disabledAccountsTableBody.innerHTML = pageAccounts.map((acc, index) => {
+          const rowNum = startIndex + index + 1;
+          const safeId = acc.id;
+          const safeEmail = escapeHtml(acc.email || "");
+          const escapedEmail = safeEmail.replace(/'/g, "\\'");
+          const isChecked = selectedDisabledAccountIds.has(safeId);
+          const dateStr = acc.created_at ? escapeHtml(acc.created_at) : "—";
+
+          return `
+            <tr class="${isChecked ? 'row-selected' : ''}">
+              <td style="text-align: center;">
+                <input
+                  type="checkbox"
+                  class="disabled-row-checkbox"
+                  data-account-id="${safeId}"
+                  ${isChecked ? 'checked' : ''}
+                  onchange="toggleDisabledAccountSelection(${safeId})"
+                />
+              </td>
+              <td style="color: var(--muted); font-size: 0.85rem;">${rowNum}</td>
+              <td>
+                <span style="font-weight: 500; color: #94a3b8; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem;">${safeEmail}</span>
+              </td>
+              <td style="text-align: center;">
+                <span class="pill" style="font-size: 0.74rem; font-weight: 600; padding: 2px 8px; background: rgba(148,163,184,0.12); color: #94a3b8; border: 1px solid rgba(148,163,184,0.25); display: inline-flex; align-items: center; gap: 4px;">
+                  <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#94a3b8;"></span>
+                  <span>Disabled</span>
+                </span>
+              </td>
+              <td style="text-align: center;">
+                <span class="password-hidden-badge" title="Password stored securely in database" style="font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; color: #94a3b8; font-size: 0.88rem; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background: rgba(15, 23, 42, 0.6); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(148, 163, 184, 0.15);">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.75;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>••••••••</span>
+                </span>
+              </td>
+              <td>
+                <span style="color: var(--muted); font-size: 0.82rem; font-family: 'JetBrains Mono', monospace;">${dateStr}</span>
+              </td>
+              <td style="text-align: center;">
+                <div style="display: inline-flex; align-items: center; gap: 6px;">
+                  <button
+                    type="button"
+                    class="btn-row-action btn-row-enable"
+                    title="Mark this email as Enabled in database"
+                    onclick="toggleSingleAccountStatus(${safeId}, true, '${escapedEmail}')"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Enable</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-icon-danger"
+                    title="Delete email account from database"
+                    onclick="deleteAccount(${safeId}, '${escapedEmail}')"
+                    style="background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 600; transition: all 0.15s ease;"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      renderDisabledPagination(currentDisabledPage, totalPages, totalCount);
+      updateDisabledSelectionUI(pageAccounts);
+    }
+
+    function renderDisabledPagination(page, totalPages, totalCount) {
+      if (!disabledPaginationInfo || !disabledPaginationControls) return;
+      const start = totalCount === 0 ? 0 : (page - 1) * disabledPageSize + 1;
+      const end = Math.min(page * disabledPageSize, totalCount);
+      disabledPaginationInfo.textContent = `Showing ${start}–${end} of ${totalCount} disabled emails`;
+
+      if (totalPages <= 1) {
+        disabledPaginationControls.innerHTML = "";
+        return;
+      }
+
+      let html = `<button type="button" class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="goToDisabledPage(${page - 1})" title="Previous">&lt;</button>`;
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
+          html += `<button type="button" class="page-btn ${i === page ? 'active' : ''}" onclick="goToDisabledPage(${i})">${i}</button>`;
+        } else if (i === page - 2 || i === page + 2) {
+          html += `<span style="color: var(--muted); padding: 0 4px;">...</span>`;
+        }
+      }
+      html += `<button type="button" class="page-btn" ${page >= totalPages ? 'disabled' : ''} onclick="goToDisabledPage(${page + 1})" title="Next">&gt;</button>`;
+      disabledPaginationControls.innerHTML = html;
+    }
+
+    window.goToDisabledPage = function (page) {
+      currentDisabledPage = page;
+      renderDisabledSection();
+    };
+
+    window.toggleDisabledAccountSelection = function (accountId) {
+      if (selectedDisabledAccountIds.has(accountId)) {
+        selectedDisabledAccountIds.delete(accountId);
+      } else {
+        selectedDisabledAccountIds.add(accountId);
+      }
+      renderDisabledSection();
+    };
+
+    function toggleSelectAllDisabledOnPage() {
+      const q = disabledSearchInput ? disabledSearchInput.value.trim().toLowerCase() : "";
+      const filtered = allAccountsList.filter(a => {
+        if (a.is_enabled) return false;
+        if (!q) return true;
+        return (a.email || "").toLowerCase().includes(q) || (a.username || "").toLowerCase().includes(q);
+      });
+      const startIndex = (currentDisabledPage - 1) * disabledPageSize;
+      const pageAccounts = filtered.slice(startIndex, startIndex + disabledPageSize);
+      if (!pageAccounts.length) return;
+
+      const allSelected = pageAccounts.every(a => selectedDisabledAccountIds.has(a.id));
+      if (allSelected) {
+        pageAccounts.forEach(a => selectedDisabledAccountIds.delete(a.id));
+      } else {
+        pageAccounts.forEach(a => selectedDisabledAccountIds.add(a.id));
+      }
+      renderDisabledSection();
+    }
+
+    function updateDisabledSelectionUI(pageAccounts = []) {
+      const count = selectedDisabledAccountIds.size;
+      if (disabledSelectedCount) disabledSelectedCount.textContent = String(count);
+
+      if (disabledEnableSelectedBtn) {
+        disabledEnableSelectedBtn.style.display = count > 0 ? "inline-flex" : "none";
+      }
+      if (disabledDeleteSelectedBtn) {
+        disabledDeleteSelectedBtn.style.display = count > 0 ? "inline-flex" : "none";
+      }
+
+      if (selectAllDisabledCheckbox) {
+        if (pageAccounts.length > 0 && pageAccounts.every(a => selectedDisabledAccountIds.has(a.id))) {
+          selectAllDisabledCheckbox.checked = true;
+          selectAllDisabledCheckbox.indeterminate = false;
+        } else if (pageAccounts.some(a => selectedDisabledAccountIds.has(a.id))) {
+          selectAllDisabledCheckbox.checked = false;
+          selectAllDisabledCheckbox.indeterminate = true;
+        } else {
+          selectAllDisabledCheckbox.checked = false;
+          selectAllDisabledCheckbox.indeterminate = false;
+        }
+      }
+    }
+
+
+    // ─────────────────────────────────────────────────────────────────
+    // Unified All Accounts Section Rendering & Selection
+    // ─────────────────────────────────────────────────────────────────
+    function renderAllSection() {
+      const q = accountsSearchInput ? accountsSearchInput.value.trim().toLowerCase() : "";
+      const filtered = allAccountsList.filter(a => {
+        if (!q) return true;
+        return (a.email || "").toLowerCase().includes(q) || (a.username || "").toLowerCase().includes(q);
+      });
+
+      const totalCount = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalCount / accountsPageSize));
+      if (currentAccountsPage > totalPages) currentAccountsPage = totalPages;
+
+      const startIndex = (currentAccountsPage - 1) * accountsPageSize;
+      const pageAccounts = filtered.slice(startIndex, startIndex + accountsPageSize);
+
+      if (!accountsTableBody) return;
+      if (!pageAccounts.length) {
+        accountsTableBody.innerHTML = `<tr><td colspan="7" class="empty-state">No email accounts found in database.</td></tr>`;
+      } else {
+        accountsTableBody.innerHTML = pageAccounts.map((acc, index) => {
+          const rowNum = startIndex + index + 1;
+          const safeId = acc.id;
+          const safeEmail = escapeHtml(acc.email || "");
+          const escapedEmail = safeEmail.replace(/'/g, "\\'");
+          const isChecked = selectedAccountIds.has(safeId);
+          const isEnabled = Boolean(acc.is_enabled);
+          const dateStr = acc.created_at ? escapeHtml(acc.created_at) : "—";
+
+          return `
+            <tr class="${isChecked ? 'row-selected' : ''}">
+              <td style="text-align: center;">
+                <input
+                  type="checkbox"
+                  class="account-row-checkbox"
+                  data-account-id="${safeId}"
+                  ${isChecked ? 'checked' : ''}
+                  onchange="toggleAccountSelection(${safeId})"
+                />
+              </td>
+              <td style="color: var(--muted); font-size: 0.85rem;">${rowNum}</td>
+              <td>
+                <span style="font-weight: 600; color: ${isEnabled ? '#f8fafc' : '#94a3b8'}; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem;">${safeEmail}</span>
+              </td>
+              <td style="text-align: center;">
+                ${isEnabled
+                  ? `<span class="pill pill-success" style="font-size:0.74rem; font-weight:700; padding:2px 8px; display:inline-flex; align-items:center; gap:4px;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10b981;"></span><span>Active</span></span>`
+                  : `<span class="pill" style="font-size:0.74rem; font-weight:600; padding:2px 8px; background:rgba(148,163,184,0.12); color:#94a3b8; border:1px solid rgba(148,163,184,0.25); display:inline-flex; align-items:center; gap:4px;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#94a3b8;"></span><span>Disabled</span></span>`
+                }
+              </td>
+              <td style="text-align: center;">
+                <span class="password-hidden-badge" title="Password stored securely in database" style="font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; color: #94a3b8; font-size: 0.88rem; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background: rgba(15, 23, 42, 0.6); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(148, 163, 184, 0.15);">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.75;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>••••••••</span>
+                </span>
+              </td>
+              <td>
+                <span style="color: var(--muted); font-size: 0.82rem; font-family: 'JetBrains Mono', monospace;">${dateStr}</span>
+              </td>
+              <td style="text-align: center;">
+                <div style="display: inline-flex; align-items: center; gap: 6px;">
+                  ${isEnabled
+                    ? `<button type="button" class="btn-row-action btn-row-disable" title="Mark Disabled" onclick="toggleSingleAccountStatus(${safeId}, false, '${escapedEmail}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg><span>Disable</span></button>`
+                    : `<button type="button" class="btn-row-action btn-row-enable" title="Mark Enabled" onclick="toggleSingleAccountStatus(${safeId}, true, '${escapedEmail}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Enable</span></button>`
+                  }
+                  <button
+                    type="button"
+                    class="btn-icon-danger"
+                    title="Delete email account from database"
+                    onclick="deleteAccount(${safeId}, '${escapedEmail}')"
+                    style="background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 600; transition: all 0.15s ease;"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      renderAllPagination(currentAccountsPage, totalPages, totalCount);
+      updateAllSelectionUI(pageAccounts);
+    }
+
+    function renderAllPagination(page, totalPages, totalCount) {
+      if (!accountsPaginationInfo || !accountsPaginationControls) return;
+      const start = totalCount === 0 ? 0 : (page - 1) * accountsPageSize + 1;
+      const end = Math.min(page * accountsPageSize, totalCount);
+      accountsPaginationInfo.textContent = `Showing ${start}–${end} of ${totalCount} emails`;
+
+      if (totalPages <= 1) {
+        accountsPaginationControls.innerHTML = "";
+        return;
+      }
+
+      let html = `<button type="button" class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="goToAllAccountsPage(${page - 1})" title="Previous">&lt;</button>`;
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
+          html += `<button type="button" class="page-btn ${i === page ? 'active' : ''}" onclick="goToAllAccountsPage(${i})">${i}</button>`;
+        } else if (i === page - 2 || i === page + 2) {
+          html += `<span style="color: var(--muted); padding: 0 4px;">...</span>`;
+        }
+      }
+      html += `<button type="button" class="page-btn" ${page >= totalPages ? 'disabled' : ''} onclick="goToAllAccountsPage(${page + 1})" title="Next">&gt;</button>`;
+      accountsPaginationControls.innerHTML = html;
+    }
+
+    window.goToAllAccountsPage = function (page) {
+      currentAccountsPage = page;
+      renderAllSection();
+    };
 
     window.toggleAccountSelection = function (accountId) {
       if (selectedAccountIds.has(accountId)) {
@@ -8390,37 +9264,37 @@ Live execution batch logs are updating below...`, "success");
       } else {
         selectedAccountIds.add(accountId);
       }
-
-      const startIndex = (currentAccountsPage - 1) * accountsPageSize;
-      const pageAccounts = allAccountsList.slice(startIndex, startIndex + accountsPageSize);
-      updateAccountSelectionUI(pageAccounts);
+      renderAllSection();
     };
 
     function toggleSelectAllAccountsOnPage() {
+      const q = accountsSearchInput ? accountsSearchInput.value.trim().toLowerCase() : "";
+      const filtered = allAccountsList.filter(a => {
+        if (!q) return true;
+        return (a.email || "").toLowerCase().includes(q) || (a.username || "").toLowerCase().includes(q);
+      });
       const startIndex = (currentAccountsPage - 1) * accountsPageSize;
-      const pageAccounts = allAccountsList.slice(startIndex, startIndex + accountsPageSize);
+      const pageAccounts = filtered.slice(startIndex, startIndex + accountsPageSize);
       if (!pageAccounts.length) return;
 
-      const allPageSelected = pageAccounts.every(a => selectedAccountIds.has(a.id));
-      if (allPageSelected) {
+      const allSelected = pageAccounts.every(a => selectedAccountIds.has(a.id));
+      if (allSelected) {
         pageAccounts.forEach(a => selectedAccountIds.delete(a.id));
       } else {
         pageAccounts.forEach(a => selectedAccountIds.add(a.id));
       }
-
-      renderAccountsTable(pageAccounts);
-      updateAccountSelectionUI(pageAccounts);
+      renderAllSection();
     }
 
-    function updateAccountSelectionUI(pageAccounts = []) {
-      const selectedCount = selectedAccountIds.size;
-      if (accountsSelectedCount) {
-        accountsSelectedCount.textContent = String(selectedCount);
-      }
+    function updateAllSelectionUI(pageAccounts = []) {
+      const count = selectedAccountIds.size;
+      if (accountsSelectedCount) accountsSelectedCount.textContent = String(count);
+      if (allSelectedEnableCount) allSelectedEnableCount.textContent = String(count);
+      if (allSelectedDisableCount) allSelectedDisableCount.textContent = String(count);
 
-      if (accountsDeleteSelectedBtn) {
-        accountsDeleteSelectedBtn.style.display = selectedCount > 0 ? "inline-flex" : "none";
-      }
+      if (allEnableSelectedBtn) allEnableSelectedBtn.style.display = count > 0 ? "inline-flex" : "none";
+      if (allDisableSelectedBtn) allDisableSelectedBtn.style.display = count > 0 ? "inline-flex" : "none";
+      if (accountsDeleteSelectedBtn) accountsDeleteSelectedBtn.style.display = count > 0 ? "inline-flex" : "none";
 
       if (selectAllAccountsCheckbox) {
         if (pageAccounts.length > 0 && pageAccounts.every(a => selectedAccountIds.has(a.id))) {
@@ -8436,6 +9310,82 @@ Live execution batch logs are updating below...`, "success");
       }
     }
 
+
+    // ─────────────────────────────────────────────────────────────────
+    // Status Change & Delete API Actions
+    // ─────────────────────────────────────────────────────────────────
+
+    // Mark single account as enabled/disabled
+    window.toggleSingleAccountStatus = async function (accountId, is_enabled, email) {
+      const actionText = is_enabled ? "enable" : "disable";
+      const displayLabel = email ? `email "${email}"` : `account ID ${accountId}`;
+
+      try {
+        const res = await authFetch(`${EMAILS_API_URL}/${encodeURIComponent(accountId)}/status`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_enabled: Boolean(is_enabled) }),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || `Failed to ${actionText} account (HTTP ${res.status})`);
+        }
+
+        showAddAccountStatus(`✓ Successfully marked ${displayLabel} as ${is_enabled ? 'enabled' : 'disabled'} in database!`, "success");
+        // Clear from selection if present
+        selectedEnabledAccountIds.delete(accountId);
+        selectedDisabledAccountIds.delete(accountId);
+        selectedAccountIds.delete(accountId);
+        loadAccounts(currentAccountsPage, true);
+      } catch (err) {
+        showAddAccountStatus(`Error: ${err.message}`, "error");
+        alert(`Could not ${actionText} ${displayLabel}: ${err.message}`);
+      }
+    };
+
+    // Mark batch accounts as enabled/disabled
+    async function markAccountsStatus(ids, is_enabled, label, btnEl) {
+      if (!ids || !ids.length) return;
+      const count = ids.length;
+      const actionText = is_enabled ? "Enable" : "Disable";
+
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = `<span class="spinner" style="width:12px; height:12px;"></span><span>Updating ${count}...</span>`;
+      }
+
+      try {
+        const res = await authFetch(`${EMAILS_API_URL}/status`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: ids, is_enabled: Boolean(is_enabled) }),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || `Failed to ${actionText.toLowerCase()} accounts (HTTP ${res.status})`);
+        }
+
+        ids.forEach(id => {
+          selectedEnabledAccountIds.delete(id);
+          selectedDisabledAccountIds.delete(id);
+          selectedAccountIds.delete(id);
+        });
+
+        showAddAccountStatus(`✓ ${data.message || `Successfully marked ${count} email(s) as ${label.toLowerCase()} in database.`}`, "success");
+        loadAccounts(currentAccountsPage, true);
+      } catch (err) {
+        showAddAccountStatus(`Error: ${err.message}`, "error");
+        alert(`Could not update accounts status: ${err.message}`);
+      } finally {
+        if (btnEl) {
+          btnEl.disabled = false;
+        }
+      }
+    }
+
+    // Delete single account
     window.deleteAccount = async function (accountId, email) {
       const displayLabel = email ? `email "${email}" (ID: ${accountId})` : `account ID ${accountId}`;
       if (!confirm(`Are you sure you want to delete ${displayLabel} from the database?`)) {
@@ -8452,6 +9402,8 @@ Live execution batch logs are updating below...`, "success");
           throw new Error(data.error || `Failed to delete account (HTTP ${res.status})`);
         }
 
+        selectedEnabledAccountIds.delete(accountId);
+        selectedDisabledAccountIds.delete(accountId);
         selectedAccountIds.delete(accountId);
         showAddAccountStatus(`✓ ${data.message || 'Account deleted successfully!'}`, "success");
         loadAccounts(currentAccountsPage);
@@ -8461,24 +9413,25 @@ Live execution batch logs are updating below...`, "success");
       }
     };
 
-    async function deleteSelectedAccounts() {
-      const count = selectedAccountIds.size;
-      if (count === 0) return;
+    // Delete batch accounts
+    async function deleteBatchAccounts(ids, btnEl) {
+      if (!ids || !ids.length) return;
+      const count = ids.length;
 
       if (!confirm(`Are you sure you want to delete all ${count} selected email account(s) from the database?`)) {
         return;
       }
 
-      if (accountsDeleteSelectedBtn) {
-        accountsDeleteSelectedBtn.disabled = true;
-        accountsDeleteSelectedBtn.innerHTML = `<span class="spinner" style="width:12px; height:12px;"></span><span>Deleting ${count}...</span>`;
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = `<span class="spinner" style="width:12px; height:12px;"></span><span>Deleting ${count}...</span>`;
       }
 
       try {
         const res = await authFetch(EMAILS_API_URL, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids: Array.from(selectedAccountIds) }),
+          body: JSON.stringify({ ids: ids }),
         });
 
         const data = await res.json().catch(() => ({}));
@@ -8487,66 +9440,22 @@ Live execution batch logs are updating below...`, "success");
           throw new Error(data.error || `Failed to delete selected accounts (HTTP ${res.status})`);
         }
 
-        selectedAccountIds.clear();
+        ids.forEach(id => {
+          selectedEnabledAccountIds.delete(id);
+          selectedDisabledAccountIds.delete(id);
+          selectedAccountIds.delete(id);
+        });
+
         showAddAccountStatus(`✓ ${data.message || `Deleted ${count} email account(s) successfully.`}`, "success");
         loadAccounts(currentAccountsPage);
       } catch (err) {
         showAddAccountStatus(`Error deleting accounts: ${err.message}`, "error");
         alert(`Could not delete selected email accounts: ${err.message}`);
       } finally {
-        if (accountsDeleteSelectedBtn) {
-          accountsDeleteSelectedBtn.disabled = false;
-          accountsDeleteSelectedBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Delete Selected (<span id="accounts-selected-count">0</span>)</span>`;
+        if (btnEl) {
+          btnEl.disabled = false;
         }
       }
-    }
-
-    function renderAccountsPagination(page, totalPages, totalCount) {
-      if (!accountsPaginationInfo || !accountsPaginationControls) return;
-      const start = totalCount === 0 ? 0 : (page - 1) * accountsPageSize + 1;
-      const end = Math.min(page * accountsPageSize, totalCount);
-      accountsPaginationInfo.textContent = `Showing ${start}–${end} of ${totalCount} emails`;
-
-      if (totalPages <= 1) {
-        accountsPaginationControls.innerHTML = "";
-        return;
-      }
-
-      let buttonsHtml = "";
-      buttonsHtml += `
-        <button type="button" class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="loadAccounts(${page - 1})" title="Previous page">&lt;</button>
-      `;
-
-      let pagesToShow = [];
-      if (totalPages <= 7) {
-        for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
-      } else {
-        pagesToShow.push(1);
-        if (page > 3) pagesToShow.push("...");
-        const startP = Math.max(2, page - 1);
-        const endP = Math.min(totalPages - 1, page + 1);
-        for (let i = startP; i <= endP; i++) {
-          if (!pagesToShow.includes(i)) pagesToShow.push(i);
-        }
-        if (page < totalPages - 2) pagesToShow.push("...");
-        if (!pagesToShow.includes(totalPages)) pagesToShow.push(totalPages);
-      }
-
-      pagesToShow.forEach(p => {
-        if (p === "...") {
-          buttonsHtml += `<span style="color: var(--muted); padding: 0 4px;">...</span>`;
-        } else {
-          buttonsHtml += `
-            <button type="button" class="page-btn ${p === page ? 'active' : ''}" onclick="loadAccounts(${p})">${p}</button>
-          `;
-        }
-      });
-
-      buttonsHtml += `
-        <button type="button" class="page-btn" ${page >= totalPages ? 'disabled' : ''} onclick="loadAccounts(${page + 1})" title="Next page">&gt;</button>
-      `;
-
-      accountsPaginationControls.innerHTML = buttonsHtml;
     }
 
 

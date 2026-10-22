@@ -2551,7 +2551,7 @@ def _save_cached_investing_accounts(accounts: list[dict]):
 
 
 def _init_investing_accounts_table():
-    """Ensure dbo.investing_accounts table exists in SQL Server."""
+    """Ensure dbo.investing_accounts table exists in SQL Server and has is_enabled column."""
     if pyodbc is None or not DB_CONNECTION_STRING:
         return
     try:
@@ -2565,8 +2565,21 @@ def _init_investing_accounts_table():
                         username NVARCHAR(255) NOT NULL,
                         email NVARCHAR(255) NOT NULL,
                         password NVARCHAR(255) NOT NULL,
-                        created_at DATETIME DEFAULT GETDATE()
+                        created_at DATETIME DEFAULT GETDATE(),
+                        is_enabled BIT NOT NULL DEFAULT 1
                     );
+                END
+                ELSE
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM sys.columns 
+                        WHERE object_id = OBJECT_ID('dbo.investing_accounts') 
+                        AND name = 'is_enabled'
+                    )
+                    BEGIN
+                        ALTER TABLE dbo.investing_accounts ADD is_enabled BIT DEFAULT 1;
+                        EXEC('UPDATE dbo.investing_accounts SET is_enabled = 1 WHERE is_enabled IS NULL');
+                    END
                 END
             """)
             connection.commit()
@@ -2574,7 +2587,7 @@ def _init_investing_accounts_table():
         app.logger.warning(f"Could not initialize dbo.investing_accounts: {e}")
 
 
-def _fetch_investing_accounts(include_passwords: bool = False, search: str = "") -> list[dict]:
+def _fetch_investing_accounts(include_passwords: bool = False, search: str = "", status_filter: str = "") -> list[dict]:
     """Fetch accounts from dbo.investing_accounts table, falling back to local cache."""
     _init_investing_accounts_table()
     accounts = []
@@ -2584,31 +2597,65 @@ def _fetch_investing_accounts(include_passwords: bool = False, search: str = "")
         try:
             with _get_db_connection(timeout=10) as connection:
                 cursor = connection.cursor()
-                cursor.execute("""
-                    SELECT id, username, email, password, created_at
-                    FROM dbo.investing_accounts
-                    ORDER BY id ASC
-                """)
-                for r in cursor.fetchall():
-                    acc_id = int(r[0])
-                    uname = str(r[1] or "").strip()
-                    email = str(r[2] or "").strip()
-                    pwd = str(r[3] or "")
-                    dt = r[4].strftime("%Y-%m-%d %H:%M:%S") if r[4] else ""
-                    accounts.append({
-                        "id": acc_id,
-                        "username": uname,
-                        "email": email,
-                        "password": pwd,
-                        "created_at": dt,
-                    })
-                db_success = True
-                _save_cached_investing_accounts(accounts)
+                try:
+                    cursor.execute("""
+                        SELECT id, username, email, password, created_at, is_enabled
+                        FROM dbo.investing_accounts
+                        ORDER BY id ASC
+                    """)
+                    for r in cursor.fetchall():
+                        acc_id = int(r[0])
+                        uname = str(r[1] or "").strip()
+                        email = str(r[2] or "").strip()
+                        pwd = str(r[3] or "")
+                        dt = r[4].strftime("%Y-%m-%d %H:%M:%S") if r[4] else ""
+                        is_en = bool(r[5]) if len(r) > 5 and r[5] is not None else True
+                        accounts.append({
+                            "id": acc_id,
+                            "username": uname,
+                            "email": email,
+                            "password": pwd,
+                            "created_at": dt,
+                            "is_enabled": is_en,
+                        })
+                    db_success = True
+                except Exception:
+                    # Fallback if column selection fails
+                    cursor.execute("""
+                        SELECT id, username, email, password, created_at
+                        FROM dbo.investing_accounts
+                        ORDER BY id ASC
+                    """)
+                    for r in cursor.fetchall():
+                        acc_id = int(r[0])
+                        uname = str(r[1] or "").strip()
+                        email = str(r[2] or "").strip()
+                        pwd = str(r[3] or "")
+                        dt = r[4].strftime("%Y-%m-%d %H:%M:%S") if r[4] else ""
+                        accounts.append({
+                            "id": acc_id,
+                            "username": uname,
+                            "email": email,
+                            "password": pwd,
+                            "created_at": dt,
+                            "is_enabled": True,
+                        })
+                    db_success = True
+
+                if db_success:
+                    _save_cached_investing_accounts(accounts)
         except Exception as e:
             app.logger.warning(f"Could not query dbo.investing_accounts from DB: {e}")
 
     if not db_success:
         accounts = _load_cached_investing_accounts()
+
+    # Normalize is_enabled
+    for a in accounts:
+        if "is_enabled" not in a:
+            a["is_enabled"] = True
+        else:
+            a["is_enabled"] = bool(a["is_enabled"])
 
     if search:
         s_lower = search.strip().lower()
@@ -2617,22 +2664,32 @@ def _fetch_investing_accounts(include_passwords: bool = False, search: str = "")
             if s_lower in str(a.get("username", "")).lower() or s_lower in str(a.get("email", "")).lower()
         ]
 
+    if status_filter:
+        s_filt = status_filter.strip().lower()
+        if s_filt in ("enable", "enabled", "1", "true", "active"):
+            accounts = [a for a in accounts if a.get("is_enabled", True)]
+        elif s_filt in ("disable", "disabled", "0", "false", "inactive"):
+            accounts = [a for a in accounts if not a.get("is_enabled", True)]
+
     if not include_passwords:
         sanitized = []
         for a in accounts:
+            is_en = bool(a.get("is_enabled", True))
             sanitized.append({
                 "id": a.get("id"),
                 "username": a.get("username", ""),
                 "email": a.get("email", ""),
                 "has_password": bool(a.get("password")),
                 "created_at": a.get("created_at", ""),
+                "is_enabled": is_en,
+                "status": "enabled" if is_en else "disabled",
             })
         return sanitized
 
     return accounts
 
 
-def _add_investing_account(username: str, email: str, password: str) -> tuple[bool, str, dict]:
+def _add_investing_account(username: str, email: str, password: str, is_enabled: bool = True) -> tuple[bool, str, dict]:
     """Add a new investing account into SQL Server (and cache)."""
     email_clean = str(email or "").strip()
     pwd_clean = str(password or "").strip()
@@ -2661,6 +2718,7 @@ def _add_investing_account(username: str, email: str, password: str) -> tuple[bo
         "email": email_clean,
         "password": pwd_clean,
         "created_at": dt_str,
+        "is_enabled": bool(is_enabled),
     }
 
     if pyodbc is not None and DB_CONNECTION_STRING:
@@ -2671,15 +2729,26 @@ def _add_investing_account(username: str, email: str, password: str) -> tuple[bo
                 if cursor.fetchone()[0] > 0:
                     return False, f"An account with email '{email_clean}' already exists in database.", {}
 
-                cursor.execute("""
-                    INSERT INTO dbo.investing_accounts (username, email, password)
-                    OUTPUT INSERTED.Id
-                    VALUES (?, ?, ?)
-                """, uname_clean, email_clean, pwd_clean)
-                row = cursor.fetchone()
-                if row and row[0]:
-                    account_data["id"] = int(row[0])
-                connection.commit()
+                try:
+                    cursor.execute("""
+                        INSERT INTO dbo.investing_accounts (username, email, password, is_enabled)
+                        OUTPUT INSERTED.Id
+                        VALUES (?, ?, ?, ?)
+                    """, uname_clean, email_clean, pwd_clean, 1 if is_enabled else 0)
+                    row = cursor.fetchone()
+                    if row and row[0]:
+                        account_data["id"] = int(row[0])
+                    connection.commit()
+                except Exception:
+                    cursor.execute("""
+                        INSERT INTO dbo.investing_accounts (username, email, password)
+                        OUTPUT INSERTED.Id
+                        VALUES (?, ?, ?)
+                    """, uname_clean, email_clean, pwd_clean)
+                    row = cursor.fetchone()
+                    if row and row[0]:
+                        account_data["id"] = int(row[0])
+                    connection.commit()
         except Exception as e:
             app.logger.warning(f"Could not insert into dbo.investing_accounts (using local cache): {e}")
 
@@ -2694,6 +2763,8 @@ def _add_investing_account(username: str, email: str, password: str) -> tuple[bo
         "email": account_data["email"],
         "has_password": True,
         "created_at": account_data["created_at"],
+        "is_enabled": account_data["is_enabled"],
+        "status": "enabled" if account_data["is_enabled"] else "disabled",
     }
     return True, f"Email '{email_clean}' added successfully.", sanitized
 
@@ -2752,6 +2823,46 @@ def _delete_investing_accounts_batch(account_ids: list[int]) -> tuple[int, str]:
     return deleted_count, f"Successfully deleted {deleted_count} account(s)."
 
 
+def _update_investing_accounts_status(account_ids: list[int], is_enabled: bool) -> tuple[int, str]:
+    """Enable or disable one or more investing accounts in SQL Server and cache."""
+    if not account_ids:
+        return 0, "No accounts specified."
+
+    _init_investing_accounts_table()
+    updated_count = 0
+    bit_val = 1 if is_enabled else 0
+    status_label = "enabled" if is_enabled else "disabled"
+
+    if pyodbc is not None and DB_CONNECTION_STRING:
+        try:
+            with _get_db_connection(timeout=15) as connection:
+                cursor = connection.cursor()
+                placeholders = ",".join(["?"] * len(account_ids))
+                cursor.execute(
+                    f"UPDATE dbo.investing_accounts SET is_enabled = ? WHERE id IN ({placeholders})",
+                    bit_val,
+                    *account_ids
+                )
+                updated_count = cursor.rowcount
+                connection.commit()
+        except Exception as e:
+            app.logger.warning(f"Could not update status in dbo.investing_accounts: {e}")
+
+    cached = _load_cached_investing_accounts()
+    id_set = set(account_ids)
+    cache_updated = 0
+    for a in cached:
+        if a.get("id") in id_set:
+            a["is_enabled"] = is_enabled
+            cache_updated += 1
+    _save_cached_investing_accounts(cached)
+
+    if updated_count == 0:
+        updated_count = cache_updated
+
+    return updated_count, f"Successfully marked {updated_count} account(s) as {status_label}."
+
+
 def _build_post_comment_payload(req_data: dict) -> tuple[dict | None, str | None]:
     """Extract non-blank comments and count for Lambda dispatch.
     
@@ -2799,7 +2910,8 @@ def _build_post_comment_payload(req_data: dict) -> tuple[dict | None, str | None
 def get_accounts_endpoint():
     try:
         search = request.args.get("search", "").strip()
-        accounts = _fetch_investing_accounts(include_passwords=False, search=search)
+        status_filter = request.args.get("status", "").strip() or request.args.get("filter", "").strip()
+        accounts = _fetch_investing_accounts(include_passwords=False, search=search, status_filter=status_filter)
         return jsonify({
             "success": True,
             "total": len(accounts),
@@ -2822,6 +2934,7 @@ def add_account_endpoint():
         username = str(data.get("username") or data.get("user_name") or data.get("name") or "").strip()
         email = str(data.get("email") or "").strip()
         password = str(data.get("password") or data.get("pass") or "").strip()
+        is_enabled = bool(data.get("is_enabled", True))
 
         if not email or "@" not in email:
             return jsonify({"success": False, "error": "Valid email address is required."}), 400
@@ -2830,7 +2943,7 @@ def add_account_endpoint():
         if not username:
             username = email.split("@")[0]
 
-        success, message, account = _add_investing_account(username, email, password)
+        success, message, account = _add_investing_account(username, email, password, is_enabled=is_enabled)
         if not success:
             return jsonify({"success": False, "error": message}), 409
 
@@ -2841,6 +2954,92 @@ def add_account_endpoint():
         }), 201
     except Exception as error:
         app.logger.exception("Could not add investing account")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
+@app.post("/api/accounts/status")
+@app.post("/api/emails/status")
+@app.patch("/api/accounts/status")
+@app.patch("/api/emails/status")
+@app.put("/api/accounts/status")
+@app.put("/api/emails/status")
+@require_auth
+def update_accounts_status_batch_endpoint():
+    try:
+        data = request.get_json(silent=True) or {}
+        raw_ids = data.get("ids") or data.get("account_ids") or []
+        if not raw_ids:
+            single_id = data.get("id") or data.get("account_id") or request.args.get("id")
+            if single_id is not None:
+                raw_ids = [single_id]
+
+        int_ids = [int(x) for x in raw_ids if str(x).isdigit()]
+        if not int_ids:
+            return jsonify({"success": False, "error": "No valid numeric account IDs provided."}), 400
+
+        if "is_enabled" in data:
+            is_enabled = bool(data["is_enabled"])
+        elif "status" in data:
+            st = str(data["status"]).strip().lower()
+            is_enabled = st in ("enable", "enabled", "active", "1", "true")
+        elif "action" in data:
+            act = str(data["action"]).strip().lower()
+            is_enabled = act in ("enable", "enabled", "activate")
+        else:
+            return jsonify({"success": False, "error": "Must specify 'is_enabled' (true/false) or 'status' ('enabled'/'disabled')."}), 400
+
+        count, message = _update_investing_accounts_status(int_ids, is_enabled)
+        return jsonify({
+            "success": True,
+            "message": message,
+            "updated_count": count,
+            "is_enabled": is_enabled,
+            "status": "enabled" if is_enabled else "disabled",
+            "account_ids": int_ids,
+        }), 200
+    except Exception as error:
+        app.logger.exception("Could not update investing accounts status")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}"
+        }), 500
+
+
+@app.patch("/api/accounts/<int:account_id>/status")
+@app.patch("/api/emails/<int:account_id>/status")
+@app.put("/api/accounts/<int:account_id>/status")
+@app.put("/api/emails/<int:account_id>/status")
+@app.post("/api/accounts/<int:account_id>/status")
+@app.post("/api/emails/<int:account_id>/status")
+@require_auth
+def update_single_account_status_endpoint(account_id: int):
+    try:
+        data = request.get_json(silent=True) or {}
+        if "is_enabled" in data:
+            is_enabled = bool(data["is_enabled"])
+        elif "status" in data:
+            st = str(data["status"]).strip().lower()
+            is_enabled = st in ("enable", "enabled", "active", "1", "true")
+        elif "action" in data:
+            act = str(data["action"]).strip().lower()
+            is_enabled = act in ("enable", "enabled", "activate")
+        else:
+            return jsonify({"success": False, "error": "Must specify 'is_enabled' (true/false) or 'status' ('enabled'/'disabled')."}), 400
+
+        count, message = _update_investing_accounts_status([account_id], is_enabled)
+        return jsonify({
+            "success": True,
+            "message": message,
+            "updated_count": count,
+            "account_id": account_id,
+            "is_enabled": is_enabled,
+            "status": "enabled" if is_enabled else "disabled",
+        }), 200
+    except Exception as error:
+        app.logger.exception("Could not update account status")
         return jsonify({
             "success": False,
             "error": f"Database error: {str(error)}"
