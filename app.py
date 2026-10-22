@@ -389,6 +389,130 @@ def logout():
     })
 
 
+
+# ---------------------------------------------------------------------------
+# System Configuration (Default Accounts, Global Settings)
+# ---------------------------------------------------------------------------
+_SYSTEM_CONFIG_FILE = BASE_DIR / ".system_config.json"
+DEFAULT_NUMBER_OF_ACCOUNTS = 10
+
+
+def _load_cached_system_config() -> dict:
+    """Load cached system config from disk."""
+    if not _SYSTEM_CONFIG_FILE.exists():
+        return {}
+    try:
+        with open(_SYSTEM_CONFIG_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, dict):
+                return data
+    except Exception:
+        pass
+    return {}
+
+
+def _save_cached_system_config(cfg: dict):
+    """Persist system config to disk."""
+    try:
+        with open(_SYSTEM_CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2)
+    except Exception:
+        pass
+
+
+def _init_system_config_table():
+    """Ensure dbo.system_config table exists in SQL Server."""
+    if pyodbc is None or not DB_CONNECTION_STRING:
+        return
+    try:
+        with _get_db_connection(timeout=10) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'system_config')
+                BEGIN
+                    CREATE TABLE dbo.system_config (
+                        config_key NVARCHAR(100) PRIMARY KEY,
+                        config_value NVARCHAR(500) NOT NULL,
+                        updated_at DATETIME DEFAULT GETDATE(),
+                        updated_by NVARCHAR(255)
+                    );
+                END
+            """)
+            connection.commit()
+    except Exception as e:
+        app.logger.warning(f"Could not initialize dbo.system_config: {e}")
+
+
+def _get_default_accounts_count() -> int:
+    """Return default number of accounts configured (defaults to 10)."""
+    # 1. Check DB first if available
+    if pyodbc is not None and DB_CONNECTION_STRING:
+        try:
+            with _get_db_connection(timeout=10) as connection:
+                cursor = connection.cursor()
+                cursor.execute("SELECT config_value FROM dbo.system_config WHERE config_key = 'default_number_of_accounts'")
+                row = cursor.fetchone()
+                if row and row[0]:
+                    val = int(str(row[0]).strip())
+                    if val >= 1:
+                        cached = _load_cached_system_config()
+                        if cached.get("default_number_of_accounts") != val:
+                            cached["default_number_of_accounts"] = val
+                            _save_cached_system_config(cached)
+                        return val
+        except Exception:
+            pass
+
+    # 2. Check local file cache
+    cached = _load_cached_system_config()
+    if "default_number_of_accounts" in cached:
+        try:
+            val = int(cached["default_number_of_accounts"])
+            if val >= 1:
+                return val
+        except Exception:
+            pass
+
+    return DEFAULT_NUMBER_OF_ACCOUNTS
+
+
+def _set_default_accounts_count(count: int, updated_by: str = "superadmin") -> tuple[bool, str, int]:
+    """Persist default number of accounts configured in DB and local file cache."""
+    if count < 1:
+        return False, "Default number of accounts must be at least 1.", _get_default_accounts_count()
+
+    # 1. Update file cache
+    cached = _load_cached_system_config()
+    cached["default_number_of_accounts"] = count
+    cached["updated_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    cached["updated_by"] = updated_by
+    _save_cached_system_config(cached)
+
+    # 2. Update DB
+    if pyodbc is not None and DB_CONNECTION_STRING:
+        try:
+            _init_system_config_table()
+            with _get_db_connection(timeout=10) as connection:
+                cursor = connection.cursor()
+                cursor.execute("""
+                    MERGE dbo.system_config AS target
+                    USING (SELECT 'default_number_of_accounts' AS config_key, ? AS config_value, ? AS updated_by) AS source
+                    ON (target.config_key = source.config_key)
+                    WHEN MATCHED THEN
+                        UPDATE SET target.config_value = source.config_value,
+                                   target.updated_at = GETDATE(),
+                                   target.updated_by = source.updated_by
+                    WHEN NOT MATCHED THEN
+                        INSERT (config_key, config_value, updated_at, updated_by)
+                        VALUES (source.config_key, source.config_value, GETDATE(), source.updated_by);
+                """, str(count), updated_by)
+                connection.commit()
+        except Exception as e:
+            app.logger.warning(f"Could not persist default_number_of_accounts in dbo.system_config: {e}")
+
+    return True, f"Default number of accounts set to {count}.", count
+
+
 # ---------------------------------------------------------------------------
 # App & Protected API Endpoints
 # ---------------------------------------------------------------------------
@@ -404,6 +528,7 @@ def get_config():
         "lambda_api_url": LAMBDA_API_URL,
         "scraper_api_url": SCRAPER_API_URL,
         "ecs_tracker_api_url": ECS_TRACKER_API_URL,
+        "default_number_of_accounts": _get_default_accounts_count(),
     }
     if is_super:
         cfg["billing_api_url"] = BILLING_API_URL
@@ -2257,6 +2382,7 @@ def _fetch_user_limits(search: str = "") -> dict:
         "custom_count": custom_count,
         "default_min": 3,
         "default_hourly": 2,
+        "default_number_of_accounts": _get_default_accounts_count(),
     }
 
 
@@ -2518,6 +2644,50 @@ def reset_user_limit_endpoint():
             "success": False,
             "error": f"Error resetting limit: {str(error)}"
         }), 500
+
+
+@app.get("/api/user-limits/default-accounts")
+@app.get("/api/system-limits/default-accounts")
+@require_auth
+def get_default_accounts_endpoint():
+    """Fetch the configured default number of accounts."""
+    try:
+        val = _get_default_accounts_count()
+        return jsonify({"success": True, "default_number_of_accounts": val})
+    except Exception as error:
+        app.logger.exception("Could not fetch default accounts")
+        return jsonify({"success": False, "error": str(error)}), 500
+
+
+@app.post("/api/user-limits/default-accounts")
+@app.post("/api/system-limits/default-accounts")
+@require_super_admin
+def set_default_accounts_endpoint():
+    """Update the default number of accounts (Super Admin only)."""
+    try:
+        data = request.get_json(silent=True) or {}
+        raw_val = data.get("default_number_of_accounts") if data.get("default_number_of_accounts") is not None else (data.get("count") if data.get("count") is not None else data.get("accounts"))
+        if raw_val is None:
+            return jsonify({"success": False, "error": "default_number_of_accounts is required."}), 400
+        try:
+            val = int(raw_val)
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "error": "Default number of accounts must be a valid integer."}), 400
+
+        if val < 1:
+            return jsonify({"success": False, "error": "Default number of accounts must be at least 1."}), 400
+
+        token = _get_bearer_token()
+        _, session = _is_valid_token(token)
+        updated_by = (session or {}).get("email", "superadmin")
+
+        success, msg, new_count = _set_default_accounts_count(val, updated_by=updated_by)
+        if not success:
+            return jsonify({"success": False, "error": msg}), 400
+        return jsonify({"success": True, "message": msg, "default_number_of_accounts": new_count})
+    except Exception as error:
+        app.logger.exception("Could not update default accounts")
+        return jsonify({"success": False, "error": str(error)}), 500
 
 
 # ---------------------------------------------------------------------------

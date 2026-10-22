@@ -4938,6 +4938,54 @@
               </div>
             </div>
 
+            <!-- Default Accounts Setting Card -->
+            <div class="card default-accounts-config-card" style="padding: 18px 22px; margin-bottom: 20px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(192, 132, 252, 0.25); border-radius: var(--radius); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <div style="display: flex; align-items: center; gap: 14px; max-width: 650px;">
+                  <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(49, 196, 141, 0.15); color: #31c48d; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                      <h3 style="font-size: 1.02rem; font-weight: 700; color: #f8fafc; margin: 0;">Default Number of Accounts</h3>
+                      <span id="default-accounts-active-badge" class="pill" style="background: rgba(49, 196, 141, 0.15); color: #31c48d; border: 1px solid rgba(49, 196, 141, 0.35); font-size: 0.75rem; padding: 2px 8px; font-weight: 600;">Active: 10 accounts</span>
+                    </div>
+                    <p style="font-size: 0.82rem; color: #94a3b8; margin-top: 4px; margin-bottom: 0; line-height: 1.45;">
+                      Configure the default number of accounts loaded on the <strong>Comment Section</strong> and <strong>Dashboard</strong>. On both pages, users can still increase and decrease the account count as before.
+                    </p>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.82rem; color: #cbd5e1; font-weight: 600;">Default Count:</span>
+                    <div class="limit-stepper">
+                      <button type="button" class="stepper-btn" onclick="stepDefaultAccounts(-1)" title="Decrease default accounts">&minus;</button>
+                      <input type="number" id="default-accounts-input" class="limit-number-input" value="10" min="1" step="1" inputmode="numeric" />
+                      <button type="button" class="stepper-btn" onclick="stepDefaultAccounts(1)" title="Increase default accounts">+</button>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 4px;">
+                    <button type="button" class="billing-chip" style="padding: 4px 10px; font-size: 0.78rem;" onclick="setDefaultAccountsValue(5)">5</button>
+                    <button type="button" class="billing-chip" style="padding: 4px 10px; font-size: 0.78rem;" onclick="setDefaultAccountsValue(10)">10</button>
+                    <button type="button" class="billing-chip" style="padding: 4px 10px; font-size: 0.78rem;" onclick="setDefaultAccountsValue(15)">15</button>
+                    <button type="button" class="billing-chip" style="padding: 4px 10px; font-size: 0.78rem;" onclick="setDefaultAccountsValue(20)">20</button>
+                  </div>
+                  <button type="button" id="save-default-accounts-btn" class="btn-primary" style="padding: 7px 16px; font-size: 0.85rem;" onclick="saveDefaultAccountsSetting()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>Save Default</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <!-- Limits Directory Card -->
             <div class="card" style="padding: 20px;">
               <div class="comments-toolbar">
@@ -6371,6 +6419,9 @@
           }
           if (config.billing_api_key) {
             billingApiKey = config.billing_api_key;
+          }
+          if (config.default_number_of_accounts) {
+            applyConfiguredDefaultAccounts(config.default_number_of_accounts, false);
           }
         }
       } catch (err) {
@@ -7956,7 +8007,7 @@
         }
       }
 
-      const numAccounts = Number(commentsAccountCount.value) || 10;
+      const numAccounts = Number(commentsAccountCount.value) || globalDefaultAccounts || 10;
       if (!Number.isInteger(numAccounts) || numAccounts < 1) {
         alert("Number of accounts must be at least 1.");
         return;
@@ -9503,6 +9554,83 @@ Live execution batch logs are updating below...`, "success");
       }, 3500);
     }
 
+    let globalDefaultAccounts = 10;
+
+    function applyConfiguredDefaultAccounts(val, overwriteInputs = false) {
+      const num = parseInt(val, 10);
+      if (isNaN(num) || num < 1) return;
+      globalDefaultAccounts = num;
+
+      const badge = document.getElementById("default-accounts-active-badge");
+      if (badge) badge.textContent = `Active: ${num} accounts`;
+
+      const defaultInput = document.getElementById("default-accounts-input");
+      if (defaultInput) defaultInput.value = num;
+
+      if (overwriteInputs) {
+        if (commentsAccountCount) commentsAccountCount.value = num;
+        if (accountCountInput) accountCountInput.value = num;
+      } else {
+        if (commentsAccountCount && (commentsAccountCount.value === "10" || !commentsAccountCount.value)) {
+          commentsAccountCount.value = num;
+        }
+        if (accountCountInput && (accountCountInput.value === "10" || !accountCountInput.value)) {
+          accountCountInput.value = num;
+        }
+      }
+    }
+    window.applyConfiguredDefaultAccounts = applyConfiguredDefaultAccounts;
+
+    function stepDefaultAccounts(delta) {
+      const input = document.getElementById("default-accounts-input");
+      if (!input) return;
+      let val = parseInt(input.value, 10);
+      if (isNaN(val) || val < 1) val = globalDefaultAccounts || 10;
+      val = Math.max(1, val + delta);
+      input.value = val;
+    }
+    window.stepDefaultAccounts = stepDefaultAccounts;
+
+    function setDefaultAccountsValue(val) {
+      const input = document.getElementById("default-accounts-input");
+      if (!input) return;
+      input.value = Math.max(1, parseInt(val, 10) || 10);
+    }
+    window.setDefaultAccountsValue = setDefaultAccountsValue;
+
+    async function saveDefaultAccountsSetting() {
+      const input = document.getElementById("default-accounts-input");
+      const btn = document.getElementById("save-default-accounts-btn");
+      if (!input) return;
+
+      const count = parseInt(input.value, 10);
+      if (isNaN(count) || count < 1) {
+        showLimitsToast("Please enter a valid positive integer (minimum 1).", false);
+        return;
+      }
+
+      if (btn) btn.disabled = true;
+      try {
+        const res = await authFetch("/api/user-limits/default-accounts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ default_number_of_accounts: count })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "Failed to update default number of accounts");
+        }
+
+        applyConfiguredDefaultAccounts(data.default_number_of_accounts || count, true);
+        showLimitsToast(`✓ Default number of accounts saved to ${count}! Updated on Dashboard & Comments section.`, true);
+      } catch (err) {
+        showLimitsToast(`Error saving default accounts: ${err.message}`, false);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+    window.saveDefaultAccountsSetting = saveDefaultAccountsSetting;
+
     async function loadUserLimits(isSilent = false) {
       if (!isCurrentUserSuperAdmin()) return;
       if (!isSilent && limitsRefreshBtn) {
@@ -9526,6 +9654,9 @@ Live execution batch logs are updating below...`, "success");
         }
 
         allUserLimits = data.users || [];
+        if (data.default_number_of_accounts) {
+          applyConfiguredDefaultAccounts(data.default_number_of_accounts, false);
+        }
         updateLimitsCounts();
         renderUserLimitsTable();
       } catch (err) {
@@ -10754,7 +10885,7 @@ Live execution batch logs are reloading...`, "success");
       event.preventDefault();
       const comment_ids = idsFrom(commentIdsInput);
       const user_ids = idsFrom(userIdsInput);
-      const number_of_accounts = Number(accountCountInput.value) || 10;
+      const number_of_accounts = Number(accountCountInput.value) || globalDefaultAccounts || 10;
 
       if (!comment_ids.length || !user_ids.length) {
         showStatus("Enter at least one comment ID and one user ID.", "error");
