@@ -1603,6 +1603,56 @@ def get_comments_users():
         }), 500
 
 
+@app.get("/api/comments/reported-accounts")
+@require_auth
+def get_reported_accounts():
+    """Fetch email accounts that have already processed one or more comment IDs."""
+    try:
+        c_id = (request.args.get("comment_id") or request.args.get("cid") or "").strip()
+        c_ids_raw = request.args.getlist("comment_ids") or request.args.getlist("cids")
+        if not c_ids_raw and request.args.get("comment_ids"):
+            c_ids_raw = [x.strip() for x in request.args.get("comment_ids").split(",") if x.strip()]
+
+        target_cids = []
+        if c_id and c_id not in target_cids:
+            target_cids.append(c_id)
+        for x in c_ids_raw:
+            cleaned = str(x).strip()
+            if cleaned and cleaned not in target_cids:
+                target_cids.append(cleaned)
+
+        if not target_cids:
+            return jsonify({"success": True, "accounts": []})
+
+        accounts = []
+        with _get_db_connection(timeout=10) as conn:
+            cursor = conn.cursor()
+            clauses = ["comment_ids LIKE ?" for _ in target_cids]
+            params = [f"%{cid}%" for cid in target_cids]
+            sql = f"""
+                SELECT DISTINCT account_email
+                FROM dbo.BackendProcessingTracker
+                WHERE account_email IS NOT NULL
+                  AND LTRIM(RTRIM(account_email)) <> ''
+                  AND ({' OR '.join(clauses)})
+                ORDER BY account_email ASC
+            """
+            cursor.execute(sql, *params)
+            for row in cursor.fetchall():
+                email = str(row[0] or "").strip()
+                if email and email not in accounts:
+                    accounts.append(email)
+
+        return jsonify({"success": True, "comment_ids": target_cids, "accounts": accounts})
+    except Exception as error:
+        app.logger.warning(f"Could not fetch reported accounts for comments: {error}")
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(error)}",
+            "accounts": []
+        }), 500
+
+
 @app.post("/api/comments/status")
 @require_auth
 def update_comments_status_endpoint():

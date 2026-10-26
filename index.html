@@ -1684,6 +1684,10 @@
       border-radius: 50%;
       border-top-color: currentColor;
       animation: spin 0.7s linear infinite;
+      font-size: 0 !important;
+      overflow: hidden;
+      vertical-align: middle;
+      flex-shrink: 0;
     }
 
     @keyframes spin {
@@ -5409,6 +5413,15 @@
             <span style="font-size:0.75rem; color:var(--muted); font-family: 'JetBrains Mono', monospace;" id="confirm-modal-date">—</span>
           </div>
           <div class="comment-confirm-text-box" id="confirm-modal-text">—</div>
+          <div id="confirm-modal-accounts-wrapper" style="margin-top: 10px; padding: 10px 12px; background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px;">
+            <div style="font-size: 0.78rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+              <span>Accounts That Already Processed This Comment:</span>
+              <span id="confirm-modal-accounts-count" class="status-tag" style="font-size: 0.72rem; padding: 1px 7px;">0</span>
+            </div>
+            <div id="confirm-modal-accounts-list" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px; align-items: center;">
+              <span style="font-size: 0.78rem; color: var(--muted); font-style: italic;">None</span>
+            </div>
+          </div>
         </div>
 
         <p id="confirm-modal-warning-desc" style="font-size: 0.88rem; color: #fbbf24; line-height: 1.5; margin: 0;">
@@ -6450,6 +6463,7 @@
     const commentsPageSize = 10;
     let currentCommentsList = [];
     const selectedComments = new Map();
+    let isCommentBatchRunning = false;
 
     // Multi-Select User Filter State
     const selectedUserFilters = new Set();
@@ -6769,33 +6783,52 @@
       }
 
       // Dynamically query fresh span elements from DOM so detached references never occur
-      const reportSpan = document.getElementById("selected-count-btn") || (commentsReportBtn ? commentsReportBtn.querySelector("#selected-count-btn") : null);
-      if (reportSpan) {
-        reportSpan.textContent = count;
-      } else if (commentsReportBtn) {
-        const textSpan = commentsReportBtn.querySelector("span");
-        if (textSpan) textSpan.innerHTML = `Report Selected (<span id="selected-count-btn">${count}</span>)`;
-      }
+      if (!isCommentBatchRunning) {
+        if (commentsReportBtn && !commentsReportBtn.querySelector(".spinner")) {
+          const reportSpan = commentsReportBtn.querySelector("#selected-count-btn");
+          if (reportSpan) {
+            reportSpan.textContent = count;
+          } else {
+            const textSpan = commentsReportBtn.querySelector("span:not(.spinner)");
+            if (textSpan) {
+              textSpan.innerHTML = `Report Selected (<span id="selected-count-btn">${count}</span>)`;
+            } else {
+              commentsReportBtn.innerHTML = `<span>Report Selected (<span id="selected-count-btn">${count}</span>)</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`;
+            }
+          }
+          commentsReportBtn.disabled = count === 0;
+        }
 
-      const upvoteSpan = document.getElementById("upvote-count-btn") || (commentsUpvoteBtn ? commentsUpvoteBtn.querySelector("#upvote-count-btn") : null);
-      if (upvoteSpan) {
-        upvoteSpan.textContent = count;
-      } else if (commentsUpvoteBtn) {
-        const textSpan = commentsUpvoteBtn.querySelector("span");
-        if (textSpan) textSpan.innerHTML = `Upvote (<span id="upvote-count-btn">${count}</span>)`;
-      }
+        if (commentsUpvoteBtn && !commentsUpvoteBtn.querySelector(".spinner")) {
+          const upvoteSpan = commentsUpvoteBtn.querySelector("#upvote-count-btn");
+          if (upvoteSpan) {
+            upvoteSpan.textContent = count;
+          } else {
+            const textSpan = commentsUpvoteBtn.querySelector("span:not(.spinner)");
+            if (textSpan) {
+              textSpan.innerHTML = `Upvote (<span id="upvote-count-btn">${count}</span>)`;
+            } else {
+              commentsUpvoteBtn.innerHTML = `<span>Upvote (<span id="upvote-count-btn">${count}</span>)</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>`;
+            }
+          }
+          commentsUpvoteBtn.disabled = count === 0;
+        }
 
-      const downvoteSpan = document.getElementById("downvote-count-btn") || (commentsDownvoteBtn ? commentsDownvoteBtn.querySelector("#downvote-count-btn") : null);
-      if (downvoteSpan) {
-        downvoteSpan.textContent = count;
-      } else if (commentsDownvoteBtn) {
-        const textSpan = commentsDownvoteBtn.querySelector("span");
-        if (textSpan) textSpan.innerHTML = `Downvote (<span id="downvote-count-btn">${count}</span>)`;
+        if (commentsDownvoteBtn && !commentsDownvoteBtn.querySelector(".spinner")) {
+          const downvoteSpan = commentsDownvoteBtn.querySelector("#downvote-count-btn");
+          if (downvoteSpan) {
+            downvoteSpan.textContent = count;
+          } else {
+            const textSpan = commentsDownvoteBtn.querySelector("span:not(.spinner)");
+            if (textSpan) {
+              textSpan.innerHTML = `Downvote (<span id="downvote-count-btn">${count}</span>)`;
+            } else {
+              commentsDownvoteBtn.innerHTML = `<span>Downvote (<span id="downvote-count-btn">${count}</span>)</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/></svg>`;
+            }
+          }
+          commentsDownvoteBtn.disabled = count === 0;
+        }
       }
-
-      if (commentsReportBtn) commentsReportBtn.disabled = count === 0;
-      if (commentsUpvoteBtn) commentsUpvoteBtn.disabled = count === 0;
-      if (commentsDownvoteBtn) commentsDownvoteBtn.disabled = count === 0;
 
       if (count > 0) {
         clearSelectionBtn.style.display = "inline-block";
@@ -7268,9 +7301,12 @@
       const warnDesc = document.getElementById("confirm-modal-warning-desc");
       const consentCb = document.getElementById("confirm-reported-checkbox");
       const confirmBtn = document.getElementById("confirm-reported-ok-btn");
+      const accountsListEl = document.getElementById("confirm-modal-accounts-list");
+      const accountsCountEl = document.getElementById("confirm-modal-accounts-count");
 
       if (titleEl) titleEl.textContent = "Confirm Selection";
-      if (commentIdEl) commentIdEl.textContent = commentItem.comment_id || String(commentItem.id);
+      const rawCid = commentItem.comment_id || String(commentItem.id || "");
+      if (commentIdEl) commentIdEl.textContent = rawCid;
       if (userEl) userEl.textContent = commentItem.user_name || "Unknown User";
       if (dateEl) dateEl.textContent = commentItem.fetched_at || "";
       if (textEl) textEl.textContent = commentItem.comment_text || "(No comment text)";
@@ -7279,10 +7315,39 @@
         statusEl.className = `status-tag ${commentItem.status && commentItem.status.includes('upvote') ? 'status-upvoted' : commentItem.status && commentItem.status.includes('downvote') ? 'status-downvoted' : 'status-reported'}`;
       }
       if (warnDesc) {
-        warnDesc.innerHTML = `<strong>Warning:</strong> This comment is already marked as <em>${escapeHtml(commentItem.status || "reported")}</em>. Selecting and reporting will re-execute the action.`;
+        warnDesc.innerHTML = `<strong>Warning:</strong> This comment is already marked as <em>${escapeHtml(commentItem.status || "reported")}</em>. Selecting and reporting will execute another round using remaining accounts.`;
       }
       if (consentCb) consentCb.checked = true;
       if (confirmBtn) confirmBtn.disabled = false;
+
+      // Fetch and display already run accounts for this comment
+      if (accountsCountEl) accountsCountEl.textContent = "...";
+      if (accountsListEl) {
+        accountsListEl.innerHTML = '<span style="font-size:0.78rem; color:var(--muted);"><span class="spinner" style="width:12px; height:12px; margin-right:5px; vertical-align:middle;"></span>Loading account history...</span>';
+      }
+
+      if (rawCid) {
+        authFetch(`/api/comments/reported-accounts?comment_id=${encodeURIComponent(rawCid)}`)
+          .then(r => r.json())
+          .then(data => {
+            const accs = (data && data.accounts) || [];
+            if (accountsCountEl) accountsCountEl.textContent = accs.length;
+            if (!accountsListEl) return;
+            if (accs.length > 0) {
+              accountsListEl.innerHTML = accs.map(email =>
+                `<span style="background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(99, 102, 241, 0.35); color: #93c5fd; font-size: 0.75rem; padding: 2px 7px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; word-break: break-all;">${escapeHtml(email)}</span>`
+              ).join("");
+            } else {
+              accountsListEl.innerHTML = '<span style="font-size:0.78rem; color:#94a3b8; font-style:italic;">No previous accounts recorded</span>';
+            }
+          })
+          .catch(() => {
+            if (accountsCountEl) accountsCountEl.textContent = "0";
+            if (accountsListEl) {
+              accountsListEl.innerHTML = '<span style="font-size:0.78rem; color:#94a3b8; font-style:italic;">Could not load account history</span>';
+            }
+          });
+      }
 
       modal.style.display = "flex";
       void modal.offsetWidth;
@@ -7305,6 +7370,8 @@
       const warnDesc = document.getElementById("confirm-modal-warning-desc");
       const consentCb = document.getElementById("confirm-reported-checkbox");
       const confirmBtn = document.getElementById("confirm-reported-ok-btn");
+      const accountsListEl = document.getElementById("confirm-modal-accounts-list");
+      const accountsCountEl = document.getElementById("confirm-modal-accounts-count");
 
       if (titleEl) titleEl.textContent = "Confirm Batch Selection";
       if (commentIdEl) commentIdEl.textContent = `${allComments.length} Comments Selected`;
@@ -7320,6 +7387,40 @@
       }
       if (consentCb) consentCb.checked = true;
       if (confirmBtn) confirmBtn.disabled = false;
+
+      // Fetch accounts for reported batch comments
+      if (accountsCountEl) accountsCountEl.textContent = "...";
+      if (accountsListEl) {
+        accountsListEl.innerHTML = '<span style="font-size:0.78rem; color:var(--muted);"><span class="spinner" style="width:12px; height:12px; margin-right:5px; vertical-align:middle;"></span>Loading account history...</span>';
+      }
+
+      const reportedCids = (reportedComments || []).map(c => c.comment_id || String(c.id || "")).filter(Boolean);
+      if (reportedCids.length > 0) {
+        const queryParams = reportedCids.map(id => `comment_ids=${encodeURIComponent(id)}`).join("&");
+        authFetch(`/api/comments/reported-accounts?${queryParams}`)
+          .then(r => r.json())
+          .then(data => {
+            const accs = (data && data.accounts) || [];
+            if (accountsCountEl) accountsCountEl.textContent = accs.length;
+            if (!accountsListEl) return;
+            if (accs.length > 0) {
+              accountsListEl.innerHTML = accs.map(email =>
+                `<span style="background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(99, 102, 241, 0.35); color: #93c5fd; font-size: 0.75rem; padding: 2px 7px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; word-break: break-all;">${escapeHtml(email)}</span>`
+              ).join("");
+            } else {
+              accountsListEl.innerHTML = '<span style="font-size:0.78rem; color:#94a3b8; font-style:italic;">No previous accounts recorded</span>';
+            }
+          })
+          .catch(() => {
+            if (accountsCountEl) accountsCountEl.textContent = "0";
+            if (accountsListEl) {
+              accountsListEl.innerHTML = '<span style="font-size:0.78rem; color:#94a3b8; font-style:italic;">Could not load account history</span>';
+            }
+          });
+      } else {
+        if (accountsCountEl) accountsCountEl.textContent = "0";
+        if (accountsListEl) accountsListEl.innerHTML = '<span style="font-size:0.78rem; color:#94a3b8; font-style:italic;">None</span>';
+      }
 
       modal.style.display = "flex";
       void modal.offsetWidth;
@@ -8058,12 +8159,13 @@
       }
 
       // Disable all action buttons during operation
+      isCommentBatchRunning = true;
       if (commentsReportBtn) commentsReportBtn.disabled = true;
       if (commentsUpvoteBtn) commentsUpvoteBtn.disabled = true;
       if (commentsDownvoteBtn) commentsDownvoteBtn.disabled = true;
 
       if (activeBtn) {
-        activeBtn.innerHTML = `<span class="spinner"></span><span>${actionProgress} ${comment_ids.length} item(s)...</span>`;
+        activeBtn.innerHTML = `<span class="spinner" style="margin-right:8px; vertical-align:middle;"></span><span>${actionProgress} ${comment_ids.length} item(s)...</span>`;
       }
 
       let processingId = null;
@@ -8195,6 +8297,7 @@ Live execution batch logs are updating below...`, "success");
         const requestRef = processingId !== null ? ` Processing ID: ${processingId}.` : "";
         alert(`Error executing ${actionTitle.toLowerCase()}: ${err.message}${requestRef}`);
       } finally {
+        isCommentBatchRunning = false;
         const count = selectedComments.size;
         if (commentsReportBtn) {
           commentsReportBtn.innerHTML = `<span>Report Selected (<span id="selected-count-btn">${count}</span>)</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`;
