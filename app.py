@@ -668,11 +668,13 @@ def _validate_payload(payload: object) -> dict[str, object]:
     action_str = str(raw_action).strip().lower()
     if action_str in ("post_comment", "postcomment", "post-comment", "post comment", "comment"):
         action_value = "post_comment"
+    elif action_str in ("offensive",):
+        action_value = "offensive"
     elif action_str in ("report", "report_spam", "spam", "reported"):
         action_value = "report_spam"
-    elif action_str in ("upvote", "upvoted"):
+    elif action_str in ("upvote", "upvoted", "upvoting"):
         action_value = "upvote"
-    elif action_str in ("downvote", "downvoted"):
+    elif action_str in ("downvote", "downvoted", "downvoting"):
         action_value = "downvote"
     else:
         action_value = "report_spam"
@@ -763,19 +765,21 @@ def _record_report_activity(user_ids: list[str], processing_id: int | None = Non
 
 
 def _normalize_action_type(raw_val: object, default: str = "report_spam") -> str:
-    """Normalize action type to standard keys: report_spam, upvote, downvote, or post_comment."""
+    """Normalize action type to standard keys: offensive, report_spam, upvote/upvoting, downvote/downvoting, or post_comment."""
     if not raw_val:
         return default
     val = str(raw_val).strip().lower()
+    if "offensive" in val:
+        return "offensive"
     if "post_comment" in val or "post comment" in val or "postcomment" in val:
         return "post_comment"
-    if "upvote" in val:
-        return "upvote"
-    if "downvote" in val:
-        return "downvote"
+    if "upvot" in val:
+        return "upvoting" if "upvoting" in val else "upvote"
+    if "downvot" in val:
+        return "downvoting" if "downvoting" in val else "downvote"
     if "report" in val or "spam" in val:
         return "report_spam"
-    return default
+    return val or default
 
 
 def _extract_id_tokens(val: object) -> set[str]:
@@ -1058,11 +1062,15 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
 
             # 2. Strict voting conflict filter: if tracker specifically specified 'upvote',
             # it cannot match a 'downvote' UI run (and vice versa)
-            if explicit_row_action in ("upvote", "downvote") and u_action in ("upvote", "downvote") and explicit_row_action != u_action:
+            row_is_up = bool(explicit_row_action and "upvot" in explicit_row_action)
+            row_is_down = bool(explicit_row_action and "downvot" in explicit_row_action)
+            u_is_up = bool("upvot" in u_action)
+            u_is_down = bool("downvot" in u_action)
+            if (row_is_up and u_is_down) or (row_is_down and u_is_up):
                 continue
 
             # 3. If UI run is report_spam, but tracker record explicitly has a vote action (upvote or downvote)
-            if u_action == "report_spam" and explicit_row_action in ("upvote", "downvote"):
+            if u_action == "report_spam" and (row_is_up or row_is_down):
                 continue
 
             # (Note: If tracker action is 'report_spam' or empty, but UI run is 'upvote' or 'downvote',
@@ -1111,7 +1119,8 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
         if best_match_id is not None and best_score > 0:
             target_batch = ui_batches[best_match_id]
             matched_action = target_batch["action_type"]
-            record["action_type"] = matched_action
+            # Prioritize action type directly from BackendProcessingTracker table
+            record["action_type"] = explicit_row_action or matched_action
             target_batch["records"].append(record)
             target_batch["_has_records"] = True
             if row_dt and (
@@ -1126,9 +1135,8 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             if not is_completed:
                 target_batch["_any_in_progress"] = True
 
-            # If BackendProcessingTracker has an action column and its stored value is not matched_action
-            # (e.g. was 'report_spam' or NULL for a downvote or upvote job), record task to sync in DB
-            if tracker_action_col and task_id and explicit_row_action != matched_action:
+            # If BackendProcessingTracker has an action column and its stored value is empty/NULL, record task to sync in DB
+            if tracker_action_col and task_id and not explicit_row_action and matched_action:
                 tasks_to_update_action.append((matched_action, task_id))
         else:
             if not record.get("action_type"):
@@ -1222,6 +1230,12 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             if b["_tracker_latest_dt"]:
                 b["_dt"] = b["_tracker_latest_dt"]
                 b["starting_date"] = b["_dt"].strftime("%Y-%m-%d %H:%M:%S IST")
+
+            # Prioritize the authoritative action type from BackendProcessingTracker records
+            tracker_actions = [r["action_type"] for r in b["records"] if r.get("action_type")]
+            if tracker_actions:
+                b["action_type"] = tracker_actions[0]
+
             batches.append(b)
 
     for fb in fallback_batches:
@@ -1245,8 +1259,12 @@ def _fetch_batches_from_tracker(days: int = 3, action_filter: str = ""):
             batches = [b for b in batches if b.get("action_type") == "post_comment"]
         elif act_filt in ("reports", "report", "dashboard", "report_spam", "spam", "votes"):
             batches = [b for b in batches if b.get("action_type") != "post_comment"]
-        elif act_filt in ("upvote", "downvote"):
-            batches = [b for b in batches if b.get("action_type") == act_filt]
+        elif "upvot" in act_filt:
+            batches = [b for b in batches if "upvot" in str(b.get("action_type", "")).lower()]
+        elif "downvot" in act_filt:
+            batches = [b for b in batches if "downvot" in str(b.get("action_type", "")).lower()]
+        elif "offensive" in act_filt:
+            batches = [b for b in batches if "offensive" in str(b.get("action_type", "")).lower()]
 
     total_batches = len(batches)
     for idx, b in enumerate(batches):
