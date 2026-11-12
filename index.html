@@ -4631,9 +4631,9 @@
             </div>
           </div>
 
-          <!-- TAB: EMAILS VIEW (SUPER ADMIN ONLY - INVESTING ACCOUNTS MANAGEMENT) -->
+          <!-- TAB: EMAILS VIEW (INVESTING ACCOUNTS MANAGEMENT) -->
           <div class="tab-content" id="tab-emails">
-            <div class="eyebrow">Super Admin Console &bull; Account Management</div>
+            <div class="eyebrow">Investing Accounts Management</div>
             <div class="comments-header-bar">
               <div>
                 <h1>Investing Email Accounts</h1>
@@ -5822,10 +5822,11 @@
 
       const superAdmin = (typeof isSuperAdmin === "boolean") ? isSuperAdmin : isCurrentUserSuperAdmin();
 
-      // Show Emails, Limits, and Billing sections in navigation ONLY if Super Admin
+      // Show Emails tab for all authenticated users (Standard and Super Admin)
       if (navBtnEmails) {
-        navBtnEmails.style.display = superAdmin ? "flex" : "none";
+        navBtnEmails.style.display = "flex";
       }
+      // Limits and Billing sections in navigation remain ONLY for Super Admin
       if (navBtnBilling) {
         navBtnBilling.style.display = superAdmin ? "flex" : "none";
       }
@@ -5848,7 +5849,7 @@
       }
 
       // If user is not super admin but super-admin-only tab was active, fallback to dashboard
-      if (!superAdmin && ((tabBilling && tabBilling.classList.contains("active")) || (tabLimits && tabLimits.classList.contains("active")) || (tabEmails && tabEmails.classList.contains("active")))) {
+      if (!superAdmin && ((tabBilling && tabBilling.classList.contains("active")) || (tabLimits && tabLimits.classList.contains("active")))) {
         switchTab("dashboard");
       }
 
@@ -5857,15 +5858,15 @@
       loadCommentUsers();
       loadComments(1);
       renderPostCommentRows();
-      if (superAdmin && typeof loadAccounts === "function") {
+      if (typeof loadAccounts === "function") {
         loadAccounts(1, true);
       }
     }
 
     // Navigation Tabs Switching Functions
     function switchTab(tabName) {
-      // Disallow non-superadmin from viewing billing, limits, or emails tab
-      if ((tabName === "billing" || tabName === "limits" || tabName === "emails") && !isCurrentUserSuperAdmin()) {
+      // Disallow non-superadmin from viewing billing or limits tab (emails allowed for all users)
+      if ((tabName === "billing" || tabName === "limits") && !isCurrentUserSuperAdmin()) {
         tabName = "dashboard";
       }
 
@@ -5892,10 +5893,6 @@
         tabUsers.classList.add("active");
         loadUsers(currentUsersPage);
       } else if (tabName === "emails") {
-        if (!isCurrentUserSuperAdmin()) {
-          switchTab("dashboard");
-          return;
-        }
         if (navBtnEmails) navBtnEmails.classList.add("active");
         if (tabEmails) tabEmails.classList.add("active");
         if (typeof loadAccounts === "function") {
@@ -8551,7 +8548,7 @@ Live execution batch logs are updating below...`, "success");
 
 
     // ─────────────────────────────────────────────────────────────────
-    // 4A. EMAILS VIEW LOGIC (SUPER ADMIN ONLY - INVESTING ACCOUNTS)
+    // 4A. EMAILS VIEW LOGIC (INVESTING ACCOUNTS MANAGEMENT)
     // ─────────────────────────────────────────────────────────────────
     const EMAILS_API_URL = "/api/emails";
     let allAccountsList = [];
@@ -8852,7 +8849,7 @@ Live execution batch logs are updating below...`, "success");
 
     // Main Fetch Function
     async function loadAccounts(page = 1, isSilent = false) {
-      if (!isCurrentUserSuperAdmin()) return;
+      if (!getAuthToken()) return;
 
       if (!isSilent && accountsRefreshBtn) {
         accountsRefreshBtn.disabled = true;
